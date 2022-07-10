@@ -1,6 +1,6 @@
 # EC2
 module "ec2" {
-  source = "../../modules/EC2"
+  source = "../../../modules/EC2"
 
   ec2 = {
     "example-ec2" = {
@@ -30,7 +30,7 @@ module "ec2" {
 }
 
 module "sg" {
-  source = "../../modules/SecurityGroup"
+  source = "../../../modules/SecurityGroup"
   sg_name = "security_group_01"
   sg_description = "security_group_01"
   sg_vpc_id = "vpc-05b5aeed5c9d8e83e"
