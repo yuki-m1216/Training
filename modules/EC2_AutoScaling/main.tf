@@ -3,10 +3,13 @@ resource "aws_launch_template" "launch_template" {
   name_prefix   = var.name_prefix
   image_id      = var.image_id
   instance_type = var.instance_type
+  user_data = var.user_data
+  vpc_security_group_ids = var.vpc_security_group_ids
 }
 
 # autoscaling_group
 resource "aws_autoscaling_group" "autoscaling_group" {
+  name = var.autoscaling_group_name
   vpc_zone_identifier = var.vpc_zone_identifier
   desired_capacity   = var.desired_capacity
   max_size           = var.max_size

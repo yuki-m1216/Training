@@ -2,8 +2,16 @@
 variable "name_prefix" {}
 variable "image_id" {}
 variable "instance_type" {}
+variable "user_data" {
+    default = null
+}
+variable "vpc_security_group_ids" {
+  type = list
+  default = null
+}
 
 # autoscaling_group
+variable "autoscaling_group_name" {}
 variable "vpc_zone_identifier" {
     type = list
 }
