@@ -58,6 +58,14 @@ other_private_route = {
       vpc_peering_connection_id = data.terraform_remote_state.subvpc.outputs.vpc_peering_connection_id
       vpc_endpoint_id = null
     }
+
+    # "other-private-subnet-1a-route-nat" = {
+    #   destination_cidr_block    = "0.0.0.0/0"
+    #   nat_gateway_id = aws_nat_gateway.main_nat[each.key].id
+    #   transit_gateway_id = null
+    #   vpc_peering_connection_id = null
+    #   vpc_endpoint_id = null
+    # }
   }
 
 # IGW
@@ -65,6 +73,23 @@ other_private_route = {
 
 }
 
+
+# resource "aws_nat_gateway" "main_nat" {
+#   for_each = module.main_VPC.private_subnet_id
+#   allocation_id = aws_eip.main_nat_gateway[each.key].id
+#   subnet_id     = each.value
+
+#   tags = {
+#     Name = "main_nat_${each.key}"
+#   }
+
+# }
+
+# # eip
+# resource "aws_eip" "main_nat_gateway" {
+#   for_each = module.main_VPC.private_subnet_id
+#   vpc = true
+# }
 
 data "terraform_remote_state" "subvpc" {
   backend = "s3"

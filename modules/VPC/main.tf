@@ -36,7 +36,7 @@ resource "aws_subnet" "private_subnet" {
 
 # internet_gateway
 resource "aws_internet_gateway" "main_igw" {
-  count = var.private_subnet != null ? 1 : 0
+  count = var.public_subnet != null ? 1 : 0
   vpc_id = aws_vpc.main.id
 
   tags = {
@@ -110,6 +110,11 @@ output "mainvpc_id" {
   value = aws_vpc.main.id
 }
 
+output "private_subnet_id" {
+  value = {
+    for k, v in aws_subnet.private_subnet : k => v.id
+  }
+}
 output "public_routetable" {
   value = aws_route_table.public_routetable.id
 }
