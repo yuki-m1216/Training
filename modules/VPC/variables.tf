@@ -4,14 +4,14 @@ variable "vpc_name" {}
 
 # public subnets
 variable "public_subnet" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
 }
 
 # private subnets
 variable "private_subnet" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
 }
 
 # routetable
@@ -23,14 +23,20 @@ variable "private_routetable_name" {}
 variable "main_igw_name" {}
 
 # other route
-## public
+# public
 variable "other_public_route" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
 }
 
-## private
+# private
 variable "other_private_route" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
+}
+
+# nat
+variable "nat_gateway_create" {
+  type    = string
+  default = "false"
 }

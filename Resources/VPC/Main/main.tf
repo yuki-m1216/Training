@@ -3,93 +3,88 @@
 module "main_VPC" {
   source = "../../../modules/VPC"
 
-# VPC
+  # VPC
   vpc_cidr_block = "10.0.0.0/16"
-  vpc_name = "Main_VPC"
+  vpc_name       = "Main_VPC"
 
-# subnets
+  # subnets
   public_subnet = {
     "public-subnet-1a" = {
       name = "public-subnet-1a"
       cidr = "10.0.0.0/24"
-      az = "ap-northeast-1a"
+      az   = "ap-northeast-1a"
     }
     "public-subnet-1c" = {
       name = "public-subnet-1c"
       cidr = "10.0.1.0/24"
-      az = "ap-northeast-1c"
+      az   = "ap-northeast-1c"
     }
   }
-  private_subnet ={
+  private_subnet = {
     "private-subnet-1a" = {
       name = "private-subnet-1a"
       cidr = "10.0.2.0/24"
-      az = "ap-northeast-1a"
+      az   = "ap-northeast-1a"
     }
     "private-subnet-1c" = {
       name = "private-subnet-1c"
       cidr = "10.0.3.0/24"
-      az = "ap-northeast-1c"
+      az   = "ap-northeast-1c"
     }
 
   }
 
-# routetable
-  public_routetable_name = "main_public_routetable-01"
+  # routetable
+  public_routetable_name = "main_public_routetable"
 
-  private_routetable_name = "main_private_routetable-01"
+  private_routetable_name = "main_private_routetable"
 
-# add route
+  # add route
   other_public_route = {
     "other-public-subnet-1a-route" = {
+      target_subnet             = "public-subnet-1a"
       destination_cidr_block    = "172.16.0.0/16"
-      nat_gateway_id = null
-      transit_gateway_id = null
+      nat_gateway_id            = null
+      transit_gateway_id        = null
       vpc_peering_connection_id = data.terraform_remote_state.subvpc.outputs.vpc_peering_connection_id
-      vpc_endpoint_id = null
+      vpc_endpoint_id           = null
+    }
+    "other-public-subnet-1c-route" = {
+      target_subnet             = "public-subnet-1c"
+      destination_cidr_block    = "172.16.0.0/16"
+      nat_gateway_id            = null
+      transit_gateway_id        = null
+      vpc_peering_connection_id = data.terraform_remote_state.subvpc.outputs.vpc_peering_connection_id
+      vpc_endpoint_id           = null
     }
   }
 
-other_private_route = {
+  other_private_route = {
     "other-private-subnet-1a-route" = {
+      target_subnet             = "private-subnet-1a"
       destination_cidr_block    = "172.16.0.0/16"
-      nat_gateway_id = null
-      transit_gateway_id = null
+      nat_gateway_id            = null
+      transit_gateway_id        = null
       vpc_peering_connection_id = data.terraform_remote_state.subvpc.outputs.vpc_peering_connection_id
-      vpc_endpoint_id = null
+      vpc_endpoint_id           = null
     }
-
-    # "other-private-subnet-1a-route-nat" = {
-    #   destination_cidr_block    = "0.0.0.0/0"
-    #   nat_gateway_id = aws_nat_gateway.main_nat[each.key].id
-    #   transit_gateway_id = null
-    #   vpc_peering_connection_id = null
-    #   vpc_endpoint_id = null
-    # }
+    "other-private-subnet-1c-route" = {
+      target_subnet             = "private-subnet-1c"
+      destination_cidr_block    = "172.16.0.0/16"
+      nat_gateway_id            = null
+      transit_gateway_id        = null
+      vpc_peering_connection_id = data.terraform_remote_state.subvpc.outputs.vpc_peering_connection_id
+      vpc_endpoint_id           = null
+    }
   }
 
-# IGW
+  # IGW
   main_igw_name = "Main_IGW"
 
+
+  # nat
+  nat_gateway_create = "false"
 }
-
-
-# resource "aws_nat_gateway" "main_nat" {
-#   for_each = module.main_VPC.private_subnet_id
-#   allocation_id = aws_eip.main_nat_gateway[each.key].id
-#   subnet_id     = each.value
-
-#   tags = {
-#     Name = "main_nat_${each.key}"
-#   }
-
-# }
-
-# # eip
-# resource "aws_eip" "main_nat_gateway" {
-#   for_each = module.main_VPC.private_subnet_id
-#   vpc = true
-# }
 
 data "terraform_remote_state" "subvpc" {
   backend = "s3"
