@@ -22,6 +22,11 @@ variable "launch_template_version" {
   type    = string
   default = "$Latest"
 }
+variable "health_check_type" {
+  type    = string
+  default = "EC2"
+}
+
 
 # lb
 variable "alb_name" {}
@@ -73,6 +78,11 @@ variable "target_type" {
   default = "instance"
 }
 
+
+variable "health_check_enabled" {
+  type    = bool
+  default = true
+}
 variable "health_check_interval" {
   type    = number
   default = 30
@@ -111,4 +121,8 @@ variable "health_check_unhealthy_threshold" {
 variable "health_check_matcher" {
   type    = string
   default = "200"
+}
+
+variable "listener" {
+  type = map(any)
 }

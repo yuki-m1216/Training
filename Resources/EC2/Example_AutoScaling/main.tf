@@ -7,15 +7,17 @@ module "EC2_AutoScaling" {
   instance_type          = "t2.micro"
   user_data              = filebase64("userdata/example.sh")
   vpc_security_group_ids = [module.sg_launch_template.sg_id]
+
   # autoscaling_group
   autoscaling_group_name = "test_autoscaling_group"
-  # todo when add elb,change privatesubnet
+
   vpc_zone_identifier = [
-    "subnet-0ef3a322300e969c2"
+    "subnet-073f1baa14173c1a5"
   ]
-  desired_capacity = 1
-  max_size         = 1
-  min_size         = 1
+  desired_capacity  = 1
+  max_size          = 1
+  min_size          = 1
+  health_check_type = "EC2"
 
   # lb
   alb_name           = "test-alb"
@@ -26,7 +28,7 @@ module "EC2_AutoScaling" {
   ]
   subnets = [
     "subnet-0ef3a322300e969c2",
-    "subnet-073f1baa14173c1a5"
+    "subnet-03ad5ab676aea8179"
   ]
 
   # target_group
@@ -34,6 +36,14 @@ module "EC2_AutoScaling" {
   target_group_port     = 80
   target_group_protocol = "HTTP"
   target_group_vpc_id   = "vpc-05b5aeed5c9d8e83e"
+
+  # lb_listener
+  listener = {
+    "listener_01" = {
+      port     = "80"
+      protocol = "HTTP"
+    }
+  }
 
 
 }
