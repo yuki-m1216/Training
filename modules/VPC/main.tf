@@ -110,9 +110,9 @@ resource "aws_route_table_association" "private_routetable_association" {
 
 # nat
 resource "aws_nat_gateway" "main_nat" {
-  for_each      = var.nat_gateway_create == "true" ? var.private_subnet : {}
+  for_each      = var.nat_gateway_create == "true" ? var.public_subnet : {}
   allocation_id = aws_eip.main_nat_gateway[each.key].id
-  subnet_id     = aws_subnet.private_subnet[each.key].id
+  subnet_id     = aws_subnet.public_subnet[each.key].id
 
   tags = {
     Name = "main_nat_${each.key}"
@@ -122,14 +122,14 @@ resource "aws_nat_gateway" "main_nat" {
 
 # eip
 resource "aws_eip" "main_nat_gateway" {
-  for_each = var.nat_gateway_create == "true" ? var.private_subnet : {}
+  for_each = var.nat_gateway_create == "true" ? var.public_subnet : {}
   vpc      = true
 }
 
 # nat_route
 resource "aws_route" "nat_private_route" {
-  for_each               = var.nat_gateway_create == "true" ? var.private_subnet : {}
-  route_table_id         = aws_route_table.private_routetable[each.key].id
+  for_each               = var.nat_gateway_create == "true" ? zipmap(keys(var.public_subnet), keys(var.private_subnet)) : {}
+  route_table_id         = aws_route_table.private_routetable[each.value].id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.main_nat[each.key].id
 }
