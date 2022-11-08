@@ -6,7 +6,7 @@ resource "aws_rds_cluster" "cluster" {
   port                   = var.port
   availability_zones     = var.availability_zones
   vpc_security_group_ids = var.vpc_security_group_ids
-  db_subnet_group_name   = var.db_subnet_group_name
+  db_subnet_group_name   = aws_db_subnet_group.subnet_group.name
   database_name          = var.database_name
   master_username        = var.master_username
   # todo
@@ -16,12 +16,12 @@ resource "aws_rds_cluster" "cluster" {
   preferred_maintenance_window    = var.preferred_maintenance_window
   deletion_protection             = var.deletion_protection
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
+  storage_encrypted               = var.kms_key_id != null ? true : false
   kms_key_id                      = var.kms_key_id
-  storage_encrypted               = var.storage_encrypted
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.parameter_group.name
   skip_final_snapshot             = var.skip_final_snapshot
   final_snapshot_identifier       = var.skip_final_snapshot == false ? "${var.cluster_name}-final-snapshot" : null
-  tags {
+  tags = {
     Name = var.cluster_name
   }
 
@@ -41,12 +41,22 @@ resource "aws_rds_cluster_instance" "cluster_instances" {
   instance_class          = var.instance_class
   engine                  = aws_rds_cluster.cluster.engine
   engine_version          = aws_rds_cluster.cluster.engine_version
-  db_subnet_group_name    = var.db_subnet_group_name
+  db_subnet_group_name    = aws_db_subnet_group.subnet_group.name
   db_parameter_group_name = aws_db_parameter_group.parameter_group.name
   monitoring_role_arn     = var.monitoring_role_arn
   monitoring_interval     = var.monitoring_interval
-  tags {
+  tags = {
     Name = var.instance_name
+  }
+}
+
+# subnet_group
+resource "aws_db_subnet_group" "subnet_group" {
+  name        = var.subnet_group_name
+  subnet_ids  = var.subnet_ids
+  description = var.subnet_group_description
+  tags = {
+    Name = var.subnet_group_name
   }
 }
 
@@ -65,7 +75,7 @@ resource "aws_rds_cluster_parameter_group" "parameter_group" {
     }
   }
 
-  tags {
+  tags = {
     Name = var.cluster_parameter_group_name
   }
 }
@@ -85,7 +95,7 @@ resource "aws_db_parameter_group" "parameter_group" {
     }
   }
 
-  tags {
+  tags = {
     Name = var.db_parameter_group_name
   }
 }
