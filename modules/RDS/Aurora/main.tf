@@ -22,7 +22,7 @@ resource "aws_rds_cluster" "cluster" {
   skip_final_snapshot             = var.skip_final_snapshot
   final_snapshot_identifier       = var.skip_final_snapshot == false ? "${var.cluster_name}-final-snapshot" : null
   tags = {
-    Name = var.cluster_name
+    Name = var.cluster_identifier
   }
 
   lifecycle {
@@ -35,7 +35,7 @@ resource "aws_rds_cluster" "cluster" {
 
 # instance
 resource "aws_rds_cluster_instance" "cluster_instances" {
-  count                   = var.count
+  count                   = var.count_instance
   identifier              = "${var.instance_identifier}-${count.index}"
   cluster_identifier      = aws_rds_cluster.cluster.id
   instance_class          = var.instance_class
@@ -43,10 +43,10 @@ resource "aws_rds_cluster_instance" "cluster_instances" {
   engine_version          = aws_rds_cluster.cluster.engine_version
   db_subnet_group_name    = aws_db_subnet_group.subnet_group.name
   db_parameter_group_name = aws_db_parameter_group.parameter_group.name
-  monitoring_role_arn     = var.monitoring_role_arn
+  monitoring_role_arn     = var.monitoring_interval == 0 ? null : var.monitoring_role_arn
   monitoring_interval     = var.monitoring_interval
   tags = {
-    Name = var.instance_name
+    Name = "${var.instance_identifier}-${count.index}"
   }
 }
 
@@ -63,7 +63,7 @@ resource "aws_db_subnet_group" "subnet_group" {
 # cluster_parameter_group
 resource "aws_rds_cluster_parameter_group" "parameter_group" {
   name        = var.cluster_parameter_group_name
-  family      = var.cluster_parameter_group_family
+  family      = var.parameter_group_family
   description = var.cluster_parameter_group_description
 
   dynamic "parameter" {
@@ -83,7 +83,7 @@ resource "aws_rds_cluster_parameter_group" "parameter_group" {
 # db_parameter_group
 resource "aws_db_parameter_group" "parameter_group" {
   name        = var.db_parameter_group_name
-  family      = var.db_parameter_group_family
+  family      = var.parameter_group_family
   description = var.db_parameter_group_description
 
   dynamic "parameter" {

@@ -1,4 +1,4 @@
-# launch_template
+# aurora
 variable "cluster_identifier" {
   type        = string
   description = "The cluster identifier."
@@ -87,4 +87,90 @@ variable "skip_final_snapshot" {
   type        = bool
   description = "Determines whether a final DB snapshot is created before the DB cluster is deleted."
   default     = false
+}
+
+# instance
+variable "count_instance" {
+  type                   = number
+  descriptiondescription = "count for instance"
+}
+
+variable "instance_identifier" {
+  type        = string
+  description = "The identifier for the RDS instance"
+}
+
+variable "instance_class" {
+  type        = string
+  description = " The instance class to use"
+  default     = "db.t3.small"
+}
+
+variable "monitoring_role_arn" {
+  type        = string
+  description = "The ARN for the IAM role for enhanced monitoring"
+}
+
+variable "monitoring_interval" {
+  type        = number
+  description = "The interval, in seconds, between points when Enhanced Monitoring metrics are collected for the DB instance."
+  default     = 0
+}
+
+# subnet_group
+variable "subnet_group_name" {
+  type        = string
+  description = "The name of the DB subnet group."
+}
+
+variable "subnet_ids" {
+  type           = list(string)
+  desdescription = "A list of VPC subnet IDs."
+}
+
+variable "subnet_group_description" {
+  type        = string
+  description = " The description of the DB subnet group."
+  default     = "Managed by Terraform."
+}
+
+# cluster_parameter_group
+variable "cluster_parameter_group_name" {
+  type        = string
+  description = "The name of the DB cluster parameter group."
+}
+
+variable "parameter_group_family" {
+  type        = string
+  description = " The family of the DB and cluster parameter group."
+  default     = "aurora-mysql5.7"
+}
+
+variable "cluster_parameter_group_description" {
+  type        = string
+  description = "The description of the DB cluster parameter group."
+}
+
+variable "cluster_parameters" {
+  type        = map(any)
+  description = "map of cluster parameters"
+  default     = null
+}
+
+# db_parameter_group
+variable "db_parameter_group_name" {
+  type        = string
+  description = "The name of the DB parameter group."
+}
+
+variable "db_parameter_group_description" {
+  type        = string
+  description = "The description of the DB parameter group."
+  default     = "Managed by Terraform."
+}
+
+variable "db_parameters" {
+  type        = map(any)
+  description = "map of DB parameters"
+  default     = null
 }
