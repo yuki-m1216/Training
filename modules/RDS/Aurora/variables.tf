@@ -23,8 +23,8 @@ variable "port" {
 }
 
 variable "availability_zones" {
-  type           = list(string)
-  desdescription = " List of EC2 Availability Zones for the DB cluster storage where DB cluster instances can be created."
+  type        = list(string)
+  description = " List of EC2 Availability Zones for the DB cluster storage where DB cluster instances can be created."
 }
 
 variable "vpc_security_group_ids" {
@@ -52,13 +52,13 @@ variable "backup_retention_period" {
 variable "preferred_backup_window" {
   type        = string
   description = "The daily time range during which automated backups are created."
-  default     = "15:00-17:00"
+  default     = "12:00-14:00"
 }
 
 variable "preferred_maintenance_window" {
   type        = string
   description = "The weekly time range during which system maintenance can occur."
-  default     = "sat:15:00-sat:17:0"
+  default     = "sat:15:00-sat:17:00"
 }
 
 variable "deletion_protection" {
@@ -78,6 +78,12 @@ variable "enabled_cloudwatch_logs_exports" {
   ]
 }
 
+variable "storage_encrypted" {
+  type        = bool
+  description = "Specifies whether the DB cluster is encrypted."
+  default     = false
+}
+
 variable "kms_key_id" {
   type        = string
   description = "The ARN for the KMS encryption key."
@@ -91,8 +97,8 @@ variable "skip_final_snapshot" {
 
 # instance
 variable "count_instance" {
-  type                   = number
-  descriptiondescription = "count for instance"
+  type        = number
+  description = "count for instance"
 }
 
 variable "instance_identifier" {
@@ -124,8 +130,8 @@ variable "subnet_group_name" {
 }
 
 variable "subnet_ids" {
-  type           = list(string)
-  desdescription = "A list of VPC subnet IDs."
+  type        = list(string)
+  description = "A list of VPC subnet IDs."
 }
 
 variable "subnet_group_description" {
@@ -154,7 +160,7 @@ variable "cluster_parameter_group_description" {
 variable "cluster_parameters" {
   type        = map(any)
   description = "map of cluster parameters"
-  default     = null
+  default     = {}
 }
 
 # db_parameter_group
@@ -172,5 +178,5 @@ variable "db_parameter_group_description" {
 variable "db_parameters" {
   type        = map(any)
   description = "map of DB parameters"
-  default     = null
+  default     = {}
 }

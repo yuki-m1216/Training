@@ -10,17 +10,18 @@ resource "aws_rds_cluster" "cluster" {
   database_name          = var.database_name
   master_username        = var.master_username
   # todo
-  master_password                 = "bar"
+  master_password                 = "examplepassword"
   backup_retention_period         = var.backup_retention_period
   preferred_backup_window         = var.preferred_backup_window
   preferred_maintenance_window    = var.preferred_maintenance_window
   deletion_protection             = var.deletion_protection
   enabled_cloudwatch_logs_exports = var.enabled_cloudwatch_logs_exports
-  storage_encrypted               = var.kms_key_id != null ? true : false
-  kms_key_id                      = var.kms_key_id
+  storage_encrypted               = var.storage_encrypted
+  # https://qiita.com/HirokiSakonju/items/18e532fcf1461876c4f3
+  kms_key_id                      = var.storage_encrypted == true ? var.kms_key_id == null ? data.aws_kms_key.managed_rds.arn : var.kms_key_id : null
   db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.parameter_group.name
   skip_final_snapshot             = var.skip_final_snapshot
-  final_snapshot_identifier       = var.skip_final_snapshot == false ? "${var.cluster_name}-final-snapshot" : null
+  final_snapshot_identifier       = var.skip_final_snapshot == false ? "${var.cluster_identifier}-final-snapshot" : null
   tags = {
     Name = var.cluster_identifier
   }
@@ -43,8 +44,9 @@ resource "aws_rds_cluster_instance" "cluster_instances" {
   engine_version          = aws_rds_cluster.cluster.engine_version
   db_subnet_group_name    = aws_db_subnet_group.subnet_group.name
   db_parameter_group_name = aws_db_parameter_group.parameter_group.name
-  monitoring_role_arn     = var.monitoring_interval == 0 ? null : var.monitoring_role_arn
   monitoring_interval     = var.monitoring_interval
+  monitoring_role_arn     = var.monitoring_interval == 0 ? null : var.monitoring_role_arn
+
   tags = {
     Name = "${var.instance_identifier}-${count.index}"
   }
@@ -98,4 +100,9 @@ resource "aws_db_parameter_group" "parameter_group" {
   tags = {
     Name = var.db_parameter_group_name
   }
+}
+
+# AWS managed keys RDS
+data "aws_kms_key" "managed_rds" {
+  key_id = "alias/aws/rds"
 }
