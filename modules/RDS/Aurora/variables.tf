@@ -43,6 +43,11 @@ variable "master_username" {
   description = "Username for the master DB user."
 }
 
+variable "master_password" {
+  type        = string
+  description = "Password for the master DB user."
+}
+
 variable "backup_retention_period" {
   type        = number
   description = "The days to retain backups for."

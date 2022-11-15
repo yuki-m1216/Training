@@ -11,6 +11,7 @@ module "rds_aurora" {
     module.sg_rds_aurora.sg_id,
   ]
   master_username     = "example"
+  master_password     = random_password.password.result
   storage_encrypted   = true
   skip_final_snapshot = true
 
@@ -53,4 +54,30 @@ module "sg_rds_aurora" {
       description              = "from My IP"
     }
   }
+}
+
+# ssm parameter for masteruser password
+resource "aws_ssm_parameter" "secret" {
+  name        = "/example/database/password/master"
+  description = "Example DB Password Parameter"
+  type        = "SecureString"
+  key_id      = data.aws_kms_key.alias_ssm.id
+  value       = random_password.password.result
+
+  tags = {
+    Name = "/example/database/password/master"
+  }
+}
+
+# data resource kms ssm
+data "aws_kms_key" "alias_ssm" {
+  key_id = "alias/aws/ssm"
+}
+
+
+# random password
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
 }

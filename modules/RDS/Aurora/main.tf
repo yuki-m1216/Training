@@ -1,16 +1,15 @@
 # aurora
 resource "aws_rds_cluster" "cluster" {
-  cluster_identifier     = var.cluster_identifier
-  engine                 = var.engine
-  engine_version         = var.engine_version
-  port                   = var.port
-  availability_zones     = var.availability_zones
-  vpc_security_group_ids = var.vpc_security_group_ids
-  db_subnet_group_name   = aws_db_subnet_group.subnet_group.name
-  database_name          = var.database_name
-  master_username        = var.master_username
-  # todo
-  master_password                 = "examplepassword"
+  cluster_identifier              = var.cluster_identifier
+  engine                          = var.engine
+  engine_version                  = var.engine_version
+  port                            = var.port
+  availability_zones              = var.availability_zones
+  vpc_security_group_ids          = var.vpc_security_group_ids
+  db_subnet_group_name            = aws_db_subnet_group.subnet_group.name
+  database_name                   = var.database_name
+  master_username                 = var.master_username
+  master_password                 = var.master_password
   backup_retention_period         = var.backup_retention_period
   preferred_backup_window         = var.preferred_backup_window
   preferred_maintenance_window    = var.preferred_maintenance_window
