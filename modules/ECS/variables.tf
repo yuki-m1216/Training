@@ -10,6 +10,53 @@ variable "containerInsights" {
   default     = false
 }
 
+# ecs_task_definition
+variable "family" {
+  type        = string
+  description = "A unique name for your task definition."
+}
+
+variable "requires_compatibilities" {
+  type        = string
+  description = "Set of launch types required by the task. The valid values are EC2 and FARGATE."
+  default     = "FARGATE"
+}
+
+variable "network_mode" {
+  type        = string
+  description = "Docker networking mode to use for the containers in the task."
+  default     = "bridge"
+}
+
+variable "cpu" {
+  type           = number
+  desdescription = "Number of cpu units used by the task."
+  default        = 256
+}
+
+variable "memory" {
+  type        = number
+  description = "Amount (in MiB) of memory used by the task."
+  default     = 512
+}
+
+variable "container_definitions" {
+  type        = map(any)
+  description = "A list of valid container definitions provided as a single valid JSON document."
+}
+
+variable "operating_system_family" {
+  type        = string
+  description = "If the requires_compatibilities is FARGATE this field is required."
+  default     = "LINUX"
+}
+
+variable "cpu_architecture" {
+  type        = string
+  description = "Must be set to either X86_64 or ARM64"
+  default     = "X86_64"
+}
+
 # ecs_service
 variable "service_name" {
   type        = string
@@ -44,6 +91,12 @@ variable "launch_type" {
   type        = string
   description = "Launch type on which to run your service."
   default     = "FARGATE"
+}
+
+variable "platform_version" {
+  type        = string
+  description = "Platform version on which to run your service."
+  default     = "LATEST"
 }
 
 variable "assign_public_ip" {

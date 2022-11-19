@@ -11,6 +11,33 @@ resource "aws_ecs_cluster" "cluster" {
   }
 }
 
+# ecs_task_definition
+resource "aws_ecs_task_definition" "ecs_task_definition" {
+  family                   = var.family
+  requires_compatibilities = [var.requires_compatibilities]
+  container_definitions    = var.container_definitions
+  network_mode             = var.requires_compatibilities == "FARGATE" ? "awsvpc" : var.network_mode
+  cpu                      = var.cpu
+  memory                   = var.memory
+  # todo
+  execution_role_arn = aws_iam_role.foo.arn
+  # todo
+  task_role_arn = aws_iam_role.foo.arn
+
+  # https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/task_definition_parameters.html#runtime-platform
+  dynamic "runtime_platform" {
+    for_each = var.requires_compatibilities == "FARGATE" ? [1] : []
+    content {
+      operating_system_family = var.operating_system_family
+      cpu_architecture        = var.cpu_architecture
+    }
+  }
+
+  tags = {
+    Name = var.family
+  }
+}
+
 # ecs_service
 resource "aws_ecs_service" "service" {
   name    = var.service_name
@@ -21,12 +48,12 @@ resource "aws_ecs_service" "service" {
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
   # todo
-  iam_role   = aws_iam_role.foo.arn
+  iam_role   = var.network_mode != "awsvpc" ? aws_iam_role.foo.arn : null
   depends_on = [aws_iam_role_policy.foo]
 
   enable_execute_command = var.enable_execute_command
   launch_type            = var.launch_type
-
+  platform_version       = var.launch_type == "FARGATE" ? var.platform_version : null
   network_configuration {
     assign_public_ip = var.launch_type == "FARGATE" ? var.assign_public_ip : null
     subnets          = var.service_subnets
