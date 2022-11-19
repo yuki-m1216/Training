@@ -12,27 +12,69 @@ resource "aws_ecs_cluster" "cluster" {
 }
 
 # ecs_service
-resource "aws_ecs_service" "mongo" {
-  name            = "mongodb"
-  cluster         = aws_ecs_cluster.foo.id
-  task_definition = aws_ecs_task_definition.mongo.arn
-  desired_count   = 3
-  iam_role        = aws_iam_role.foo.arn
-  depends_on      = [aws_iam_role_policy.foo]
+resource "aws_ecs_service" "service" {
+  name    = var.service_name
+  cluster = aws_ecs_cluster.cluster.id
+  # todo
+  task_definition                    = aws_ecs_task_definition.mongo.arn
+  desired_count                      = var.desired_count
+  deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = var.deployment_maximum_percent
+  # todo
+  iam_role   = aws_iam_role.foo.arn
+  depends_on = [aws_iam_role_policy.foo]
 
-  ordered_placement_strategy {
-    type  = "binpack"
-    field = "cpu"
+  enable_execute_command = var.enable_execute_command
+  launch_type            = var.launch_type
+
+  network_configuration {
+    assign_public_ip = var.launch_type == "FARGATE" ? var.assign_public_ip : null
+    subnets          = var.service_subnets
+    security_groups  = var.service_security_groups
   }
 
+  propagate_tags                    = var.propagate_tags
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
+
+
+  deployment_controller {
+    type = var.deployment_controller_type
+  }
+
+  dynamic "deployment_circuit_breaker" {
+    for_each = var.deployment_controller_type == "ECS" ? [1] : []
+    content = {
+      enable   = true
+      rollback = true
+    }
+  }
+
+  tags = {
+    Name = var.service_name
+  }
+  # todo 
+  # https://www.sunnycloud.jp/column/20210625-01/
+  # https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/task-placement-strategies.html
+  # ordered_placement_strategy {
+  #   type  = "binpack"
+  #   field = "cpu"
+  # }
+
+  # https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/task-placement-constraints.html
+  # placement_constraints {
+  #   type       = "memberOf"
+  #   expression = "attribute:ecs.availability-zone in [us-west-2a, us-west-2b]"
+  # }
+
+  # todo
   load_balancer {
     target_group_arn = aws_lb_target_group.foo.arn
     container_name   = "mongo"
     container_port   = 8080
   }
 
-  placement_constraints {
-    type       = "memberOf"
-    expression = "attribute:ecs.availability-zone in [us-west-2a, us-west-2b]"
+  lifecycle {
+    ignore_changes = [desired_count]
   }
+
 }
