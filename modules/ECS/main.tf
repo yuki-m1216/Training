@@ -19,10 +19,8 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
   network_mode             = var.requires_compatibilities == "FARGATE" ? "awsvpc" : var.network_mode
   cpu                      = var.cpu
   memory                   = var.memory
-  # todo
-  execution_role_arn = aws_iam_role.foo.arn
-  # todo
-  task_role_arn = aws_iam_role.foo.arn
+  execution_role_arn       = aws_iam_role.execution_role.arn
+  task_role_arn            = aws_iam_role.task_role.arn
 
   # https://docs.aws.amazon.com/ja_jp/AmazonECS/latest/developerguide/task_definition_parameters.html#runtime-platform
   dynamic "runtime_platform" {
@@ -40,16 +38,18 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
 
 # ecs_service
 resource "aws_ecs_service" "service" {
-  name    = var.service_name
-  cluster = aws_ecs_cluster.cluster.id
-  # todo
-  task_definition                    = aws_ecs_task_definition.mongo.arn
+  name                               = var.service_name
+  cluster                            = aws_ecs_cluster.cluster.id
+  task_definition                    = aws_ecs_task_definition.ecs_task_definition.arn
   desired_count                      = var.desired_count
   deployment_minimum_healthy_percent = var.deployment_minimum_healthy_percent
   deployment_maximum_percent         = var.deployment_maximum_percent
-  # todo
-  iam_role   = var.network_mode != "awsvpc" ? aws_iam_role.foo.arn : null
-  depends_on = [aws_iam_role_policy.foo]
+  # https://qiita.com/HirokiSakonju/items/18e532fcf1461876c4f3
+  # https://qiita.com/horietakehiro/items/5f5d9166b26bfb4287dd
+  iam_role = (
+    var.network_mode != "awsvpc" ? var.service_linked_role_created ?
+    data.aws_iam_role.ecs_service_linked_role.arn : aws_iam_service_linked_role.ecs_service_linked_role.arn : null
+  )
 
   enable_execute_command = var.enable_execute_command
   launch_type            = var.launch_type
@@ -103,5 +103,82 @@ resource "aws_ecs_service" "service" {
   lifecycle {
     ignore_changes = [desired_count]
   }
-
 }
+
+# IAM
+# execution_role
+resource "aws_iam_role" "execution_role" {
+  name        = "${var.family}-TaskExecutionRole"
+  description = "ECS TaskExecutionRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = {
+    Name = "${var.family}-TaskExecutionRole"
+  }
+}
+
+resource "aws_iam_policy" "execution_role_policy" {
+  name   = "${var.family}-TaskExecutionPolicy"
+  policy = var.execution_role_policy
+}
+
+resource "aws_iam_role_policy_attachment" "execution_role_policy_attach" {
+  role       = aws_iam_role.execution_role.name
+  policy_arn = aws_iam_policy.execution_role_policy.arn
+}
+
+# task_role
+resource "aws_iam_role" "task_role" {
+  name        = "${var.family}-TaskRole"
+  description = "ECS TaskRole"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ecs-tasks.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+resource "aws_iam_policy" "task_role_policy" {
+  name   = "${var.family}-TaskPolicy"
+  policy = var.task_role_policy
+}
+
+resource "aws_iam_role_policy_attachment" "task_role_policy_attach" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.task_role_policy.arn
+}
+
+# service_linked_role
+resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
+  count            = var.service_linked_role_created ? 0 : 1
+  aws_service_name = "ecs.amazonaws.com"
+}
+
+data "aws_iam_role" "ecs_service_linked_role" {
+  count = var.service_linked_role_created ? 1 : 0
+  name  = "AWSServiceRoleForECS"
+}
+
+# lb

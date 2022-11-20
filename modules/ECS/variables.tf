@@ -132,3 +132,23 @@ variable "deployment_controller_type" {
   description = "Type of deployment controller. Valid values: CODE_DEPLOY, ECS, EXTERNAL."
   default     = "ECS"
 }
+
+# IAM
+# execution_role
+variable "execution_role_policy" {
+  type        = map(any)
+  description = "Policy for TaskExecutionRole"
+}
+
+# task_role
+variable "task_role_policy" {
+  type        = map(any)
+  description = "Policy for TaskRole"
+}
+
+# service_linked_role
+variable "service_linked_role_created" {
+  type        = bool
+  description = "Whether ECS Service Linked Role already created."
+  default     = true
+}
