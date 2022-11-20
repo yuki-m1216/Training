@@ -10,11 +10,11 @@
 
 # IAM Role
 module "IAM_Role_Lambda" {
-  source = "../../../modules/IAM/Role"
+  source      = "../../../modules/IAM/Role"
   create_role = true
-  role_name = "ConsoleLoginAlarmLambdaRole"
-  identifiers = "lambda.amazonaws.com" 
-  policies = local.Lambdapolicies
+  role_name   = "ConsoleLoginAlarmLambdaRole"
+  identifiers = "lambda.amazonaws.com"
+  policies    = local.Lambdapolicies
 }
 
 locals {
@@ -55,18 +55,18 @@ module "Lambda" {
   providers = {
     aws.alternate = aws
   }
-  lambda_filename =  data.archive_file.function.output_path
+  lambda_filename      = data.archive_file.function.output_path
   lambda_function_name = "ConsoleLoginAlarm"
-  lambda_role = module.IAM_Role_Lambda.RoleArn
-  handler = "ConsoleAlarm.lambda_handler"
-  runtime = "python3.9"
+  lambda_role          = module.IAM_Role_Lambda.RoleArn
+  handler              = "ConsoleAlarm.lambda_handler"
+  runtime              = "python3.9"
   environment_variables = {
     webhookURL = data.aws_ssm_parameter.webhookURL.value
   }
 
   statement_id = "AllowExecutionFromCloudWatch"
-  principal = "events.amazonaws.com"
-  source_arn = module.EventBridge_Receiver.RuleArn
+  principal    = "events.amazonaws.com"
+  source_arn   = module.EventBridge_Receiver.RuleArn
 }
 
 data "aws_ssm_parameter" "webhookURL" {
@@ -82,14 +82,14 @@ module "EventBridge_Receiver" {
   providers = {
     aws.alternate = aws
   }
-# rule
-  rule_name = "ConsoleLoginEvent"
-  rule_description = "ConsoleLogin Event" 
+  # rule
+  rule_name        = "ConsoleLoginEvent"
+  rule_description = "ConsoleLogin Event"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -97,36 +97,36 @@ module "EventBridge_Receiver" {
     Name = "ConsoleLoginEvent"
   }
 
-# target
+  # target
   target_arn = module.Lambda.LambdaArn
-# Examle input_transformer
-#   input_transformer_input_paths = {
-#       instance = "$.detail.instance",
-#       status   = "$.detail.status",
-#     }
-#   input_transformer_input_template = <<EOF
-# {
-#   "instance_id": <instance>,
-#   "instance_status": <status>
-# }
-# EOF
+  # Examle input_transformer
+  #   input_transformer_input_paths = {
+  #       instance = "$.detail.instance",
+  #       status   = "$.detail.status",
+  #     }
+  #   input_transformer_input_template = <<EOF
+  # {
+  #   "instance_id": <instance>,
+  #   "instance_status": <status>
+  # }
+  # EOF
 
-# evntbus  
+  # evntbus  
   create_event_bus = true
-  event_bus_name = "eventbus_receiver"
+  event_bus_name   = "eventbus_receiver"
 }
 
 
 # IAM Role
 module "IAM_Role_EventBridge_Sender" {
-  source = "../../../modules/IAM/Role"
-  create_role = true
-  role_name = "ConsoleLoginAlarmEventBridgeSenderRole"
-  identifiers = "events.amazonaws.com"
+  source        = "../../../modules/IAM/Role"
+  create_role   = true
+  role_name     = "ConsoleLoginAlarmEventBridgeSenderRole"
+  identifiers   = "events.amazonaws.com"
   create_policy = true
-  policy_name = "EventBridgeSenderPolicy"
-  policy = data.aws_iam_policy_document.EventBridgeSender.json
-  policies =  local.EventBridgeSenderpolicies
+  policy_name   = "EventBridgeSenderPolicy"
+  policy        = data.aws_iam_policy_document.EventBridgeSender.json
+  policies      = local.EventBridgeSenderpolicies
 }
 
 # # IAM Policy
@@ -150,7 +150,7 @@ data "aws_iam_policy_document" "EventBridgeSender" {
 # IAM Attachment
 locals {
   EventBridgeSenderpolicies = [
-    "arn:aws:iam::365084727525:policy/EventBridgeSenderPolicy"
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/EventBridgeSenderPolicy"
   ]
 }
 
@@ -168,14 +168,14 @@ module "EventBridge_Sender_ap-northeast-1" {
   providers = {
     aws.alternate = aws
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -183,8 +183,8 @@ module "EventBridge_Sender_ap-northeast-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -195,14 +195,14 @@ module "EventBridge_Sender_us-east-1" {
   providers = {
     aws.alternate = aws.us-east-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -210,8 +210,8 @@ module "EventBridge_Sender_us-east-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -221,14 +221,14 @@ module "EventBridge_Sender_us-east-2" {
   providers = {
     aws.alternate = aws.us-east-2
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -236,8 +236,8 @@ module "EventBridge_Sender_us-east-2" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -247,14 +247,14 @@ module "EventBridge_Sender_us-west-1" {
   providers = {
     aws.alternate = aws.us-west-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -262,8 +262,8 @@ module "EventBridge_Sender_us-west-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -273,14 +273,14 @@ module "EventBridge_Sender_us-west-2" {
   providers = {
     aws.alternate = aws.us-west-2
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -288,8 +288,8 @@ module "EventBridge_Sender_us-west-2" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -299,14 +299,14 @@ module "EventBridge_Sender_ap-south-1" {
   providers = {
     aws.alternate = aws.ap-south-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -314,8 +314,8 @@ module "EventBridge_Sender_ap-south-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -325,14 +325,14 @@ module "EventBridge_Sender_ap-northeast-2" {
   providers = {
     aws.alternate = aws.ap-northeast-2
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -340,8 +340,8 @@ module "EventBridge_Sender_ap-northeast-2" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -351,14 +351,14 @@ module "EventBridge_Sender_ap-southeast-1" {
   providers = {
     aws.alternate = aws.ap-southeast-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -366,8 +366,8 @@ module "EventBridge_Sender_ap-southeast-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -377,14 +377,14 @@ module "EventBridge_Sender_ca-central-1" {
   providers = {
     aws.alternate = aws.ca-central-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -392,8 +392,8 @@ module "EventBridge_Sender_ca-central-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -403,14 +403,14 @@ module "EventBridge_Sender_eu-central-1" {
   providers = {
     aws.alternate = aws.eu-central-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -418,8 +418,8 @@ module "EventBridge_Sender_eu-central-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -429,14 +429,14 @@ module "EventBridge_Sender_eu-west-1" {
   providers = {
     aws.alternate = aws.eu-west-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -444,8 +444,8 @@ module "EventBridge_Sender_eu-west-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -455,14 +455,14 @@ module "EventBridge_Sender_eu-west-2" {
   providers = {
     aws.alternate = aws.eu-west-2
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -470,8 +470,8 @@ module "EventBridge_Sender_eu-west-2" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -481,14 +481,14 @@ module "EventBridge_Sender_eu-west-3" {
   providers = {
     aws.alternate = aws.eu-west-3
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -496,8 +496,8 @@ module "EventBridge_Sender_eu-west-3" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -507,14 +507,14 @@ module "EventBridge_Sender_eu-north-1" {
   providers = {
     aws.alternate = aws.eu-north-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -522,8 +522,8 @@ module "EventBridge_Sender_eu-north-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }
 
@@ -533,14 +533,14 @@ module "EventBridge_Sender_sa-east-1" {
   providers = {
     aws.alternate = aws.sa-east-1
   }
-# rule
-  rule_name = "ConsoleLoginEvent_Sender"
-  rule_description = "ConsoleLogin Event Sender" 
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
   event_pattern = jsonencode(
     {
- 	"detail-type": [
-  		"AWS Console Sign In via CloudTrail"
-	]
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
     }
   )
   is_enabled = true
@@ -548,7 +548,7 @@ module "EventBridge_Sender_sa-east-1" {
     Name = "ConsoleLoginEvent_Sender"
   }
 
-# target
-  target_arn = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.RoleArn
 }

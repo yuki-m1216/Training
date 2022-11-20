@@ -2,36 +2,36 @@ provider "aws" {
   # access_key = var.access_key
   # secret_key = var.secret_key
   profile = var.profile
-  region     = "ap-northeast-1"
+  region  = "ap-northeast-1"
 }
 
 terraform {
   required_version = ">= 0.13.0"
   backend "s3" {
-    bucket = "s3-terraform-state-y-mitsuyama"
-    region = "ap-northeast-1"
-    key = "IAM.tfstate"
+    bucket  = "s3-terraform-state-y-mitsuyama"
+    region  = "ap-northeast-1"
+    key     = "IAM.tfstate"
     encrypt = true
   }
 }
 
 # IAM Role
 module "IAM_Role" {
-  source = "../../../modules/IAM/Role"
-  create_role = true
-  role_name = "TestRole"
-  identifiers = "ec2.amazonaws.com" 
+  source        = "../../../modules/IAM/Role"
+  create_role   = true
+  role_name     = "TestRole"
+  identifiers   = "ec2.amazonaws.com"
   create_policy = true
-  policy_name = "TestPolicy"
-  policy = data.aws_iam_policy_document.TestPolicy.json
-  policies =  local.policies
+  policy_name   = "TestPolicy"
+  policy        = data.aws_iam_policy_document.TestPolicy.json
+  policies      = local.policies
 }
 
 locals {
   policies = [
     "arn:aws:iam::aws:policy/AmazonEC2FullAccess",
     "arn:aws:iam::aws:policy/AmazonS3FullAccess",
-    "arn:aws:iam::365084727525:policy/TestPolicy"
+    "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/TestPolicy"
   ]
 }
 
