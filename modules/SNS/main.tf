@@ -11,13 +11,13 @@ variable "endpoint" {}
 
 # sns topic
 resource "aws_sns_topic" "sns_topic" {
-  name = var.topic_name
+  name         = var.topic_name
   display_name = var.display_name
 }
 
 # sns topic policy
 resource "aws_sns_topic_policy" "sns_policy" {
-  arn = aws_sns_topic.sns_topic.arn
+  arn    = aws_sns_topic.sns_topic.arn
   policy = var.policy
 }
 

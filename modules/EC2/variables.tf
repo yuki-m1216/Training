@@ -1,5 +1,5 @@
 # EC2
 variable "ec2" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
 }

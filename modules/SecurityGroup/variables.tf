@@ -5,6 +5,6 @@ variable "sg_vpc_id" {}
 
 # SG Rule
 variable "sg_rule" {
-    type = map
-    default = {}
+  type    = map(any)
+  default = {}
 }

@@ -19,7 +19,7 @@ resource "aws_cloudtrail" "cloudtrail" {
   s3_bucket_name                = aws_s3_bucket.cloudtrailbucket.id
   is_multi_region_trail         = var.is_multi_region_trail
   include_global_service_events = var.include_global_service_events
-  
+
   event_selector {
     read_write_type           = var.read_write_type
     include_management_events = var.include_management_events
@@ -28,13 +28,13 @@ resource "aws_cloudtrail" "cloudtrail" {
 
 # S3
 resource "aws_s3_bucket" "cloudtrailbucket" {
-  bucket        = var.bucketname
+  bucket = var.bucketname
 }
 
 # S3 policy
 resource "aws_s3_bucket_policy" "cloudtrailbucket_policy" {
   bucket = aws_s3_bucket.cloudtrailbucket.id
-  policy        = var.policy
+  policy = var.policy
 }
 
 # S3 encryption
@@ -43,7 +43,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "cloudtrailbucket_
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "AES256"
+      sse_algorithm = "AES256"
     }
   }
 }

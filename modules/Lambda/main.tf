@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       # source = "hashicorp/aws"
-      configuration_aliases = [ aws.alternate ]
+      configuration_aliases = [aws.alternate]
     }
   }
 }
@@ -17,7 +17,7 @@ variable "lambda_role" {
 variable "handler" {}
 variable "runtime" {}
 variable "environment_variables" {
-  type = map
+  type    = map(any)
   default = null
 }
 
@@ -51,12 +51,12 @@ resource "aws_lambda_function" "lambda" {
 
 # Lambda permission
 resource "aws_lambda_permission" "lambda_permission" {
-    provider      = aws.alternate
-    statement_id  = var.statement_id
-    action        = "lambda:InvokeFunction"
-    function_name = aws_lambda_function.lambda.function_name
-    principal     = var.principal
-    source_arn    = var.source_arn
+  provider      = aws.alternate
+  statement_id  = var.statement_id
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda.function_name
+  principal     = var.principal
+  source_arn    = var.source_arn
 }
 
 output "LambdaArn" {

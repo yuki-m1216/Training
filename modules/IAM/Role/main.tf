@@ -34,7 +34,7 @@ variable "policies" {
 # IAM Role
 resource "aws_iam_role" "iam_role" {
   count = var.create_role ? 1 : 0
-  name = var.role_name
+  name  = var.role_name
 
   assume_role_policy = data.aws_iam_policy_document.assume-role-policy.json
 
@@ -59,8 +59,8 @@ data "aws_iam_policy_document" "assume-role-policy" {
 
 # IAM Policy
 resource "aws_iam_policy" "policy" {
-  count = var.create_policy ? 1 : 0 
-  name = var.policy_name
+  count  = var.create_policy ? 1 : 0
+  name   = var.policy_name
   policy = var.policy
 }
 
@@ -70,7 +70,7 @@ resource "aws_iam_role_policy_attachment" "attach" {
   # for_each = toset(flatten([
   #   var.policies
   # ]))
-  for_each = {for i in var.policies : i => i}
+  for_each   = { for i in var.policies : i => i }
   role       = var.create_role ? aws_iam_role.iam_role[0].name : var.attachment_role_name
   policy_arn = each.value
 }
@@ -81,9 +81,9 @@ output "RoleName" {
 }
 
 output "RoleArn" {
-  value = var.create_role ? aws_iam_role.iam_role[0].arn :null
+  value = var.create_role ? aws_iam_role.iam_role[0].arn : null
 }
 
 output "PolicyArn" {
-  value = var.create_policy ? aws_iam_policy.policy[0].arn :null
+  value = var.create_policy ? aws_iam_policy.policy[0].arn : null
 }
