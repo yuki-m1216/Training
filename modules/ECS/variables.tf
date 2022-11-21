@@ -22,6 +22,11 @@ variable "requires_compatibilities" {
   default     = "FARGATE"
 }
 
+variable "container_definitions" {
+  type        = map(any)
+  description = "A list of valid container definitions provided as a single valid JSON document."
+}
+
 variable "network_mode" {
   type        = string
   description = "Docker networking mode to use for the containers in the task."
@@ -38,11 +43,6 @@ variable "memory" {
   type        = number
   description = "Amount (in MiB) of memory used by the task."
   default     = 512
-}
-
-variable "container_definitions" {
-  type        = map(any)
-  description = "A list of valid container definitions provided as a single valid JSON document."
 }
 
 variable "operating_system_family" {
@@ -131,6 +131,16 @@ variable "deployment_controller_type" {
   type        = string
   description = "Type of deployment controller. Valid values: CODE_DEPLOY, ECS, EXTERNAL."
   default     = "ECS"
+}
+
+variable "container_name" {
+  type           = string
+  desdescription = "Name of the container to associate with the load balancer (as it appears in a container definition)."
+}
+
+variable "container_port" {
+  type        = number
+  description = "Port on the container to associate with the load balancer."
 }
 
 # IAM
