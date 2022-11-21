@@ -95,9 +95,9 @@ resource "aws_ecs_service" "service" {
 
   # todo
   load_balancer {
-    target_group_arn = aws_lb_target_group.foo.arn
-    container_name   = "mongo"
-    container_port   = 8080
+    target_group_arn = aws_lb_target_group.tg.arn
+    container_name   = var.container_name
+    container_port   = var.container_port
   }
 
   lifecycle {
@@ -182,3 +182,73 @@ data "aws_iam_role" "ecs_service_linked_role" {
 }
 
 # lb
+resource "aws_lb" "lb" {
+  name               = var.alb_name
+  internal           = var.internal
+  load_balancer_type = var.load_balancer_type
+  security_groups    = var.security_groups
+  subnets            = var.subnets
+
+  enable_deletion_protection = var.enable_deletion_protection
+
+  # access_logs {
+  #   bucket  = aws_s3_bucket.lb_logs.bucket
+  #   prefix  = "test-lb"
+  #   enabled = true
+  # }
+
+  #   tags = {
+  #     Environment = "production"
+  #   }
+}
+
+# target_group
+resource "aws_lb_target_group" "tg" {
+  name        = var.target_group_name
+  port        = var.target_group_port
+  protocol    = var.target_group_protocol
+  vpc_id      = var.target_group_vpc_id
+  target_type = var.target_type
+  health_check {
+    enabled             = var.health_check_enabled
+    interval            = var.health_check_interval
+    path                = var.health_check_path
+    port                = var.health_check_port
+    protocol            = var.health_check_protocol
+    timeout             = var.health_check_timeout
+    healthy_threshold   = var.health_check_healthy_threshold
+    unhealthy_threshold = var.health_check_unhealthy_threshold
+    matcher             = var.health_check_matcher
+  }
+}
+
+# lb_listener
+resource "aws_lb_listener" "listener" {
+  for_each          = var.listener
+  load_balancer_arn = aws_lb.lb.arn
+  port              = each.value.port
+  protocol          = each.value.protocol
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+}
+
+# lb_listener_rule
+resource "aws_lb_listener_rule" "listener_rule" {
+  for_each     = var.listener
+  listener_arn = aws_lb_listener.listener[each.key].arn
+  priority     = 100
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.tg.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/*"]
+    }
+  }
+}
