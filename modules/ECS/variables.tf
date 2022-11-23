@@ -23,7 +23,7 @@ variable "requires_compatibilities" {
 }
 
 variable "container_definitions" {
-  type        = map(any)
+  type        = any
   description = "A list of valid container definitions provided as a single valid JSON document."
 }
 
@@ -34,9 +34,9 @@ variable "network_mode" {
 }
 
 variable "cpu" {
-  type           = number
-  desdescription = "Number of cpu units used by the task."
-  default        = 256
+  type        = number
+  description = "Number of cpu units used by the task."
+  default     = 256
 }
 
 variable "memory" {
@@ -133,9 +133,21 @@ variable "deployment_controller_type" {
   default     = "ECS"
 }
 
+variable "circuit_breaker_deployment_enabled" {
+  type        = bool
+  description = "Whether to enable the deployment circuit breaker logic for the service."
+  default     = true
+}
+
+variable "circuit_breaker_rollback_enabled" {
+  type        = bool
+  description = "Whether to enable Amazon ECS to roll back the service if a service deployment fails."
+  default     = true
+}
+
 variable "container_name" {
-  type           = string
-  desdescription = "Name of the container to associate with the load balancer (as it appears in a container definition)."
+  type        = string
+  description = "Name of the container to associate with the load balancer (as it appears in a container definition)."
 }
 
 variable "container_port" {
@@ -145,15 +157,29 @@ variable "container_port" {
 
 # IAM
 # execution_role
-variable "execution_role_policy" {
+variable "execution_customer_managed_policies" {
   type        = map(any)
-  description = "Policy for TaskExecutionRole"
+  description = "Customer Managed Policy for TaskExecutionRole"
+  default     = {}
+}
+
+variable "execution_aws_managed_policies" {
+  type        = list(string)
+  description = "AWS Managed Policy for TaskExecutionRole"
+  default     = []
 }
 
 # task_role
-variable "task_role_policy" {
+variable "task_customer_managed_policies" {
   type        = map(any)
-  description = "Policy for TaskRole"
+  description = "Customer Managed Policy for TaskRole"
+  default     = {}
+}
+
+variable "task_aws_managed_policies" {
+  type        = list(string)
+  description = "AWS Managed Policy for TaskRole"
+  default     = []
 }
 
 # service_linked_role
@@ -164,100 +190,124 @@ variable "service_linked_role_created" {
 }
 
 # lb
-variable "alb_name" {}
+variable "alb_name" {
+  type        = string
+  description = "The name of the LB."
+}
 
 variable "internal" {
-  type    = bool
-  default = false
+  type        = bool
+  description = "If true, the LB will be internal."
+  default     = false
 }
 
 variable "load_balancer_type" {
-  type    = string
-  default = "application"
+  type        = string
+  description = "The type of load balancer to create."
+  default     = "application"
 }
 
 variable "security_groups" {
-  type = list(string)
+  type        = list(string)
+  description = "A list of security group IDs to assign to the LB."
 }
 
 variable "subnets" {
-  type = list(string)
+  type        = list(string)
+  description = "A list of subnet IDs to attach to the LB."
 }
 
 variable "enable_deletion_protection" {
-  type    = bool
-  default = false
+  type        = bool
+  description = "If true, deletion of the load balancer will be disabled via the AWS API."
+  default     = false
 }
 
 # target_group
 variable "target_group_name" {
-  type = string
+  type        = string
+  description = "Name of the target group. If omitted, Terraform will assign a random, unique name."
 }
 
 variable "target_group_port" {
-  type    = number
-  default = 80
+  type        = number
+  description = "Port on which targets receive traffic, unless overridden when registering a specific target."
+  default     = 80
 }
 
 variable "target_group_protocol" {
-  type    = string
-  default = "HTTP"
+  type        = string
+  description = "Protocol to use for routing traffic to the targets."
+  default     = "HTTP"
 }
 
 variable "target_group_vpc_id" {
-  type = string
+  type        = string
+  description = "Identifier of the VPC in which to create the target group."
 }
 
 variable "target_type" {
-  type    = string
-  default = "instance"
+  type        = string
+  description = "Type of target that you must specify when registering targets with this target group."
+  default     = "instance"
 }
 
 
 variable "health_check_enabled" {
-  type    = bool
-  default = true
+  type        = bool
+  description = "Whether health checks are enabled."
+  default     = true
 }
 variable "health_check_interval" {
-  type    = number
-  default = 30
+  type        = number
+  description = "Approximate amount of time, in seconds, between health checks of an individual target."
+  default     = 30
 }
 
 variable "health_check_path" {
-  type    = string
-  default = "/"
+  type        = string
+  description = "Destination for the health check request."
+  default     = "/"
 }
 
 variable "health_check_port" {
-  type    = any
-  default = "traffic-port"
+  type        = any
+  description = "Port to use to connect with the target."
+  default     = "traffic-port"
 }
 
 variable "health_check_protocol" {
-  type    = string
-  default = "HTTP"
+  type        = string
+  description = "Protocol to use to connect with the target."
+  default     = "HTTP"
 }
 
 variable "health_check_timeout" {
-  type    = number
-  default = 5
+  type        = number
+  description = "Amount of time, in seconds, during which no response means a failed health check."
+  default     = 5
 }
 
 variable "health_check_healthy_threshold" {
-  type    = number
-  default = 3
+  type        = number
+  description = "Number of consecutive health checks successes required before considering an unhealthy target healthy."
+  default     = 3
 }
 
 variable "health_check_unhealthy_threshold" {
-  type    = number
-  default = 3
+  type        = number
+  description = "Number of consecutive health check failures required before considering the target unhealthy."
+  default     = 3
 }
 
 variable "health_check_matcher" {
-  type    = string
-  default = "200"
+  type        = string
+  description = "Response codes to use when checking for a healthy responses from a target."
+  default     = "200"
 }
 
+# lb_listener
 variable "listener" {
-  type = map(any)
+  type        = map(any)
+  description = "Map of Listener and listener Rule"
 }

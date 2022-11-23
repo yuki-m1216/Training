@@ -48,7 +48,7 @@ resource "aws_ecs_service" "service" {
   # https://qiita.com/horietakehiro/items/5f5d9166b26bfb4287dd
   iam_role = (
     var.network_mode != "awsvpc" ? var.service_linked_role_created ?
-    data.aws_iam_role.ecs_service_linked_role.arn : aws_iam_service_linked_role.ecs_service_linked_role.arn : null
+    data.aws_iam_role.ecs_service_linked_role[0].arn : aws_iam_service_linked_role.ecs_service_linked_role[0].arn : null
   )
 
   enable_execute_command = var.enable_execute_command
@@ -70,9 +70,9 @@ resource "aws_ecs_service" "service" {
 
   dynamic "deployment_circuit_breaker" {
     for_each = var.deployment_controller_type == "ECS" ? [1] : []
-    content = {
-      enable   = true
-      rollback = true
+    content {
+      enable   = var.circuit_breaker_deployment_enabled
+      rollback = var.circuit_breaker_rollback_enabled
     }
   }
 
@@ -93,7 +93,6 @@ resource "aws_ecs_service" "service" {
   #   expression = "attribute:ecs.availability-zone in [us-west-2a, us-west-2b]"
   # }
 
-  # todo
   load_balancer {
     target_group_arn = aws_lb_target_group.tg.arn
     container_name   = var.container_name
@@ -130,14 +129,24 @@ resource "aws_iam_role" "execution_role" {
   }
 }
 
+# create customer managed policy
 resource "aws_iam_policy" "execution_role_policy" {
-  name   = "${var.family}-TaskExecutionPolicy"
-  policy = var.execution_role_policy
+  for_each = var.execution_customer_managed_policies
+  name     = "${var.family}-TaskExecutionPolicy-${each.key}"
+  policy   = each.value
 }
 
-resource "aws_iam_role_policy_attachment" "execution_role_policy_attach" {
+resource "aws_iam_role_policy_attachment" "execution_role_policy_attach_customer_managed" {
+  for_each   = var.execution_customer_managed_policies
   role       = aws_iam_role.execution_role.name
-  policy_arn = aws_iam_policy.execution_role_policy.arn
+  policy_arn = aws_iam_policy.execution_role_policy[each.key].arn
+}
+
+# aws managed policy
+resource "aws_iam_role_policy_attachment" "execution_role_policy_attach_aws_managed" {
+  for_each   = toset(var.execution_aws_managed_policies)
+  role       = aws_iam_role.execution_role.name
+  policy_arn = each.value
 }
 
 # task_role
@@ -160,14 +169,24 @@ resource "aws_iam_role" "task_role" {
   })
 }
 
+# create customer managed policy
 resource "aws_iam_policy" "task_role_policy" {
-  name   = "${var.family}-TaskPolicy"
-  policy = var.task_role_policy
+  for_each = var.task_customer_managed_policies
+  name     = "${var.family}-TaskPolicy-${each.key}"
+  policy   = each.value
 }
 
 resource "aws_iam_role_policy_attachment" "task_role_policy_attach" {
+  for_each   = var.task_customer_managed_policies
   role       = aws_iam_role.task_role.name
-  policy_arn = aws_iam_policy.task_role_policy.arn
+  policy_arn = aws_iam_policy.task_role_policy[each.key].arn
+}
+
+# aws managed policy
+resource "aws_iam_role_policy_attachment" "task_role_policy_attach_aws_managed" {
+  for_each   = toset(var.task_aws_managed_policies)
+  role       = aws_iam_role.task_role.name
+  policy_arn = each.value
 }
 
 # service_linked_role
