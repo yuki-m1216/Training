@@ -37,6 +37,6 @@ variable "other_private_route" {
 
 # nat
 variable "nat_gateway_create" {
-  type    = string
-  default = "false"
+  type    = bool
+  default = false
 }

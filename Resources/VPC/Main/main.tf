@@ -83,7 +83,7 @@ module "main_VPC" {
 
 
   # nat
-  nat_gateway_create = "false"
+  nat_gateway_create = false
 }
 
 data "terraform_remote_state" "subvpc" {
