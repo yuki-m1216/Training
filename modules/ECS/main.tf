@@ -223,11 +223,11 @@ resource "aws_lb" "lb" {
 
 # target_group
 resource "aws_lb_target_group" "tg" {
-  name        = var.target_group_name
+  name        = "${var.target_group_name}-${substr(uuid(), 0, 3)}"
   port        = var.target_group_port
   protocol    = var.target_group_protocol
   vpc_id      = var.target_group_vpc_id
-  target_type = var.target_type
+  target_type = var.launch_type == "FARGATE" ? "ip" : var.target_type
   health_check {
     enabled             = var.health_check_enabled
     interval            = var.health_check_interval
@@ -238,6 +238,11 @@ resource "aws_lb_target_group" "tg" {
     healthy_threshold   = var.health_check_healthy_threshold
     unhealthy_threshold = var.health_check_unhealthy_threshold
     matcher             = var.health_check_matcher
+  }
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes        = [name]
   }
 }
 
@@ -269,5 +274,14 @@ resource "aws_lb_listener_rule" "listener_rule" {
     path_pattern {
       values = ["/*"]
     }
+  }
+}
+
+# cloudwatch_log_group
+resource "aws_cloudwatch_log_group" "ecs" {
+  name              = var.cloudwatch_log_group_name
+  retention_in_days = var.retention_in_days
+  tags = {
+    Name = var.cloudwatch_log_group_name
   }
 }

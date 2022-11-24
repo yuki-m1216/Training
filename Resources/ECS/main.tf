@@ -5,9 +5,15 @@ module "ECS_Fargate" {
   cluster_name = "test-cluster"
 
   # ecs_task_definition
-  family                = "test-task-definition"
-  container_definitions = file("${path.root}/container_definitions/container_definitions.json")
-
+  family = "test-task-definition"
+  container_definitions = templatefile("${path.root}/container_definitions/container_definitions.tftpl",
+    {
+      log_group_name = local.log_group_name
+      region         = local.region
+      stream_prefix  = local.stream_prefix
+    }
+  )
+  network_mode = "awsvpc"
   # ecs_service
   service_name = "test-service"
   service_subnets = [
@@ -67,6 +73,8 @@ module "ECS_Fargate" {
     }
   }
 
+  # cloudwatch_log_group
+  cloudwatch_log_group_name = local.log_group_name
 
 }
 
