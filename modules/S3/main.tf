@@ -49,7 +49,7 @@ https://github.com/terraform-aws-modules/terraform-aws-s3-bucket/blob/v0.0.1/mai
 https://github.com/terraform-aws-modules/terraform-aws-s3-bucket/blob/v0.0.1/examples/s3-lifecycle-rule/main.tf#L17
 */
 resource "aws_s3_bucket_lifecycle_configuration" "lifecycle" {
-  count = var.lifecycle_configuration ? [1] : []
+  count = var.lifecycle_configuration ? 1 : 0
   # Must have bucket versioning enabled first
   depends_on = [aws_s3_bucket_versioning.versioning]
 
@@ -57,7 +57,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle" {
 
   dynamic "rule" {
     for_each = var.lifecycle_rules
-
     content {
       id     = rule.value.id
       status = rule.value.status
@@ -67,27 +66,27 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle" {
       }
 
       dynamic "expiration" {
-        for_each = lifecycle_rules.value.expiration ? lifecycle_rules.value.expiration : []
+        for_each = rule.value.expiration == null ? [] : rule.value.expiration
 
         content {
-          date                         = expiration.value.date
           days                         = expiration.value.days
+          date                         = expiration.value.date
           expired_object_delete_marker = expiration.value.expired_object_delete_marker
         }
       }
 
       dynamic "transition" {
-        for_each = lifecycle_rules.value.transition ? lifecycle_rules.value.transition : []
+        for_each = rule.value.transition == null ? [] : rule.value.transition
 
         content {
-          date          = transition.value.date
           days          = transition.value.days
+          date          = transition.value.date
           storage_class = transition.value.storage_class
         }
       }
 
       dynamic "noncurrent_version_expiration" {
-        for_each = lifecycle_rules.value.noncurrent_version_expiration ? noncurrent_version_expiration : []
+        for_each = rule.value.noncurrent_version_expiration == null ? [] : rule.value.noncurrent_version_expiration
 
         content {
           noncurrent_days           = noncurrent_version_expiration.value.noncurrent_days
@@ -96,7 +95,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle" {
       }
 
       dynamic "noncurrent_version_transition" {
-        for_each = lifecycle_rules.value.noncurrent_version_transition ? noncurrent_version_transition : []
+        for_each = rule.value.noncurrent_version_transition == null ? [] : rule.value.noncurrent_version_transition
 
         content {
           noncurrent_days           = noncurrent_version_transition.value.noncurrent_days

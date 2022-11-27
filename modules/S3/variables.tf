@@ -44,7 +44,35 @@ variable "lifecycle_configuration" {
 }
 
 variable "lifecycle_rules" {
-  type        = map(any)
+  type = list(object({
+    id     = string
+    status = string
+    prefix = string
+
+    expiration = list(object({
+      days                         = number
+      date                         = string
+      expired_object_delete_marker = bool
+    }))
+
+    transition = list(object({
+      days          = number
+      date          = string
+      storage_class = string
+    }))
+
+    noncurrent_version_expiration = list(object({
+      noncurrent_days           = number
+      newer_noncurrent_versions = number
+    }))
+
+    noncurrent_version_transition = list(object({
+      noncurrent_days           = number
+      newer_noncurrent_versions = number
+      storage_class             = string
+    }))
+
+  }))
   description = "List of configuration blocks describing the rules managing the replication."
   default     = null
 }
