@@ -74,5 +74,4 @@ variable "lifecycle_rules" {
 
   }))
   description = "List of configuration blocks describing the rules managing the replication."
-  default     = null
 }
