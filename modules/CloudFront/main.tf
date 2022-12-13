@@ -1,29 +1,32 @@
-# cloud front
+# cloudfront
 resource "aws_cloudfront_distribution" "distribution" {
   dynamic "origin" {
     for_each = var.origin
 
     content {
-      domain_name              = origin.value.domain_name
-      origin_access_control_id = origin.value.origin_access_control_id
-      origin_id                = origin.value.origin_id
-      origin_path              = origin.value.origin_path
+      domain_name = origin.value.domain_name
+      # https://qiita.com/HirokiSakonju/items/18e532fcf1461876c4f3
+      # https://qiita.com/horietakehiro/items/5f5d9166b26bfb4287dd
+      origin_access_control_id = (
+        origin.value.custom_origin_config == null ? var.oac_create == false ?
+        origin.value.origin_access_control_id : aws_cloudfront_origin_access_control.oac[0].id : null
+      )
+      origin_id   = origin.value.origin_id
+      origin_path = origin.value.origin_path
 
-      # todo
-      s3_origin_config {
-        origin_access_identity = aws_cloudfront_origin_access_identity.default.cloudfront_access_identity_path
+      # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution#custom-origin-config-arguments
+      dynamic "custom_origin_config" {
+        for_each = origin.value.custom_origin_config == null ? [] : origin.value.custom_origin_config
+
+        content {
+          http_port                = custom_origin_config.value.http_port
+          https_port               = custom_origin_config.value.https_port
+          origin_protocol_policy   = custom_origin_config.value.origin_protocol_policy
+          origin_ssl_protocols     = custom_origin_config.value.origin_ssl_protocols
+          origin_keepalive_timeout = custom_origin_config.value.origin_keepalive_timeout
+          origin_read_timeout      = custom_origin_config.value.origin_read_timeout
+        }
       }
-
-      # todo
-      # # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudfront_distribution#custom-origin-config-arguments
-      # custom_origin_config {
-      #   http_port                = 80
-      #   https_port               = 5000
-      #   origin_protocol_policy   = "match-viewer"
-      #   origin_ssl_protocols     = ["TLSv1", "TLSv1.1", "TLSv1.2"]
-      #   origin_keepalive_timeout = 5
-      #   origin_read_timeout      = 60
-      # }
 
       dynamic "custom_header" {
         for_each = origin.value.custom_header == null ? [] : origin.value.custom_header
@@ -123,4 +126,15 @@ resource "aws_cloudfront_distribution" "distribution" {
     Name = var.tags_name
   }
 
+}
+
+# OAC
+resource "aws_cloudfront_origin_access_control" "oac" {
+  count = var.oac_create ? [1] : [0]
+
+  name                              = var.oac_name
+  description                       = var.description
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }

@@ -1,10 +1,19 @@
-# cloud front
+# cloudfront
 variable "origin" {
   type = list(object({
     domain_name              = string
     origin_access_control_id = string
     origin_id                = string
     origin_path              = string
+
+    custom_origin_config = list(object({
+      http_port                = number
+      https_port               = number
+      origin_protocol_policy   = string
+      origin_ssl_protocols     = list(string)
+      origin_keepalive_timeout = number
+      origin_read_timeout      = number
+    }))
 
     custom_header = list(object({
       name  = string
@@ -130,4 +139,21 @@ variable "tags_name" {
   type        = string
   description = "tags name"
   default     = null
+}
+
+# OAC
+variable "oac_create" {
+  type        = bool
+  description = "whether Create OAC."
+  default     = false
+}
+
+variable "oac_name" {
+  type        = string
+  description = "A name that identifies the Origin Access Control."
+}
+
+variable "description" {
+  type        = string
+  description = "The description of the Origin Access Control. It may be empty."
 }

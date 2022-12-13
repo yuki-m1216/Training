@@ -1,3 +1,7 @@
-# output "s3_bucket" {
-#   value = aws_s3_bucket.bucket
-# }
+output "cloudfront_id" {
+  value = aws_cloudfront_distribution.distribution.id
+}
+
+output "cloudfront_arn" {
+  value = aws_cloudfront_distribution.distribution.arn
+}
