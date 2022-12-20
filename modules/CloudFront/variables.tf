@@ -88,6 +88,21 @@ variable "default_cache_behavior" {
     response_headers_policy_id = string
   }))
   description = "The default cache behavior for this distribution (maximum one)."
+}
+
+variable "ordered_cache_behavior" {
+  type = list(object({
+    path_pattern               = string
+    compress                   = bool
+    viewer_protocol_policy     = string
+    allowed_methods            = list(string)
+    cached_methods             = list(string)
+    target_origin_id           = string
+    cache_policy_id            = string
+    origin_request_policy_id   = string
+    response_headers_policy_id = string
+  }))
+  description = "An ordered list of cache behaviors resource for this distribution."
   default     = null
 }
 
@@ -114,7 +129,6 @@ variable "viewer_certificate" {
     ssl_support_method             = string
   }))
   description = "The SSL configuration for this distribution (maximum one)."
-  default     = null
 }
 
 variable "web_acl_id" {
