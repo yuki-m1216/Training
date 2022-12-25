@@ -20,8 +20,10 @@ variable "origin" {
       value = string
     }))
 
-    origin_shield_enabled = string
-    origin_shield_region  = string
+    origin_shield = list(object({
+      enabled              = string
+      origin_shield_region = string
+    }))
 
     connection_attempts = number
     connection_timeout  = number
@@ -106,13 +108,16 @@ variable "ordered_cache_behavior" {
   default     = null
 }
 
-variable "restrictions" {
-  type = list(object({
-    restriction_type = string
-    locations        = list(string)
-  }))
-  description = "The restriction configuration for this distribution (maximum one)."
-  default     = null
+variable "restriction_type" {
+  type        = string
+  description = "The method that you want to use to restrict distribution of your content by country: none, whitelist, or blacklist."
+  default     = "none"
+}
+
+variable "locations" {
+  type        = list(string)
+  description = "The ISO 3166-1-alpha-2 codes for which you want CloudFront either to distribute your content (whitelist) or not distribute your content (blacklist). If the type is specified as none an empty array can be used."
+  default     = []
 }
 
 variable "price_class" {
@@ -143,7 +148,7 @@ variable "retain_on_delete" {
   default     = false
 }
 
-variable "wait_for_deployment " {
+variable "wait_for_deployment" {
   type        = bool
   description = "If enabled, the resource will wait for the distribution status to change from InProgress to Deployed."
   default     = true

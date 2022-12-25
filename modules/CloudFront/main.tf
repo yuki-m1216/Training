@@ -35,18 +35,23 @@ resource "aws_cloudfront_distribution" "distribution" {
           name  = custom_header.value.name
           value = custom_header.value.value
         }
-
-        origin_shield {
-          enabled              = origin.value.origin_shield_enabled
-          origin_shield_region = origin.value.origin_shield_region
-        }
-
-        connection_attempts = origin.value.connection_attempts
-        connection_timeout  = origin.value.connection_timeout
-
       }
+
+      dynamic "origin_shield" {
+        for_each = origin.value.origin_shield == null ? [] : origin.value.origin_shield
+
+        content {
+          enabled              = origin_shield.value.enabled
+          origin_shield_region = origin_shield.value.origin_shield_region
+        }
+      }
+
+      connection_attempts = origin.value.connection_attempts
+      connection_timeout  = origin.value.connection_timeout
+
     }
   }
+
 
   aliases             = var.aliases
   enabled             = var.enabled
@@ -74,9 +79,9 @@ resource "aws_cloudfront_distribution" "distribution" {
       allowed_methods            = default_cache_behavior.value.allowed_methods
       cached_methods             = default_cache_behavior.value.cached_methods
       target_origin_id           = default_cache_behavior.value.target_origin_id
-      cache_policy_id            = default_cache_behavior.value.cache_policy_id == null ? data.aws_cloudfront_cache_policy.aws_managed_cachingoptimized : default_cache_behavior.value.cache_policy_id
-      origin_request_policy_id   = default_cache_behavior.value.origin_request_policy_id == null ? data.aws_cloudfront_origin_request_policy.aws_managed_user_agent_referer_headers : default_cache_behavior.value.origin_request_policy_id
-      response_headers_policy_id = default_cache_behavior.value.response_headers_policy_id == null ? data.aws_cloudfront_response_headers_policy : default_cache_behavior.value.response_headers_policy_id
+      cache_policy_id            = default_cache_behavior.value.cache_policy_id == null ? data.aws_cloudfront_cache_policy.aws_managed_cachingoptimized.id : default_cache_behavior.value.cache_policy_id
+      origin_request_policy_id   = default_cache_behavior.value.origin_request_policy_id == null ? data.aws_cloudfront_origin_request_policy.aws_managed_user_agent_referer_headers.id : default_cache_behavior.value.origin_request_policy_id
+      response_headers_policy_id = default_cache_behavior.value.response_headers_policy_id == null ? data.aws_cloudfront_response_headers_policy.aws_managed_security_headers_policy.id : default_cache_behavior.value.response_headers_policy_id
     }
   }
 
@@ -90,17 +95,16 @@ resource "aws_cloudfront_distribution" "distribution" {
       allowed_methods            = ordered_cache_behavior.value.allowed_methods
       cached_methods             = ordered_cache_behavior.value.cached_methods
       target_origin_id           = ordered_cache_behavior.value.target_origin_id
-      cache_policy_id            = ordered_cache_behavior.value.cache_policy_id == null ? data.aws_cloudfront_cache_policy.aws_managed_cachingoptimized : default_cache_behavior.value.cache_policy_id
-      origin_request_policy_id   = ordered_cache_behavior.value.origin_request_policy_id == null ? data.aws_cloudfront_origin_request_policy.aws_managed_user_agent_referer_headers : default_cache_behavior.value.origin_request_policy_id
-      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id == null ? data.aws_cloudfront_response_headers_policy : default_cache_behavior.value.response_headers_policy_id
+      cache_policy_id            = ordered_cache_behavior.value.cache_policy_id == null ? data.aws_cloudfront_cache_policy.aws_managed_cachingoptimized.id : default_cache_behavior.value.cache_policy_id
+      origin_request_policy_id   = ordered_cache_behavior.value.origin_request_policy_id == null ? data.aws_cloudfront_origin_request_policy.aws_managed_user_agent_referer_headers.id : default_cache_behavior.value.origin_request_policy_id
+      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id == null ? data.aws_cloudfront_response_headers_policy.aws_managed_security_headers_policy.id : default_cache_behavior.value.response_headers_policy_id
     }
   }
 
-  dynamic "restrictions" {
-    for_each = var.restrictions == null ? [] : var.restrictions
+  restrictions {
     geo_restriction {
-      restriction_type = restrictions.value.restriction_type
-      locations        = restrictions.value.locations
+      restriction_type = var.restriction_type
+      locations        = var.locations
     }
   }
 
@@ -125,12 +129,11 @@ resource "aws_cloudfront_distribution" "distribution" {
   tags = {
     Name = var.tags_name
   }
-
 }
 
 # OAC
 resource "aws_cloudfront_origin_access_control" "oac" {
-  count = var.oac_create ? [1] : [0]
+  count = var.oac_create ? 1 : 0
 
   name                              = var.oac_name
   description                       = var.description

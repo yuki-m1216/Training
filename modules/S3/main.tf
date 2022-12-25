@@ -19,7 +19,7 @@ resource "aws_s3_bucket_ownership_controls" "ownership_controls" {
   bucket = aws_s3_bucket.bucket.id
 
   rule {
-    object_ownership = "BucketOwnerEnforced"
+    object_ownership = var.object_ownership
   }
 }
 
@@ -106,4 +106,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle" {
 
     }
   }
+}
+
+# s3_bucket_policy
+resource "aws_s3_bucket_policy" "bucket_policy" {
+  count  = var.create_bucket_policy ? 1 : 0
+  bucket = aws_s3_bucket.bucket.id
+  policy = var.bucket_policy_document
 }

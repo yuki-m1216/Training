@@ -16,6 +16,12 @@ variable "object_lock_enabled" {
   default     = false
 }
 
+variable "object_ownership" {
+  type        = string
+  description = "Configuration block(s) with Ownership Controls rules."
+  default     = "BucketOwnerEnforced"
+}
+
 # server_side_encryption_configuration
 variable "sse_algorithm" {
   type        = string
@@ -74,4 +80,17 @@ variable "lifecycle_rules" {
 
   }))
   description = "List of configuration blocks describing the rules managing the replication."
+  default     = []
+}
+
+# s3_bucket_policy
+variable "create_bucket_policy" {
+  type        = bool
+  description = "whether to create bucketpolicy"
+  default     = false
+}
+
+variable "bucket_policy_document" {
+  type        = string
+  description = "The text of the policy"
 }

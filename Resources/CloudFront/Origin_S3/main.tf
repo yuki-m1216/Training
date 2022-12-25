@@ -1,6 +1,6 @@
 # cloudfront
 module "cloudfront" {
-  source = "../../modules/CloudFront"
+  source = "../../../modules/CloudFront"
 
   # distribution
   origin = [{
@@ -10,8 +10,7 @@ module "cloudfront" {
     origin_path              = null
     custom_origin_config     = null
     custom_header            = null
-    origin_shield_enabled    = null
-    origin_shield_region     = null
+    origin_shield            = null
     connection_attempts      = 3
     connection_timeout       = 10
     }
@@ -44,35 +43,64 @@ module "cloudfront" {
 
 # S3
 module "origin_s3" {
-  source = "../../modules/S3"
+  source = "../../../modules/S3"
 
   # bucket
   bucket_name = "test-ymitsuyama-origin-s3bucket"
 
+  # ownership_controls
+  object_ownership = "BucketOwnerPreferred"
+
   # versionings
   versioning_status = "Enabled"
 
-  # lifecycle_configuration
-  lifecycle_configuration = true
-  lifecycle_rules = [{
-    id     = "test-id"
-    status = "Enabled"
-    prefix = ""
+  # # lifecycle_configuration
+  # lifecycle_configuration = true
+  # lifecycle_rules = [{
+  #   id     = "test-id"
+  #   status = "Enabled"
+  #   prefix = ""
 
-    expiration = [{
-      days                         = 30
-      date                         = null
-      expired_object_delete_marker = null
-    }]
+  #   expiration = [{
+  #     days                         = 30
+  #     date                         = null
+  #     expired_object_delete_marker = null
+  #   }]
 
-    transition = []
+  #   transition = []
 
-    noncurrent_version_expiration = [{
-      noncurrent_days           = 30
-      newer_noncurrent_versions = 1
-    }]
+  #   noncurrent_version_expiration = [{
+  #     noncurrent_days           = 30
+  #     newer_noncurrent_versions = 1
+  #   }]
 
-    noncurrent_version_transition = []
-  }]
+  #   noncurrent_version_transition = []
+  # }]
 
+  # s3_bucket_policy
+  create_bucket_policy   = true
+  bucket_policy_document = data.aws_iam_policy_document.static-www.json
+}
+
+data "aws_iam_policy_document" "static-www" {
+  statement {
+    sid    = "Allow CloudFront"
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["cloudfront.amazonaws.com"]
+    }
+    actions = [
+      "s3:GetObject"
+    ]
+
+    resources = [
+      "${module.origin_s3.s3_bucket.arn}/*"
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values   = [module.cloudfront.cloudfront_arn]
+    }
+  }
 }
