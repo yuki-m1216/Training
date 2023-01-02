@@ -170,9 +170,11 @@ variable "oac_create" {
 variable "oac_name" {
   type        = string
   description = "A name that identifies the Origin Access Control."
+  default     = null
 }
 
 variable "description" {
   type        = string
   description = "The description of the Origin Access Control. It may be empty."
+  default     = null
 }

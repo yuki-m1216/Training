@@ -6,15 +6,12 @@ resource "aws_security_group" "sg" {
   tags = {
     Name = var.sg_name
   }
-
-
-
-
 }
 
 # SG Rule
 resource "aws_security_group_rule" "sg_rule" {
-  for_each                 = var.sg_rule
+  for_each = var.sg_rule
+
   security_group_id        = aws_security_group.sg.id
   type                     = each.value.type
   to_port                  = each.value.to_port
@@ -22,9 +19,6 @@ resource "aws_security_group_rule" "sg_rule" {
   protocol                 = each.value.protocol
   source_security_group_id = each.value.source_security_group_id
   cidr_blocks              = each.value.cidr_blocks
+  prefix_list_ids          = each.value.prefix_list_ids
   description              = each.value.description
-}
-
-output "sg_id" {
-  value = aws_security_group.sg.id
 }
