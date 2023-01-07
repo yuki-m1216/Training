@@ -1,3 +1,4 @@
+# opensearch
 variable "domain_name" {
   type        = string
   description = "Name of the domain."
@@ -24,4 +25,17 @@ variable "volume_size" {
   type        = number
   description = "Size of EBS volumes attached to data nodes (in GiB)."
   default     = 10
+}
+
+# domain policy
+variable "create_domain_policy" {
+  type        = bool
+  description = "Whether to create a domain policy"
+  default     = false
+}
+
+variable "access_policies" {
+  type        = string
+  description = "IAM policy document specifying the access policies for the domain."
+  default     = ""
 }
