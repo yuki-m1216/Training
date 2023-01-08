@@ -27,6 +27,23 @@ variable "volume_size" {
   default     = 10
 }
 
+variable "advanced_security_options" {
+  type = list(object({
+    enabled                        = bool
+    internal_user_database_enabled = bool
+    master_user_name               = string
+    master_user_password           = string
+    master_user_arn                = string
+  }))
+  description = "Configuration block for fine-grained access control."
+  default     = null
+}
+
+variable "kms_key_id" {
+  type        = string
+  description = "KMS key ARN to encrypt the Elasticsearch domain with."
+}
+
 # domain policy
 variable "create_domain_policy" {
   type        = bool

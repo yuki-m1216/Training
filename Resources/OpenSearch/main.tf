@@ -6,6 +6,7 @@ module "opensearch" {
   domain_name    = "test-domain"
   engine_version = "OpenSearch_2.3"
   ebs_enabled    = true
+  kms_key_id     = data.aws_kms_key.alias_es.id
 
   # domain policy
   create_domain_policy = true

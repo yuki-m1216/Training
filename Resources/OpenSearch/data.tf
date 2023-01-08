@@ -1,3 +1,8 @@
+# data resource kms es
+data "aws_kms_key" "alias_es" {
+  key_id = "alias/aws/es"
+}
+
 data "aws_caller_identity" "current" {}
 
 data "http" "checkip" {
