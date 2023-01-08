@@ -69,12 +69,6 @@ resource "aws_ssm_parameter" "secret" {
   }
 }
 
-# data resource kms ssm
-data "aws_kms_key" "alias_ssm" {
-  key_id = "alias/aws/ssm"
-}
-
-
 # random password
 resource "random_password" "password" {
   length           = 16
