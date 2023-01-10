@@ -13,10 +13,15 @@ data "aws_iam_policy_document" "access_policies" {
   statement {
     sid    = "TestAccess"
     effect = "Allow"
+    # principals {
+    #   type        = "AWS"
+    #   identifiers = ["${data.aws_caller_identity.current.arn}"]
+    # }
     principals {
-      type        = "AWS"
-      identifiers = ["${data.aws_caller_identity.current.arn}"]
+      type        = "*"
+      identifiers = ["*"]
     }
+
     condition {
       test     = "IpAddress"
       variable = "aws:SourceIp"
