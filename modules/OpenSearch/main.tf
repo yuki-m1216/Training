@@ -17,7 +17,7 @@ resource "aws_opensearch_domain" "opensearch" {
 
     content {
       enabled                        = advanced_security_options.value.enabled
-      anonymous_auth_enabled         = true
+      anonymous_auth_enabled         = advanced_security_options.value.anonymous_auth_enabled
       internal_user_database_enabled = advanced_security_options.value.internal_user_database_enabled
       master_user_options {
         master_user_name     = advanced_security_options.value.internal_user_database_enabled ? advanced_security_options.value.master_user_name : null
@@ -36,7 +36,10 @@ resource "aws_opensearch_domain" "opensearch" {
     enabled = true
   }
 
-
+  domain_endpoint_options {
+    enforce_https       = true
+    tls_security_policy = "Policy-Min-TLS-1-2-2019-07"
+  }
 
   tags = {
     Name = var.domain_name

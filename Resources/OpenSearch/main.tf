@@ -9,6 +9,7 @@ module "opensearch" {
   kms_key_id     = data.aws_kms_key.alias_es.id
   advanced_security_options = [{
     enabled                        = true
+    anonymous_auth_enabled         = false
     internal_user_database_enabled = true
     master_user_name               = "test-user"
     master_user_password           = random_password.password.result
@@ -25,7 +26,7 @@ resource "aws_ssm_parameter" "secret" {
   name        = "/example/opensearch/password/master"
   description = "Example OpenSearch Password Parameter"
   type        = "SecureString"
-  key_id      = data.aws_kms_key.alias_es.id
+  key_id      = data.aws_kms_key.alias_ssm.id
   value       = random_password.password.result
 
   tags = {

@@ -3,6 +3,12 @@ data "aws_kms_key" "alias_es" {
   key_id = "alias/aws/es"
 }
 
+# data resource kms ssm
+data "aws_kms_key" "alias_ssm" {
+  key_id = "alias/aws/ssm"
+}
+
+
 data "aws_caller_identity" "current" {}
 
 data "http" "checkip" {

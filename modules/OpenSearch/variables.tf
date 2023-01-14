@@ -30,6 +30,7 @@ variable "volume_size" {
 variable "advanced_security_options" {
   type = list(object({
     enabled                        = bool
+    anonymous_auth_enabled         = bool
     internal_user_database_enabled = bool
     master_user_name               = string
     master_user_password           = string
