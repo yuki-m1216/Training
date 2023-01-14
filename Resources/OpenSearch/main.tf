@@ -1,4 +1,4 @@
-# cloudfront
+# opensearch
 module "opensearch" {
   source = "../../modules/OpenSearch"
 
@@ -39,4 +39,13 @@ resource "random_password" "password" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# cognito
+module "cognito" {
+  source = "../../modules/Cognito"
+
+  user_pool_name     = "test-user-pool"
+  user_pool_domain   = "test-kibana"
+  identity_pool_name = "test-identity-pool"
 }
