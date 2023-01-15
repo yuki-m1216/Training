@@ -1,4 +1,5 @@
 # https://github.com/hendrixroa/terraform-aws-cognito-elasticsearch/blob/master/cognito/cognito.tf
+### Cognito ###
 # user_pool
 resource "aws_cognito_user_pool" "user_pool" {
   name = var.user_pool_name
@@ -40,28 +41,99 @@ resource "aws_cognito_user_pool_domain" "user_pool_domain" {
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
-# resource "aws_cognito_user_pool_client" "client" {
-#   name = "user_client_${var.name}"
+# todo
+# https://stackoverflow.com/questions/73421850/terraform-aws-opensearch-using-cognito-module-circular-problem
+# user_pool_client
+resource "aws_cognito_user_pool_client" "client" {
+  name = var.user_pool_client_name
 
-#   user_pool_id = aws_cognito_user_pool.user_pool.id
-#   explicit_auth_flows = ["ADMIN_NO_SRP_AUTH"]
-# }
+  user_pool_id        = aws_cognito_user_pool.user_pool.id
+  explicit_auth_flows = ["ADMIN_NO_SRP_AUTH"]
+}
 
 # identity_pool
 resource "aws_cognito_identity_pool" "identity_pool" {
   identity_pool_name               = var.identity_pool_name
   allow_unauthenticated_identities = true
 
-  # cognito_identity_providers {
-  #   client_id     = aws_cognito_user_pool_client.client.id
-  #   provider_name = aws_cognito_user_pool.user_pool.endpoint
-  # }
+  cognito_identity_providers {
+    client_id     = aws_cognito_user_pool_client.client.id
+    provider_name = aws_cognito_user_pool.user_pool.endpoint
+  }
 
-  # lifecycle { ignore_changes = [cognito_identity_providers] }
+  lifecycle { ignore_changes = [cognito_identity_providers] }
 }
 
 # random_integer
 resource "random_integer" "num" {
   min = 10000
   max = 50000
+}
+
+### IAM ###
+## authenticated
+# iam_role
+resource "aws_iam_role" "authenticated" {
+  name               = var.authenticated_iam_role_name
+  description        = var.authenticated_iam_role_description
+  assume_role_policy = data.aws_iam_policy_document.authenticated_assume-role-policy.json
+
+  tags = {
+    Name = var.authenticated_iam_role_name
+  }
+}
+
+# iam_policy
+resource "aws_iam_policy" "authenticated" {
+  name        = var.authenticated_iam_policy_name
+  description = var.authenticated_iam_policy_description
+  policy      = data.aws_iam_policy_document.authenticated_iam_policy.json
+
+  tags = {
+    Name = var.authenticated_iam_policy_name
+  }
+}
+
+# role_policy_attachment
+resource "aws_iam_role_policy_attachment" "authenticated" {
+  role       = aws_iam_role.authenticated.name
+  policy_arn = aws_iam_policy.authenticated.arn
+}
+
+## unauthenticated
+# iam_role
+resource "aws_iam_role" "unauthenticated" {
+  name               = var.unauthenticated_iam_role_name
+  description        = var.unauthenticated_iam_role_description
+  assume_role_policy = data.aws_iam_policy_document.unauthenticated_assume-role-policy.json
+
+  tags = {
+    Name = var.unauthenticated_iam_role_name
+  }
+}
+
+# iam_policy
+resource "aws_iam_policy" "unauthenticated" {
+  name        = var.unauthenticated_iam_policy_name
+  description = var.unauthenticated_iam_policy_description
+  policy      = data.aws_iam_policy_document.unauthenticated_iam_policy.json
+
+  tags = {
+    Name = var.unauthenticated_iam_policy_name
+  }
+}
+
+# role_policy_attachment
+resource "aws_iam_role_policy_attachment" "unauthenticated" {
+  role       = aws_iam_role.unauthenticated.name
+  policy_arn = aws_iam_policy.unauthenticated.arn
+}
+
+# cognito_identity_pool_roles_attachment
+resource "aws_cognito_identity_pool_roles_attachment" "identity_pool" {
+  identity_pool_id = aws_cognito_identity_pool.identity_pool.id
+  roles = {
+    "authenticated"   = aws_iam_role.authenticated.arn
+    "unauthenticated" = aws_iam_role.unauthenticated.arn
+  }
 }

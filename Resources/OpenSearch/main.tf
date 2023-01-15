@@ -1,4 +1,4 @@
-# opensearch
+### opensearch ###
 module "opensearch" {
   source = "../../modules/OpenSearch"
 
@@ -10,10 +10,17 @@ module "opensearch" {
   advanced_security_options = [{
     enabled                        = true
     anonymous_auth_enabled         = false
-    internal_user_database_enabled = true
-    master_user_name               = "test-user"
-    master_user_password           = random_password.password.result
-    master_user_arn                = null
+    internal_user_database_enabled = false
+    master_user_name               = null
+    master_user_password           = null
+    master_user_arn                = module.cognito.authenticated_iam_role_arn
+  }]
+
+  cognito_options = [{
+    enabled          = true
+    user_pool_id     = module.cognito.user_pool_id
+    identity_pool_id = module.cognito.identity_pool_id
+    role_arn         = aws_iam_role.cognito_opensearch_role.arn
   }]
 
   # domain policy
@@ -37,15 +44,50 @@ resource "aws_ssm_parameter" "secret" {
 # random password
 resource "random_password" "password" {
   length           = 16
+  min_upper        = 1
+  min_lower        = 1
+  min_numeric      = 1
+  min_special      = 1
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-# cognito
+### cognito ###
 module "cognito" {
   source = "../../modules/Cognito"
 
-  user_pool_name     = "test-user-pool"
-  user_pool_domain   = "test-kibana"
-  identity_pool_name = "test-identity-pool"
+  # cognito
+  user_pool_name        = "test-user-pool"
+  user_pool_domain      = "test-kibana"
+  identity_pool_name    = "test-identity-pool"
+  user_pool_client_name = "test-userpool-client"
+
+  # iam
+  authenticated_iam_role_name          = "test-authenticated-role"
+  authenticated_iam_role_description   = "test-authenticated-role"
+  authenticated_iam_policy_name        = "test-authenticated-policy"
+  authenticated_iam_policy_description = "test-authenticated-policy"
+
+  unauthenticated_iam_role_name          = "test-unauthenticated-role"
+  unauthenticated_iam_role_description   = "test-unauthenticated-role"
+  unauthenticated_iam_policy_name        = "test-unauthenticated-policy"
+  unauthenticated_iam_policy_description = "test-unauthenticated-policy"
+}
+
+### cognito options iam ### 
+resource "aws_iam_policy" "cognito_opensearch_policy" {
+  name   = "test-cognito-opensearch-accesspolicy"
+  policy = data.aws_iam_policy_document.cognito_opensearch_policy.json
+}
+
+
+resource "aws_iam_role" "cognito_opensearch_role" {
+  name               = "test-cognito-opensearch-accessrole"
+  assume_role_policy = data.aws_iam_policy_document.opensearch_assume_policy.json
+
+}
+
+resource "aws_iam_role_policy_attachment" "cognito_opensearch_attach" {
+  role       = aws_iam_role.cognito_opensearch_role.name
+  policy_arn = aws_iam_policy.cognito_opensearch_policy.arn
 }

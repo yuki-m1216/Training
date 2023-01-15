@@ -27,6 +27,17 @@ resource "aws_opensearch_domain" "opensearch" {
     }
   }
 
+  dynamic "cognito_options" {
+    for_each = var.cognito_options == null ? [] : var.cognito_options
+
+    content {
+      enabled          = cognito_options.value.enabled
+      user_pool_id     = cognito_options.value.user_pool_id
+      identity_pool_id = cognito_options.value.identity_pool_id
+      role_arn         = cognito_options.value.role_arn
+    }
+  }
+
   encrypt_at_rest {
     enabled    = true
     kms_key_id = var.kms_key_id

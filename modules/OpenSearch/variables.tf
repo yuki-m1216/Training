@@ -40,6 +40,17 @@ variable "advanced_security_options" {
   default     = null
 }
 
+variable "cognito_options" {
+  type = list(object({
+    enabled          = bool
+    user_pool_id     = string
+    identity_pool_id = string
+    role_arn         = string
+  }))
+  description = "Configuration block for authenticating Kibana with Cognito."
+  default     = null
+}
+
 variable "kms_key_id" {
   type        = string
   description = "KMS key ARN to encrypt the Elasticsearch domain with."
