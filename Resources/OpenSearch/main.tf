@@ -91,3 +91,24 @@ resource "aws_iam_role_policy_attachment" "cognito_opensearch_attach" {
   role       = aws_iam_role.cognito_opensearch_role.name
   policy_arn = aws_iam_policy.cognito_opensearch_policy.arn
 }
+
+# powershellはpsファイルにしないとなぜか上手く動作しない
+data "external" "cognito" {
+  program = [
+    "Powershell.exe",
+    "./test.ps1"
+  ]
+}
+
+# gitbashでの成功例
+# data "external" "cognito" {
+#   program = [
+#     "sh",
+#     "-c",
+#     "aws cognito-idp list-user-pool-clients --user-pool-id ap-northeast-1_0z0tVrNgK | jq '.UserPoolClients[] | select(.ClientName | contains(\"app\"))'"
+#   ]
+# }
+
+output "cognito" {
+  value = data.external.cognito.result["ClientId"]
+}

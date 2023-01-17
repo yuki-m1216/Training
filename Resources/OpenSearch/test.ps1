@@ -1,0 +1,1 @@
+aws cognito-idp list-user-pool-clients --user-pool-id ap-northeast-1_0z0tVrNgK | jq '.UserPoolClients[] | select(.ClientName | contains(\"app\"))'
