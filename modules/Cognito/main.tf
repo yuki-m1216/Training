@@ -41,25 +41,15 @@ resource "aws_cognito_user_pool_domain" "user_pool_domain" {
   user_pool_id = aws_cognito_user_pool.user_pool.id
 }
 
-# todo
-# https://stackoverflow.com/questions/73421850/terraform-aws-opensearch-using-cognito-module-circular-problem
-# user_pool_client
-resource "aws_cognito_user_pool_client" "client" {
-  name = var.user_pool_client_name
-
-  user_pool_id        = aws_cognito_user_pool.user_pool.id
-  explicit_auth_flows = ["ADMIN_NO_SRP_AUTH"]
-}
-
+/* ユーザープールのOpenSearchアプリクライアントとアイデンティティプールの紐づけは
+明示的に行わなくても自動的にやってくれる模様
+以下URL先でexternalプロバイダを使用して明示的に依存関係を記述しているが不要だった。念のためURLは残す。
+https://stackoverflow.com/questions/73421850/terraform-aws-opensearch-using-cognito-module-circular-problem
+*/
 # identity_pool
 resource "aws_cognito_identity_pool" "identity_pool" {
   identity_pool_name               = var.identity_pool_name
   allow_unauthenticated_identities = true
-
-  cognito_identity_providers {
-    client_id     = aws_cognito_user_pool_client.client.id
-    provider_name = aws_cognito_user_pool.user_pool.endpoint
-  }
 
   lifecycle { ignore_changes = [cognito_identity_providers] }
 }
