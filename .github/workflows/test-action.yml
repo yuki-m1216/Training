@@ -23,7 +23,7 @@ jobs:
         with:
           ignore: |
             modules/*
-            aws/**/templates
+            .github/**/test-action.yml
       - run: echo ${{ steps.directories.outputs.modules }}
     outputs:
       dirs: ${{ steps.directories.outputs.modules }}
