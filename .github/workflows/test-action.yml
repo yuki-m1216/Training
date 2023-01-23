@@ -23,8 +23,8 @@ jobs:
         with:
           ignore: |
             */*
-            modules/*
-            !Resources/**
+            !modules/**
+            modules/ignored/*
       - run: echo ${{ steps.directories.outputs.modules }}
     outputs:
       dirs: ${{ steps.directories.outputs.modules }}
