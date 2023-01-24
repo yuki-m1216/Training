@@ -78,7 +78,11 @@ jobs:
 
       - name: Exec Terraform plan
         run: |
-          pwd; echo $GithubActionRole; export AWS_PROFILE=GitHubActions; echo $GithubActionRole; terraform plan -no-color
+          pwd
+          echo $AWS_PROFILE
+          export AWS_PROFILE=GitHubActions
+          echo $AWS_PROFILE
+          terraform plan -no-color
 
       # - name: Exec Terraform apply
       #   uses: dflook/terraform-apply@v1
