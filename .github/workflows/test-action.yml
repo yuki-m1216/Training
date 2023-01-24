@@ -60,6 +60,7 @@ jobs:
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-session-name: GithubActionRole
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
