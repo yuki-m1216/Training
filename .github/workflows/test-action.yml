@@ -82,6 +82,7 @@ jobs:
           echo $AWS_PROFILE
           export AWS_PROFILE=GitHubActions
           echo $AWS_PROFILE
+          aws configure list
           terraform plan -no-color
 
       # - name: Exec Terraform apply
