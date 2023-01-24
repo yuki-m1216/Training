@@ -61,7 +61,6 @@ jobs:
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
-          role-session-name: GithubActionRole
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
@@ -80,10 +79,7 @@ jobs:
         run: |
           pwd
           echo $AWS_PROFILE
-          export AWS_PROFILE=GitHubActions
-          echo $AWS_PROFILE
-          aws configure list
-          terraform plan -no-color
+          terraform plan -var "profile=${{ env.AWS_PROFILE }}" -no-color
 
       # - name: Exec Terraform apply
       #   uses: dflook/terraform-apply@v1
