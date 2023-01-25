@@ -21,6 +21,8 @@ jobs:
 
     env:
       TF_ROOT_DIR: .
+      base_branch: main
+      diff_path: "Resources/**"
 
     outputs:
       # 全ディレクトリ用
@@ -34,18 +36,22 @@ jobs:
         id: changes
         with:
           fetch-depth: 0
-      - id: pr_dir_changes
-        # masterと差分のあるディレクトリのみを抽出する
-        # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
-        # run: |
-        #   echo "changes=$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)" >> $GITHUB_OUTPUT
-        #   echo $GITHUB_OUTPUT
-        # run: |
-        #   WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -))
-        #   git diff origin/main --dirstat=files,0
-        #   echo hello # 確認用
-        #   echo $WORKDIRS # 確認用
-        #   echo "::set-output name=changes::$(echo $WORKDIRS)"
+      # - id: pr_dir_changes
+      # masterと差分のあるディレクトリのみを抽出する
+      # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
+      # run: |
+      #   echo "changes=$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)" >> $GITHUB_OUTPUT
+      #   echo $GITHUB_OUTPUT
+      # run: |
+      #   WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -))
+      #   git diff origin/main --dirstat=files,0
+      #   echo hello # 確認用
+      #   echo $WORKDIRS # 確認用
+      #   echo "::set-output name=changes::$(echo $WORKDIRS)"
+      - name: Fetch base branch
+        run: git fetch origin ${base_branch}:${base_branch}
+
+      - name: Run actions using diff_files
         run: |
           diff_files=$(git diff --name-only HEAD ${base_branch} -- "${diff_path}" \
             | tr "\n" " ")
