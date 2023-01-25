@@ -55,6 +55,7 @@ jobs:
         run: |
           git diff origin/main...HEAD
           git diff --name-only origin/main...HEAD
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | xargs
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
   # - name: Find tfstate dirs
