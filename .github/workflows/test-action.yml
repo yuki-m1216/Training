@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   # set-matrix:
-  determine-workdir:
+  check_changed_dirs:
     runs-on: ubuntu-20.04
 
     env:
