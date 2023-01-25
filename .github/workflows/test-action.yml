@@ -54,6 +54,7 @@ jobs:
       - name: Run actions using diff_files
         run: |
           git diff origin/main...HEAD
+          git diff --name-only origin/main...HEAD
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
   # - name: Find tfstate dirs
