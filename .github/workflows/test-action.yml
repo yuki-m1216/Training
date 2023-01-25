@@ -109,6 +109,7 @@ jobs:
           aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
           aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
           terraform plan -var "profile=${{ env.AWS_PROFILE }}" -no-color
+          terraform plan -no-color
 
       # - name: Exec Terraform apply
       #   uses: dflook/terraform-apply@v1
