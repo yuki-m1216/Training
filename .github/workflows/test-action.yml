@@ -42,6 +42,7 @@ jobs:
         #   echo $GITHUB_OUTPUT
         run: |
           WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)) 
+          echo $WORKDIRS # 確認用
           echo "::set-output name=changes::$(echo $WORKDIRS)"
 
   # 全ディレクトリ用
