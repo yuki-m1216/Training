@@ -30,13 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # https://github.com/dorny/paths-filter
-      - uses: dorny/paths-filter@v2
+        # https://github.com/dorny/paths-filter
         id: changes
         with:
           fetch-depth: 0
-      # 更新ディレクトリのみ
-      # https://times.hrbrain.co.jp/entry/terraform-plan-github-actions
       - id: pr_dir_changes
         # masterと差分のあるディレクトリのみを抽出する
         # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
