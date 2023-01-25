@@ -39,6 +39,7 @@ jobs:
         # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
         run: |
           echo "changes="[$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::' | grep 'environments' | awk '{ print "\""$0"\""}' | paste -sd, -)]"" >> "$GITHUB_OUTPUT"
+          echo $GITHUB_OUTPUT
 
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
