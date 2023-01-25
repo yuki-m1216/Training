@@ -34,8 +34,8 @@ jobs:
 
         # https://github.com/dorny/paths-filter
         # id: changes
-        # with:
-        #   fetch-depth: 0
+        with:
+          fetch-depth: 0
       # - id: pr_dir_changes
       # masterと差分のあるディレクトリのみを抽出する
       # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
@@ -53,10 +53,7 @@ jobs:
 
       - name: Run actions using diff_files
         run: |
-          diff_files=$(git diff --name-only HEAD ${base_branch} -- "${diff_path}" \
-            | tr "\n" " ")
-          echo "# diff_files: ${diff_files}"
-
+          git diff origin/main...HEAD
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
   # - name: Find tfstate dirs
