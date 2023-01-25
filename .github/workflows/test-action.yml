@@ -36,7 +36,7 @@ jobs:
         with:
           filters: |
             src:
-              - 'Resources/*'
+              - 'Resources/**'
       # 更新ディレクトリのみ
       # https://zenn.dev/naofumimurata/articles/tf-monorepo-github-actions
       - name: filter
