@@ -48,8 +48,8 @@ jobs:
       #   echo hello # 確認用
       #   echo $WORKDIRS # 確認用
       #   echo "::set-output name=changes::$(echo $WORKDIRS)"
-      - name: Fetch base branch
-        run: git fetch origin ${base_branch}:${base_branch}
+      # - name: Fetch base branch
+      #   run: git fetch origin ${base_branch}:${base_branch}
 
       - name: Run actions using diff_files
         run: |
@@ -66,66 +66,66 @@ jobs:
   #     echo $dirs # 確認用
   #     echo "::set-output name=dirs::${dirs}"
 
-  terraform:
-    # environmentはgithub上でsetting -> environmentの設定をしていない場合は不要
-    # environment:
-    #   name: <環境名>
+  # terraform:
+  #   # environmentはgithub上でsetting -> environmentの設定をしていない場合は不要
+  #   # environment:
+  #   #   name: <環境名>
 
-    runs-on: ubuntu-latest
-    # needs: set-matrix
-    needs: check_changed_dirs
-    # if: needs.determine-workdir.outputs.workdirs != '[]'
-    if: needs.check_changed_dirs.outputs.changes != '[]'
-    # strategy:
-    #   fail-fast: false
-    #   max-parallel: 1
-    #   matrix:
-    #     TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
-    strategy:
-      matrix:
-        dir: ${{ fromJSON(needs.check_changed_dirs.outputs.changes) }}
+  #   runs-on: ubuntu-latest
+  #   # needs: set-matrix
+  #   needs: check_changed_dirs
+  #   # if: needs.determine-workdir.outputs.workdirs != '[]'
+  #   if: needs.check_changed_dirs.outputs.changes != '[]'
+  #   # strategy:
+  #   #   fail-fast: false
+  #   #   max-parallel: 1
+  #   #   matrix:
+  #   #     TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
+  #   strategy:
+  #     matrix:
+  #       dir: ${{ fromJSON(needs.check_changed_dirs.outputs.changes) }}
 
-    defaults:
-      run:
-        shell: bash
-        # working-directory: ${{ matrix.TF_DIR }}
-        working-directory: ${{ matrix.dir }}
+  #   defaults:
+  #     run:
+  #       shell: bash
+  #       # working-directory: ${{ matrix.TF_DIR }}
+  #       working-directory: ${{ matrix.dir }}
 
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v2
+  #   steps:
+  #     - name: Checkout branch
+  #       uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+  #     - name: Configure AWS credentials
+  #       uses: aws-actions/configure-aws-credentials@v1
+  #       with:
+  #         aws-region: ${{ env.AWS_DEFAULT_REGION }}
+  #         role-to-assume: ${{ env.AWS_ROLE_ARN }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+  #     - name: Setup Terraform
+  #       uses: hashicorp/setup-terraform@v1
+  #       with:
+  #         terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Exec Terraform fmt check
-        run: |
-          terraform fmt -recursive -check
+  #     - name: Exec Terraform fmt check
+  #       run: |
+  #         terraform fmt -recursive -check
 
-      - name: Exec Terraform init
-        run: |
-          pwd; terraform init
+  #     - name: Exec Terraform init
+  #       run: |
+  #         pwd; terraform init
 
-      - name: Exec Terraform plan
-        run: |
-          pwd
-          echo $AWS_PROFILE
-          aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
-          aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
-          aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
-          terraform plan -var "profile=${{ env.AWS_PROFILE }}" -no-color
-          terraform plan -no-color
+  #     - name: Exec Terraform plan
+  #       run: |
+  #         pwd
+  #         echo $AWS_PROFILE
+  #         aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
+  #         aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
+  #         aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
+  #         terraform plan -var "profile=${{ env.AWS_PROFILE }}" -no-color
+  #         terraform plan -no-color
 
-      # - name: Exec Terraform apply
-      #   uses: dflook/terraform-apply@v1
-      #   with:
-      #     path: policys
-      #     auto_approve: true
+  #     # - name: Exec Terraform apply
+  #     #   uses: dflook/terraform-apply@v1
+  #     #   with:
+  #     #     path: policys
+  #     #     auto_approve: true
