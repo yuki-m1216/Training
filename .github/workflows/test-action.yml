@@ -37,9 +37,12 @@ jobs:
       - id: pr_dir_changes
         # masterと差分のあるディレクトリのみを抽出する
         # https://stackoverflow.com/questions/50440420/git-diff-only-show-which-directories-changed
+        # run: |
+        #   echo "changes=$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)" >> $GITHUB_OUTPUT
+        #   echo $GITHUB_OUTPUT
         run: |
-          echo "changes=$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)" >> $GITHUB_OUTPUT
-          echo $GITHUB_OUTPUT
+          WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)) 
+          echo "::set-output name=changes::$(echo $WORKDIRS)"
 
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
