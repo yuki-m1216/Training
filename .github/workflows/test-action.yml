@@ -40,12 +40,16 @@ jobs:
         # run: |
         #   echo "changes=$(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)" >> $GITHUB_OUTPUT
         #   echo $GITHUB_OUTPUT
+        # run: |
+        #   WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -))
+        #   git diff origin/main --dirstat=files,0
+        #   echo hello # 確認用
+        #   echo $WORKDIRS # 確認用
+        #   echo "::set-output name=changes::$(echo $WORKDIRS)"
         run: |
-          WORKDIRS=$(echo $(git diff origin/main --dirstat=files,0 | awk '{print $2}' | sed -e 's:/*$::'| grep -v '.github' | awk '{ print "\""$0"\""}' | paste -sd, -)) 
-          git diff origin/main --dirstat=files,0
-          echo hello # 確認用
-          echo $WORKDIRS # 確認用
-          echo "::set-output name=changes::$(echo $WORKDIRS)"
+          diff_files=$(git diff --name-only HEAD ${base_branch} -- "${diff_path}" \
+            | tr "\n" " ")
+          echo "# diff_files: ${diff_files}"
 
   # 全ディレクトリ用
   # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
