@@ -59,6 +59,7 @@ jobs:
     # needs: set-matrix
     needs: check_changed_dirs
     # if: needs.determine-workdir.outputs.workdirs != '[]'
+    if: needs.check_changed_dirs.outputs.changes != '[]'
     # strategy:
     #   fail-fast: false
     #   max-parallel: 1
