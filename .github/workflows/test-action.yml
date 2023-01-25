@@ -15,24 +15,44 @@ permissions:
   contents: read
 
 jobs:
-  set-matrix:
+  # set-matrix:
+  determine-workdir:
     runs-on: ubuntu-20.04
 
     env:
       TF_ROOT_DIR: .
 
     outputs:
-      dirs: ${{ steps.find-tfstate-dirs.outputs.dirs }}
+      # 全ディレクトリ用
+      # dirs: ${{ steps.find-tfstate-dirs.outputs.dirs }}
+      workdirs: ${{ steps.filter.outputs.workdirs }}
 
     steps:
       - uses: actions/checkout@v2
 
-      - name: Find tfstate dirs
-        id: find-tfstate-dirs
+      # https://github.com/dorny/paths-filter
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'Resources/*'
+      # 更新ディレクトリのみ
+      # https://zenn.dev/naofumimurata/articles/tf-monorepo-github-actions
+      - name: filter
+        id: filter
         run: |
-          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' -exec dirname {} \; | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
-          echo $dirs # 確認用
-          echo "::set-output name=dirs::${dirs}"
+          WORKDIRS=$(echo '${{ toJSON(steps.changes.outputs) }}' | jq '. | to_entries[] | select(.value == "true") | .key') 
+          echo "::set-output name=workdirs::$(echo $WORKDIRS | jq -sc '.')"
+
+  # 全ディレクトリ用
+  # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
+  # - name: Find tfstate dirs
+  #   id: find-tfstate-dirs
+  #   run: |
+  #     dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' -exec dirname {} \; | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
+  #     echo $dirs # 確認用
+  #     echo "::set-output name=dirs::${dirs}"
 
   terraform:
     # environmentはgithub上でsetting -> environmentの設定をしていない場合は不要
@@ -40,17 +60,23 @@ jobs:
     #   name: <環境名>
 
     runs-on: ubuntu-latest
-    needs: set-matrix
+    # needs: set-matrix
+    needs: determine-workdir
+    if: needs.determine-workdir.outputs.workdirs != '[]'
+    # strategy:
+    #   fail-fast: false
+    #   max-parallel: 1
+    #   matrix:
+    #     TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
     strategy:
-      fail-fast: false
-      max-parallel: 1
       matrix:
-        TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
+        workdir: ${{ fromJSON(needs.determine-workdir.outputs.workdirs) }}
 
     defaults:
       run:
         shell: bash
-        working-directory: ${{ matrix.TF_DIR }}
+        # working-directory: ${{ matrix.TF_DIR }}
+        working-directory: ${{ matrix.workdir }}
 
     steps:
       - name: Checkout branch
