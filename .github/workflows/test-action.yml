@@ -83,9 +83,11 @@ jobs:
       - name: Exec Terraform plan
         run: |
           pwd
-          echo $AWS_PROFILE
+          aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
+          aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
+          aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
           terraform plan -no-color
-        timeout-minutes: 3
+        timeout-minutes: 1
 
   #     # - name: Exec Terraform apply
   #     #   uses: dflook/terraform-apply@v1
