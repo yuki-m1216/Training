@@ -43,6 +43,7 @@ module "sg" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTP from Internet"
     }
     "ingress_02" = {
@@ -52,6 +53,7 @@ module "sg" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTPS from Internet"
     }
     "egress_01" = {
@@ -61,6 +63,7 @@ module "sg" {
       protocol                 = "-1"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "Allow any outbound traffic"
     }
   }

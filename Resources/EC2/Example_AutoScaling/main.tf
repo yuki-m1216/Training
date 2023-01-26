@@ -63,6 +63,7 @@ module "sg_launch_template" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTP from Internet"
     }
     "ingress_02" = {
@@ -72,6 +73,7 @@ module "sg_launch_template" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTPS from Internet"
     }
     "egress_01" = {
@@ -81,6 +83,7 @@ module "sg_launch_template" {
       protocol                 = "-1"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "Allow any outbound traffic"
     }
   }
@@ -100,6 +103,7 @@ module "sg_lb" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTP from Internet"
     }
     "ingress_02" = {
@@ -109,6 +113,7 @@ module "sg_lb" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "HTTPS from Internet"
     }
     "egress_01" = {
@@ -118,6 +123,7 @@ module "sg_lb" {
       protocol                 = "-1"
       source_security_group_id = null
       cidr_blocks              = ["0.0.0.0/0"]
+      prefix_list_ids          = null
       description              = "Allow any outbound traffic"
     }
   }

@@ -51,6 +51,7 @@ module "sg_rds_aurora" {
       protocol                 = "tcp"
       source_security_group_id = null
       cidr_blocks              = ["${local.current-ip}/32"]
+      prefix_list_ids          = null
       description              = "from My IP"
     }
   }
