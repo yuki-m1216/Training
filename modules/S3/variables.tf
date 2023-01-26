@@ -118,4 +118,5 @@ variable "create_bucket_policy" {
 variable "bucket_policy_document" {
   type        = string
   description = "The text of the policy"
+  default     = null
 }
