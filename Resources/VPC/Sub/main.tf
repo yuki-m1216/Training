@@ -42,6 +42,7 @@ module "Sub_VPC" {
   # add route
   other_public_route = {
     "other-public-subnet-1a-route" = {
+      target_subnet             = "sub-public-subnet-1a"
       destination_cidr_block    = "10.0.0.0/16"
       nat_gateway_id            = null
       transit_gateway_id        = null
@@ -52,6 +53,7 @@ module "Sub_VPC" {
 
   other_private_route = {
     "other-private-subnet-1a-route" = {
+      target_subnet             = "sub-private-subnet-1a"
       destination_cidr_block    = "10.0.0.0/16"
       nat_gateway_id            = null
       transit_gateway_id        = null

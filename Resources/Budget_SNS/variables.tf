@@ -1,4 +1,4 @@
-# variable "access_key" {}
-# variable "secret_key" {}
-variable "profile" {}
-variable "endpoint" {}
+variable "endpoint" {
+  type    = string
+  default = "example@test.com"
+}
