@@ -6,7 +6,7 @@ on:
 
 env:
   TF_VERSION: 1.1.2
-  AWS_ROLE_ARN: arn:aws:iam:::${{ secrets.AWS_ACCOUNT_ID }}:role/test-GithubActionRole
+  AWS_ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/test-GithubActionRole
   AWS_DEFAULT_REGION: ap-northeast-1
   AWS_PROFILE: GitHubActions
 
