@@ -44,10 +44,11 @@ jobs:
   terraform:
     needs: set-matrix
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 5
       matrix:
         TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
 
@@ -79,15 +80,12 @@ jobs:
         run: |
           pwd; terraform init
 
-  #     - name: Exec Terraform plan
-  #       run: |
-  #         pwd
-  #         echo $AWS_PROFILE
-  #         aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
-  #         aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
-  #         aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
-  #         terraform plan -var "profile=${{ env.AWS_PROFILE }}" -no-color
-  #         terraform plan -no-color
+      - name: Exec Terraform plan
+        run: |
+          pwd
+          echo $AWS_PROFILE
+          terraform plan -no-color
+        timeout-minutes: 3
 
   #     # - name: Exec Terraform apply
   #     #   uses: dflook/terraform-apply@v1
