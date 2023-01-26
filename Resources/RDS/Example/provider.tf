@@ -4,8 +4,7 @@
 
 # default
 provider "aws" {
-  profile = "Y-admin"
-  region  = "ap-northeast-1"
+  region = "ap-northeast-1"
 }
 
 # # https://registry.terraform.io/providers/hashicorp/http/latest/docs

@@ -4,8 +4,7 @@
 
 # default
 provider "aws" {
-  profile = var.profile
-  region  = "ap-northeast-1"
+  region = "ap-northeast-1"
 }
 
 # multi region
