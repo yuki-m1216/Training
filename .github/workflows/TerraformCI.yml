@@ -5,7 +5,6 @@ on:
       - main
 
 env:
-  TF_VERSION: 1.1.2
   AWS_ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/test-GithubActionRole
   AWS_DEFAULT_REGION: ap-northeast-1
   AWS_PROFILE: GitHubActions
@@ -63,9 +62,7 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+        uses: hashicorp/setup-terraform@v2
 
       - name: Exec Terraform fmt check
         run: |
