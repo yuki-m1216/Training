@@ -1,4 +1,4 @@
-name: test-action
+name: TerraformCI
 on:
   push:
     branches:
@@ -22,24 +22,19 @@ jobs:
       TF_ROOT_DIR: .
 
     outputs:
-      # 全ディレクトリ用
       dirs: ${{ steps.find-tfstate-dirs.outputs.dirs }}
 
     steps:
       - uses: actions/checkout@v3
 
-      # 全ディレクトリ用
       # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
       - name: Find tfstate dirs
         id: find-tfstate-dirs
         run: |
-          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' -exec dirname {} \; | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
+          # https://stackoverflow.com/questions/26287130/converting-lines-to-json-in-bash
+          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' | xargs dirname | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
           echo $dirs # 確認用
-          echo "::set-output name=dirs::${dirs}"
-
-    # environmentはgithub上でsetting -> environmentの設定をしていない場合は不要
-    # environment:
-    #   name: <環境名>
+          echo "dirs=$dirs" >> $GITHUB_ENV
 
   terraform:
     needs: set-matrix
@@ -59,7 +54,7 @@ jobs:
 
     steps:
       - name: Checkout branch
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
