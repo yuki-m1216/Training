@@ -47,7 +47,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: ${{ needs.set-matrix.outputs.dirs_num }}
       matrix:
         TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
 
