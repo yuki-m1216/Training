@@ -23,7 +23,6 @@ jobs:
 
     outputs:
       dirs: ${{ steps.find-tfstate-dirs.outputs.dirs }}
-      dirs_num: ${{ steps.find-tfstate-dirs.outputs.dirs_num }}
 
     steps:
       - uses: actions/checkout@v3
@@ -34,11 +33,8 @@ jobs:
         run: |
           # https://stackoverflow.com/questions/26287130/converting-lines-to-json-in-bash
           dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' | xargs dirname | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
-          dirs_num=$((echo $dirs | jq 'length'))
           echo $dirs 
-          echo $dirs_num
           echo "dirs=$dirs" >> $GITHUB_OUTPUT
-          echo "dirs_num=$dirs_num" >> $GITHUB_OUTPUT
 
   terraform:
     needs: set-matrix
@@ -47,7 +43,7 @@ jobs:
 
     strategy:
       fail-fast: false
-      max-parallel: ${{ needs.set-matrix.outputs.dirs_num }}
+      max-parallel: 10
       matrix:
         TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
 
