@@ -13,6 +13,5 @@ terraform {
     region  = "ap-northeast-1"
     key     = "S3.tfstate"
     encrypt = true
-    profile = "Y-admin"
   }
 }

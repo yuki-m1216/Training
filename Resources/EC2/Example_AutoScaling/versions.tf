@@ -13,6 +13,5 @@ terraform {
     region  = "ap-northeast-1"
     key     = "EC2_AutoScaling.tfstate"
     encrypt = true
-    profile = "Y-admin"
   }
 }

@@ -13,6 +13,5 @@ terraform {
     region  = "ap-northeast-1"
     key     = "RDS_Aurora.tfstate"
     encrypt = true
-    profile = "Y-admin"
   }
 }

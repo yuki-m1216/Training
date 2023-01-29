@@ -13,6 +13,5 @@ terraform {
     region  = "ap-northeast-1"
     key     = "ECS_Fargate.tfstate"
     encrypt = true
-    profile = "Y-admin"
   }
 }

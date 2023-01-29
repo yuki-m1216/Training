@@ -13,6 +13,5 @@ terraform {
     region  = "ap-northeast-1"
     key     = "CloudFront_Origin_ALB.tfstate"
     encrypt = true
-    profile = "Y-admin"
   }
 }
