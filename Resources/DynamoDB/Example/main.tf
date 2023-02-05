@@ -27,17 +27,31 @@ module "dynamodb" {
       name               = "GameTitleIndex"
       hash_key           = "GameTitle"
       range_key          = "TopScore"
-      write_capacity     = 10
-      read_capacity      = 10
+      write_capacity     = 5
+      read_capacity      = 5
       projection_type    = "INCLUDE"
       non_key_attributes = ["UserId"]
     }
   ]
 
-  # ### AutoScaling ###
-  # autoscaling_enable = true
-  # autoscaling_read   = true
-  # autoscaling_write  = true
+  ### AutoScaling ###
+  autoscaling_enable = true
+  autoscaling_read   = true
+  autoscaling_write  = true
+
+  autoscaling_indexes = {
+    GameTitleIndex = {
+      # read
+      read_max_capacity        = 20
+      read_min_capacity        = 5
+      read_policy_target_value = 70
+
+      # write
+      write_max_capacity        = 20
+      write_min_capacity        = 5
+      write_policy_target_value = 70
+    }
+  }
 }
 
 

@@ -159,3 +159,62 @@ resource "aws_appautoscaling_policy" "dynamodb_table_write_policy" {
     target_value = var.write_policy_target_value
   }
 }
+
+# AutoScaling for global secondary index 
+# read
+resource "aws_appautoscaling_target" "index_read_target" {
+  for_each = var.autoscaling_indexes
+
+  max_capacity       = each.value["read_max_capacity"]
+  min_capacity       = each.value["read_min_capacity"]
+  resource_id        = "table/${aws_dynamodb_table.dynamodb_table_autoscaling[0].name}/index/${each.key}"
+  scalable_dimension = "dynamodb:index:ReadCapacityUnits"
+  service_namespace  = "dynamodb"
+}
+
+resource "aws_appautoscaling_policy" "index_read_policy" {
+  for_each = var.autoscaling_indexes
+
+  name               = "DynamoDBReadCapacityUtilization:${aws_appautoscaling_target.index_read_target[each.key].resource_id}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.index_read_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.index_read_target[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.index_read_target[each.key].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBReadCapacityUtilization"
+    }
+
+    target_value = each.value["read_policy_target_value"]
+  }
+}
+
+# write
+resource "aws_appautoscaling_target" "index_write_target" {
+  for_each = var.autoscaling_indexes
+
+  max_capacity       = each.value["write_max_capacity"]
+  min_capacity       = each.value["write_min_capacity"]
+  resource_id        = "table/${aws_dynamodb_table.dynamodb_table_autoscaling[0].name}/index/${each.key}"
+  scalable_dimension = "dynamodb:index:WriteCapacityUnits"
+  service_namespace  = "dynamodb"
+}
+
+resource "aws_appautoscaling_policy" "index_write_policy" {
+  for_each = var.autoscaling_indexes
+
+  name               = "DynamoDBWriteCapacityUtilization:${aws_appautoscaling_target.index_write_target[each.key].resource_id}"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.index_write_target[each.key].resource_id
+  scalable_dimension = aws_appautoscaling_target.index_write_target[each.key].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.index_write_target[each.key].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "DynamoDBWriteCapacityUtilization"
+    }
+
+    target_value = each.value["write_policy_target_value"]
+  }
+}

@@ -110,3 +110,10 @@ variable "write_policy_target_value" {
   description = "write policy targetvalue"
   default     = 70
 }
+
+# AutoScaling for global secondary index 
+variable "autoscaling_indexes" {
+  type        = map(map(string))
+  description = "autoscaling indexes configurations"
+  default     = {}
+}
