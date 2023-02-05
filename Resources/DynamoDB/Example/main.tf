@@ -39,6 +39,7 @@ module "dynamodb" {
   autoscaling_read   = true
   autoscaling_write  = true
 
+  # AutoScaling for global secondary index 
   autoscaling_indexes = {
     GameTitleIndex = {
       # read
