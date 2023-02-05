@@ -1,6 +1,7 @@
 module "dynamodb" {
   source = "../../../modules/DynamoDB"
 
+  ### DynamoDB ###
   dynamodb_table = "Test-DynamoDB"
   billing_mode   = "PROVISIONED"
   hash_key       = "UserId"
@@ -32,6 +33,11 @@ module "dynamodb" {
       non_key_attributes = ["UserId"]
     }
   ]
+
+  # ### AutoScaling ###
+  # autoscaling_enable = true
+  # autoscaling_read   = true
+  # autoscaling_write  = true
 }
 
 
