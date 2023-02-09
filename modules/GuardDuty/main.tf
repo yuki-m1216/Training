@@ -1,4 +1,6 @@
 resource "aws_guardduty_detector" "detector" {
+  provider = aws.alternate
+
   enable                       = var.enable
   finding_publishing_frequency = var.finding_publishing_frequency
 
