@@ -9,7 +9,7 @@ terraform {
   }
   required_version = ">= 0.13"
   backend "s3" {
-    bucket  = "s3-terraform-state-y-mitsuyama"
+    bucket  = "s3-terraform-state-ym"
     region  = "ap-northeast-1"
     key     = "MainVPC.tfstate"
     encrypt = true
