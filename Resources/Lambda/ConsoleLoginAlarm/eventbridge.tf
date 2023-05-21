@@ -65,6 +65,8 @@ module "EventBridge_Sender_ap-northeast-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 
@@ -92,6 +94,8 @@ module "EventBridge_Sender_us-east-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # us-east-2
@@ -118,6 +122,8 @@ module "EventBridge_Sender_us-east-2" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # us-west-1
@@ -144,6 +150,8 @@ module "EventBridge_Sender_us-west-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # us-west-2
@@ -170,6 +178,8 @@ module "EventBridge_Sender_us-west-2" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # ap-south-1
@@ -196,6 +206,8 @@ module "EventBridge_Sender_ap-south-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # ap-northeast-2
@@ -222,6 +234,8 @@ module "EventBridge_Sender_ap-northeast-2" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # ap-southeast-1
@@ -248,7 +262,38 @@ module "EventBridge_Sender_ap-southeast-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
+
+# ap-southeast-2
+module "EventBridge_Sender_ap-southeast-2" {
+  source = "../../../modules/EventBridge"
+  providers = {
+    aws.alternate = aws.ap-southeast-2
+  }
+  # rule
+  rule_name        = "ConsoleLoginEvent_Sender"
+  rule_description = "ConsoleLogin Event Sender"
+  event_pattern = jsonencode(
+    {
+      "detail-type" : [
+        "AWS Console Sign In via CloudTrail"
+      ]
+    }
+  )
+  is_enabled = true
+  rule_tags = {
+    Name = "ConsoleLoginEvent_Sender"
+  }
+
+  # target
+  target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
+  target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
+}
+
 
 # ca-central-1
 module "EventBridge_Sender_ca-central-1" {
@@ -274,6 +319,8 @@ module "EventBridge_Sender_ca-central-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # eu-central-1
@@ -300,6 +347,8 @@ module "EventBridge_Sender_eu-central-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # eu-west-1
@@ -326,6 +375,8 @@ module "EventBridge_Sender_eu-west-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # eu-west-2
@@ -352,6 +403,8 @@ module "EventBridge_Sender_eu-west-2" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # eu-west-3
@@ -378,6 +431,8 @@ module "EventBridge_Sender_eu-west-3" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # eu-north-1
@@ -404,6 +459,8 @@ module "EventBridge_Sender_eu-north-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
 
 # sa-east-1
@@ -430,4 +487,6 @@ module "EventBridge_Sender_sa-east-1" {
   # target
   target_arn      = module.EventBridge_Receiver.Eventbridge_Eventbus_Arn[0]
   target_role_arn = module.IAM_Role_EventBridge_Sender.role_arn
+
+  depends_on = [module.EventBridge_Receiver]
 }
