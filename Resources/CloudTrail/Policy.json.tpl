@@ -5,19 +5,19 @@
             "Sid": "AWSCloudTrailAclCheck",
             "Effect": "Allow",
             "Principal": {
-              "Service": "cloudtrail.amazonaws.com"
+                "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::cloudtrail-bucket-y-mitsuyama"
+            "Resource": "arn:aws:s3:::cloudtrail-bucket-ym"
         },
         {
             "Sid": "AWSCloudTrailWrite",
             "Effect": "Allow",
             "Principal": {
-              "Service": "cloudtrail.amazonaws.com"
+                "Service": "cloudtrail.amazonaws.com"
             },
             "Action": "s3:PutObject",
-            "Resource": "arn:aws:s3:::cloudtrail-bucket-y-mitsuyama/AWSLogs/${account_id}/*",
+            "Resource": "arn:aws:s3:::cloudtrail-bucket-ym/AWSLogs/${account_id}/*",
             "Condition": {
                 "StringEquals": {
                     "s3:x-amz-acl": "bucket-owner-full-control"

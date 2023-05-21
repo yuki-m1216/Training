@@ -5,7 +5,7 @@ provider "aws" {
 terraform {
   required_version = ">= 0.13.0"
   backend "s3" {
-    bucket  = "s3-terraform-state-y-mitsuyama"
+    bucket  = "s3-terraform-state-ym"
     region  = "ap-northeast-1"
     key     = "CloudTrail.tfstate"
     encrypt = true
@@ -32,7 +32,7 @@ module "CloudTrail" {
   include_management_events     = "true"
 
   # s3
-  bucketname      = "cloudtrail-bucket-y-mitsuyama"
+  bucketname      = "cloudtrail-bucket-ym"
   policy          = data.template_file.policy.rendered
   id              = "cloudtrail-lifecycle"
   expiration_days = 31
