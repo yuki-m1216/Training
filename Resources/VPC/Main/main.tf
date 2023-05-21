@@ -90,7 +90,7 @@ data "terraform_remote_state" "subvpc" {
   backend = "s3"
 
   config = {
-    bucket = "s3-terraform-state-y-mitsuyama"
+    bucket = "s3-terraform-state-ym"
     key    = "SubVPC.tfstate"
     region = "ap-northeast-1"
   }
