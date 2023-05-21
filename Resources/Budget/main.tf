@@ -5,7 +5,7 @@ provider "aws" {
 terraform {
   required_version = ">= 0.13.0"
   backend "s3" {
-    bucket  = "cloudtrail-bucket-ym"
+    bucket  = "s3-terraform-state-ym"
     region  = "ap-northeast-1"
     key     = "Budget.tfstate"
     encrypt = true
