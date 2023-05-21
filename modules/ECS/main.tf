@@ -191,12 +191,12 @@ resource "aws_iam_role_policy_attachment" "task_role_policy_attach_aws_managed" 
 
 # service_linked_role
 resource "aws_iam_service_linked_role" "ecs_service_linked_role" {
-  count            = var.service_linked_role_created ? 0 : 1
+  count            = var.service_linked_role_created ? 1 : 0
   aws_service_name = "ecs.amazonaws.com"
 }
 
 data "aws_iam_role" "ecs_service_linked_role" {
-  count = var.service_linked_role_created ? 1 : 0
+  count = var.service_linked_role_created ? 0 : 1
   name  = "AWSServiceRoleForECS"
 }
 
