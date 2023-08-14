@@ -183,14 +183,17 @@ variable "description" {
 variable "create_record" {
   type        = bool
   description = "whether Create Alias Recird."
+  default     = false
 }
 
 variable "zone_id" {
   type        = string
   description = "The ID of the hosted zone to contain this record."
+  default     = null
 }
 
 variable "record_name" {
   type        = string
   description = "The name of the record."
+  default     = null
 }
