@@ -141,3 +141,18 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
 }
+
+# Route53
+resource "aws_route53_record" "record" {
+  count = var.create_record ? 1 : 0
+
+  zone_id = var.zone_id
+  name    = var.record_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.distribution.domain_name
+    zone_id                = aws_cloudfront_distribution.distribution.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
