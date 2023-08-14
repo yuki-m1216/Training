@@ -1,4 +1,6 @@
 resource "aws_acm_certificate" "main" {
+  provider = aws.alternate
+
   domain_name               = var.domain_name
   subject_alternative_names = var.subject_alternative_names
   validation_method         = var.validation_method
@@ -31,6 +33,8 @@ resource "aws_route53_record" "main" {
 }
 
 resource "aws_acm_certificate_validation" "main" {
+  provider = aws.alternate
+
   certificate_arn         = aws_acm_certificate.main.arn
   validation_record_fqdns = [for record in aws_route53_record.main : record.fqdn]
 }
