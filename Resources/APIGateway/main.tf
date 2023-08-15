@@ -7,6 +7,10 @@ module "apigateway" {
 
   # aws_api_gateway_stage
   stage_name = "dev"
+
+  # aws_api_gateway_rest_api_policy
+  create_api_policy = true
+  api_policy        = data.aws_iam_policy_document.apigateway_policy.json
 }
 
 module "iam_for_apigateway" {

@@ -18,6 +18,32 @@ data "aws_iam_policy_document" "invokelambda" {
   }
 }
 
+# api gateway resource policy
+data "aws_iam_policy_document" "apigateway_policy" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions   = ["execute-api:Invoke"]
+    resources = ["${module.apigateway.apigateway_execution_arn}/*"]
+
+    condition {
+      test     = "IpAddress"
+      variable = "aws:SourceIp"
+      values   = ["${chomp(data.http.checkip.response_body)}/32"]
+    }
+  }
+}
+
+# myip
+data "http" "checkip" {
+  url = "http://ipv4.icanhazip.com/"
+}
+
 # lambda
 data "archive_file" "function" {
   type        = "zip"

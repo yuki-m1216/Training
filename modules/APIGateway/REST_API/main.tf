@@ -30,3 +30,10 @@ resource "aws_api_gateway_stage" "main" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = var.stage_name
 }
+
+resource "aws_api_gateway_rest_api_policy" "main" {
+  count = var.create_api_policy ? 1 : 0
+
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  policy      = var.api_policy
+}

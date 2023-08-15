@@ -20,3 +20,15 @@ variable "stage_name" {
   type        = string
   description = "Name of the stage"
 }
+
+# aws_api_gateway_rest_api_policy
+variable "create_api_policy" {
+  type        = bool
+  description = "whether create resouce policy"
+  default     = false
+}
+
+variable "api_policy" {
+  type        = string
+  description = "JSON formatted policy document that controls access to the API Gateway."
+}
