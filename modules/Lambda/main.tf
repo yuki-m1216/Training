@@ -7,31 +7,6 @@ terraform {
   }
 }
 
-# variable 
-# Lambda
-variable "lambda_filename" {}
-variable "lambda_function_name" {}
-variable "lambda_role" {
-  default = null
-}
-variable "handler" {}
-variable "runtime" {}
-variable "environment_variables" {
-  type    = map(any)
-  default = null
-}
-
-# Lambda permission
-variable "statement_id" {
-  default = null
-}
-variable "principal" {
-  default = null
-}
-variable "source_arn" {
-  default = null
-}
-
 # Lambda
 resource "aws_lambda_function" "lambda" {
   provider      = aws.alternate
@@ -51,6 +26,8 @@ resource "aws_lambda_function" "lambda" {
 
 # Lambda permission
 resource "aws_lambda_permission" "lambda_permission" {
+  count = var.create_lambda_permission ? 1 : 0
+
   provider      = aws.alternate
   statement_id  = var.statement_id
   action        = "lambda:InvokeFunction"

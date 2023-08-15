@@ -15,3 +15,25 @@ module "iam_for_apigateway" {
   identifiers     = "apigateway.amazonaws.com"
   create_policies = local.create_policies
 }
+
+module "lambda" {
+  source = "../../modules/Lambda"
+
+  providers = {
+    aws.alternate = aws
+  }
+
+  lambda_function_name     = "Test-APIGateway-Lambda"
+  runtime                  = "python3.11"
+  lambda_filename          = data.archive_file.function.output_path
+  handler                  = "main.lambda_handler"
+  lambda_role              = module.iam_for_lambda.role_arn
+  create_lambda_permission = false
+}
+
+module "iam_for_lambda" {
+  source      = "../../modules/IAM/Role"
+  role_name   = "TestAPIGatewayLambda"
+  identifiers = "lambda.amazonaws.com"
+  policies    = local.Lambdapolicies
+}
