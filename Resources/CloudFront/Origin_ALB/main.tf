@@ -36,6 +36,24 @@ module "cloudfront" {
     response_headers_policy_id = null
   }]
 
+  /*
+  CloudFrontのデフォルトの証明書を利用する場合
+    viewer_certificate = [{
+      cloudfront_default_certificate = true
+      acm_certificate_arn            = null
+      minimum_protocol_version       = null
+      ssl_support_method             = null
+    }]
+
+  ユーザー発行の証明書を利用する場合
+    viewer_certificate = [{
+      cloudfront_default_certificate = false
+      acm_certificate_arn            = data.terraform_remote_state.acm_us_east_1.outputs.acm_certificate_validation_certificate_us_east_1.aws_acm_certificate_validation_certificate_arn
+      minimum_protocol_version       = "TLSv1.2_2021"
+      ssl_support_method             = "sni-only"
+    }]
+  */
+
   viewer_certificate = [{
     cloudfront_default_certificate = true
     acm_certificate_arn            = null
