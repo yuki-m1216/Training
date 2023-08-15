@@ -1,0 +1,19 @@
+openapi: "3.0.1"
+info:
+  title: "test_api"
+  version: "v1"
+paths:
+  /:
+    get:
+      responses:
+        200:
+          description: "200 response"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empty"
+      x-amazon-apigateway-integration:
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:ap-northeast-1:lambda:path/2015-03-31/functions/${lambda_arn}/invocations"
+        passthroughBehavior: "when_no_match"
+        type: "aws_proxy"
