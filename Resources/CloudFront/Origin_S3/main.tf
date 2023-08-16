@@ -54,11 +54,6 @@ module "cloudfront" {
     ssl_support_method             = "sni-only"
   }]
 
-  # route53 alias record
-  create_record = true
-  zone_id       = data.aws_route53_zone.main.zone_id
-  record_name   = "cf.yuki-m.com"
-
   # oac
   oac_create  = true
   oac_name    = "CloudFront-OAC"
@@ -93,4 +88,19 @@ resource "aws_s3_object" "object" {
   source       = "${path.root}/source/index.html"
   etag         = filemd5("${path.root}/source/index.html")
   content_type = "text/html"
+}
+
+
+module "route53_cloudfront_record" {
+  source = "../../../modules/Route53"
+
+  create_record = true
+  zone_id       = data.aws_route53_zone.main.zone_id
+  record_name   = "cf.yuki-m.com"
+  type          = "A"
+  alias = [{
+    name                   = module.cloudfront.cloudfront_domain_name
+    zone_id                = module.cloudfront.cloudfront_hosted_zone_id
+    evaluate_target_health = false
+  }]
 }
