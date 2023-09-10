@@ -1,3 +1,7 @@
+data "aws_region" "current" {}
+
+data "aws_caller_identity" "current" {}
+
 data "aws_iam_policy_document" "kinesis" {
   statement {
     actions = [
@@ -12,10 +16,23 @@ data "aws_iam_policy_document" "kinesis" {
     resources = [
       module.s3_bucket_for_kinesis.s3_bucket.arn,
       "${module.s3_bucket_for_kinesis.s3_bucket.arn}/*",
-      #   "arn:aws:logs:${AWS_REGION}:${ACCOUNT_ID}:log-group:${FIREHOSE_CWL_ERROR_LOG_GROUP_NAME}:log-stream:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:log-group:/aws/kinesisfirehose/CWL-To-S3-Kinesis:log-stream:*"
     ]
   }
 }
+
+data "aws_iam_policy_document" "subscription_filter" {
+  statement {
+    actions = [
+      "firehose:PutRecord",
+      "firehose:PutRecordBatch",
+    ]
+    resources = [
+      "arn:aws:firehose:${data.aws_region.current.name}:${data.aws_caller_identity.current.id}:deliverystream/CWL-To-S3-Kinesis"
+    ]
+  }
+}
+
 
 /*
 aws_kms_aliasで取得するとKinesisのコンソール上カスタマーマネージドCMKを選択したことになるため、
