@@ -7,7 +7,7 @@ on:
 env:
   AWS_ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsRole
   AWS_DEFAULT_REGION: ap-northeast-1
-  AWS_PROFILE: GitHubActions
+  # AWS_PROFILE: GitHubActions
 
 permissions:
   id-token: write
@@ -72,11 +72,11 @@ jobs:
         run: |
           pwd; terraform init
 
-      - name: Exec Terraform plan
-        run: |
-          pwd
-          aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
-          aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
-          aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
-          terraform plan -no-color
-        timeout-minutes: 1
+      # - name: Exec Terraform plan
+      #   run: |
+      #     pwd
+      #     aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID} --profile ${{ env.AWS_PROFILE }}
+      #     aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY} --profile ${{ env.AWS_PROFILE }}
+      #     aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
+      #     terraform plan -no-color
+      #   timeout-minutes: 1
