@@ -80,3 +80,8 @@ jobs:
       #     aws configure set aws_session_token ${AWS_SESSION_TOKEN} --profile ${{ env.AWS_PROFILE }}
       #     terraform plan -no-color
       #   timeout-minutes: 1
+      - name: Exec Terraform plan
+        run: |
+          pwd
+          terraform plan -no-color
+        timeout-minutes: 1
