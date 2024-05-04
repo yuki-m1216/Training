@@ -30,7 +30,7 @@ jobs:
         id: find-tfstate-dirs
         run: |
           # https://stackoverflow.com/questions/26287130/converting-lines-to-json-in-bash
-          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' | xargs dirname | grep -v 'modules\|\.terraform' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
+          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' | xargs dirname | grep -v 'modules\|\.terraform\|NewRelic' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
           echo $dirs 
           echo "dirs=$dirs" >> $GITHUB_OUTPUT
 
