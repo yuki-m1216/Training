@@ -1,18 +1,3 @@
-# variable 
-# cloudtrail
-variable "cloudtrailname" {}
-variable "is_multi_region_trail" {}
-variable "include_global_service_events" {}
-variable "read_write_type" {}
-variable "include_management_events" {}
-
-# S3
-variable "bucketname" {}
-variable "policy" {}
-variable "id" {}
-variable "expiration_days" {}
-variable "status" {}
-
 # Trail
 resource "aws_cloudtrail" "cloudtrail" {
   name                          = var.cloudtrailname
@@ -30,7 +15,8 @@ resource "aws_cloudtrail" "cloudtrail" {
 
 # S3
 resource "aws_s3_bucket" "cloudtrailbucket" {
-  bucket = var.bucketname
+  bucket        = var.bucketname
+  force_destroy = var.bucket_force_destroy
 }
 
 # S3 policy

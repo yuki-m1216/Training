@@ -11,6 +11,12 @@ variable "hostzone_name" {
   default     = null
 }
 
+variable "force_destroy" {
+  type        = bool
+  description = "force destroy"
+  default     = false
+}
+
 # record
 variable "create_record" {
   type        = bool

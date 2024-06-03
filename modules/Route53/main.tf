@@ -3,6 +3,7 @@ resource "aws_route53_zone" "main" {
   count = var.create_hostzone ? 1 : 0
 
   name = var.hostzone_name
+  force_destroy = var.force_destroy
 
   tags = {
     Name = var.hostzone_name
