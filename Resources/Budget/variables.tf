@@ -3,4 +3,3 @@ variable "endpoint" {
   description = "email address"
   default     = "dummy"
 }
-

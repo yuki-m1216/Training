@@ -33,7 +33,7 @@ data "terraform_remote_state" "acm_us_east_1" {
   backend = "s3"
 
   config = {
-    bucket = "s3-terraform-state-ym"
+    bucket = "s3-terraform-state-y-mitsuyama"
     key    = "ACM.tfstate"
     region = "ap-northeast-1"
   }

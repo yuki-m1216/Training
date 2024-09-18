@@ -56,7 +56,7 @@ data "terraform_remote_state" "acm_ap_northeast_1" {
   backend = "s3"
 
   config = {
-    bucket = "s3-terraform-state-ym"
+    bucket = "s3-terraform-state-y-mitsuyama"
     key    = "ACM.tfstate"
     region = "ap-northeast-1"
   }
@@ -67,7 +67,7 @@ data "terraform_remote_state" "hoste_zone_id" {
   backend = "s3"
 
   config = {
-    bucket = "s3-terraform-state-ym"
+    bucket = "s3-terraform-state-y-mitsuyama"
     key    = "Route53.tfstate"
     region = "ap-northeast-1"
   }
