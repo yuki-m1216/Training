@@ -12,7 +12,6 @@ variable "environment_variables" {
 }
 
 # Lambda permission
-
 variable "create_lambda_permission" {
   type        = bool
   description = "whether create lambda permissions"

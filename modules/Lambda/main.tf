@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      # source = "hashicorp/aws"
-      configuration_aliases = [aws.alternate]
-    }
-  }
-}
-
 # Lambda
 resource "aws_lambda_function" "lambda" {
   provider      = aws.alternate
@@ -34,8 +25,4 @@ resource "aws_lambda_permission" "lambda_permission" {
   function_name = aws_lambda_function.lambda.function_name
   principal     = var.principal
   source_arn    = var.source_arn
-}
-
-output "LambdaArn" {
-  value = aws_lambda_function.lambda.arn
 }
