@@ -6,8 +6,8 @@ module "Lambda" {
   lambda_filename      = data.archive_file.function.output_path
   lambda_function_name = "ConsoleLoginAlarm"
   lambda_role          = module.IAM_Role_Lambda.role_arn
-  handler              = "ConsoleAlarm.lambda_handler"
-  runtime              = "python3.9"
+  handler              = "index.handler"
+  runtime              = "nodejs20.x"
   environment_variables = {
     webhookURL = data.aws_ssm_parameter.webhookURL.value
   }

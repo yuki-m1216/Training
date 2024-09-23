@@ -3,7 +3,7 @@ data "aws_caller_identity" "current" {}
 # lambda
 data "archive_file" "function" {
   type        = "zip"
-  source_dir  = "lambda/source"
+  source_file = "lambda/dist/index.js"
   output_path = "lambda/upload/source.zip"
 }
 

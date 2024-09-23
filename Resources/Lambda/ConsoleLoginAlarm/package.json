@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@types/aws-lambda": "^8.10.145"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.5"
+  }
+}

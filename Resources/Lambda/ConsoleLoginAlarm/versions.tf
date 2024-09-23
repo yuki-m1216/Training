@@ -1,4 +1,5 @@
 terraform {
+  required_version = ">= 0.13"
   required_providers {
     aws = {
       source = "hashicorp/aws"
@@ -7,7 +8,7 @@ terraform {
       source = "hashicorp/template"
     }
   }
-  required_version = ">= 0.13"
+
   backend "s3" {
     bucket         = "s3-terraform-state-y-mitsuyama"
     region         = "ap-northeast-1"

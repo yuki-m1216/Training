@@ -23,6 +23,11 @@ variable "schedule_expression" {
 variable "is_enabled" {
   default = true
 }
+
+variable "state" {
+  default = "ENABLED"
+  description = "value can be ENABLED or DISABLED or ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS"
+}
 variable "rule_tags" {
   type    = map(any)
   default = null
@@ -66,8 +71,8 @@ resource "aws_cloudwatch_event_rule" "rule" {
   description         = var.rule_description
   event_pattern       = var.event_pattern
   schedule_expression = var.schedule_expression
-  is_enabled          = var.is_enabled
-  event_bus_name      = var.create_event_bus == false ? null : var.event_bus_name
+  state          = var.state
+  event_bus_name      = var.create_event_bus == false ? null : aws_cloudwatch_event_bus.eventbus[0].name
   tags                = var.rule_tags
 }
 
@@ -78,7 +83,7 @@ resource "aws_cloudwatch_event_target" "target" {
   target_id      = var.target_id
   arn            = var.target_arn
   role_arn       = var.target_role_arn
-  event_bus_name = var.create_event_bus == false ? null : var.event_bus_name
+  event_bus_name = var.create_event_bus == false ? null : aws_cloudwatch_event_bus.eventbus[0].name
   input          = var.input
   input_path     = var.input_path
   dynamic "input_transformer" {
