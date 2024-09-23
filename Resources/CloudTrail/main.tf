@@ -1,5 +1,5 @@
 module "CloudTrail" {
-  source = "../../modules/Trail"
+  source = "../../modules/CloudTrail"
   # trail
   cloudtrailname                = "Main-Trail"
   is_multi_region_trail         = "true"
