@@ -1,11 +1,16 @@
+resource "newrelic_alert_policy" "main" {
+  account_id = var.newrelic_account_id
+  name = var.policy_name
+  incident_preference = var.incident_preference
+}
+
 resource "newrelic_nrql_alert_condition" "main" {
   account_id = var.newrelic_account_id
-  policy_id = var.policy_id
+  policy_id = newrelic_alert_policy.main.id
   type = var.condition_type
   name = var.condition_name
   enabled = var.condition_enabled
   violation_time_limit_seconds = var.violation_time_limit_seconds
-
 
   nrql {
     query = var.condition_query

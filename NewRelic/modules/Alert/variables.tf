@@ -4,9 +4,16 @@ variable "newrelic_account_id" {
   default     = null
 }
 
-variable "policy_id" {
+variable "policy_name" {
   type        = string
-  description = "The ID of the policy where this condition should be used."
+  description = "The rollup strategy for the policy, which can have one of the following values (the default value is PER_POLICY)"
+  default     = "PER_POLICY"
+}
+
+variable "incident_preference" {
+  type        = string
+  description = "The incident preference for the policy. Valid values are PER_POLICY and PER_CONDITION. Defaults to PER_POLICY."
+  default     = "PER_POLICY"
 }
 
 variable "condition_type" {
