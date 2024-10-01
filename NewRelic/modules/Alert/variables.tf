@@ -105,3 +105,57 @@ variable "baseline_direction" {
   description = "The baseline direction of a baseline NRQL alert condition. Valid values are: lower_only, upper_and_lower, upper_only (case insensitive)."
   default     = "upper_and_lower"
 }
+
+variable "notification_destination_name" {
+  type        = string
+  description = "The name of the destination."
+}
+
+variable "notification_destination_type" {
+  type        = string
+  description = <<-EOT
+    The type of destination. 
+    One of: EMAIL, SERVICE_NOW, SERVICE_NOW_APP, WEBHOOK, JIRA, MOBILE_PUSH, EVENT_BRIDGE, PAGERDUTY_ACCOUNT_INTEGRATION or PAGERDUTY_SERVICE_INTEGRATION. 
+    The types SLACK and SLACK_COLLABORATION can only be imported, updated and destroyed (cannot be created via terraform).
+  EOT
+}
+
+variable "property_key" {
+  type        = string
+  description = "The notification property key."
+}
+
+variable "property_value" {
+  type        = string
+  description = "The notification property value."
+}
+
+variable "notification_channel_name" {
+  type        = string
+  description = "The name of the channel."
+}
+
+variable "notification_channel_type" {
+  type        = string
+  description = <<-EOT
+    The type of channel. 
+    One of: EMAIL, SERVICENOW_INCIDENTS, SERVICE_NOW_APP, WEBHOOK, JIRA_CLASSIC, MOBILE_PUSH, EVENT_BRIDGE, SLACK and SLACK_COLLABORATION, 
+    PAGERDUTY_ACCOUNT_INTEGRATION or PAGERDUTY_SERVICE_INTEGRATION.
+  EOT
+}
+
+variable "notification_channel_product" {
+  type        = string
+  description = "The type of product. One of: DISCUSSIONS, ERROR_TRACKING or IINT (workflows)."
+  default     = "IIINT"
+}
+
+variable "webhook_properties" {
+  type = list(object({
+    header_key    = string
+    header_value  = string
+    payload_key   = string
+    payload_value = string
+  }))
+  description = "The properties for the webhook."
+}
