@@ -82,30 +82,30 @@ resource "newrelic_notification_channel" "main" {
 
 resource "newrelic_workflow" "workflow" {
   account_id            = var.newrelic_account_id
-  name                  = "test workflow"
-  enabled               = true
-  muting_rules_handling = "DONT_NOTIFY_FULLY_MUTED_ISSUES"
+  name                  = var.workflow_name
+  enabled               = var.workflow_enabled
+  muting_rules_handling = var.muting_rules_handling
 
   issues_filter {
-    name = "workflow_filter"
+    name = var.issues_filter_name
     type = "FILTER"
 
     predicate {
-      attribute = "labels.policyIds"
-      operator  = "EXACTLY_MATCHES"
+      attribute = var.predicate_policy_attribute
+      operator  = var.predicate_policy_operator
       values    = [newrelic_alert_policy.main.id]
     }
 
     predicate {
-      attribute = "priority"
-      operator  = "EQUAL"
-      values    = ["LOW"]
+      attribute = var.predicate_priority_attribute
+      operator  = var.predicate_priority_operator
+      values    = var.predicate_priority_values
     }
   }
 
   destination {
     channel_id              = newrelic_notification_channel.main.id
-    notification_triggers   = ["ACKNOWLEDGED", "ACTIVATED", "CLOSED", "OTHER_UPDATES", "PRIORITY_CHANGED"]
+    notification_triggers   = var.notification_triggers
     update_original_message = true
   }
 }
