@@ -63,3 +63,42 @@ resource "aws_api_gateway_base_path_mapping" "main" {
   stage_name  = aws_api_gateway_stage.main.stage_name
   domain_name = try(aws_api_gateway_domain_name.main[0].domain_name, null)
 }
+
+resource "aws_api_gateway_usage_plan" "main" {
+  count = var.usage_plan_name != null ? 1 : 0
+
+  name        = var.usage_plan_name
+  description = var.usage_plan_description
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.main.id
+    stage  = aws_api_gateway_stage.main.stage_name
+  }
+
+  dynamic "quota_settings" {
+    for_each = var.quota_settings
+    content {
+      limit  = quota_settings.value.limit
+      offset = quota_settings.value.offset
+      period = quota_settings.value.period
+    }
+  }
+
+  tags = {
+    Name = var.usage_plan_name
+  }
+}
+
+resource "aws_api_gateway_api_key" "main" {
+  count = var.api_key_name != null ? 1 : 0
+
+  name = var.api_key_name
+}
+
+resource "aws_api_gateway_usage_plan_key" "main" {
+  count = var.api_key_name != null && var.usage_plan_name != null ? 1 : 0
+
+  key_id        = aws_api_gateway_api_key.main[0].id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.main[0].id
+}

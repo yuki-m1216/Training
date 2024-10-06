@@ -37,6 +37,7 @@ variable "create_api_policy" {
 variable "api_policy" {
   type        = string
   description = "JSON formatted policy document that controls access to the API Gateway."
+  default     = null
 }
 
 # aws_api_gateway_domain_name
@@ -55,5 +56,35 @@ variable "domain_name" {
 variable "regional_certificate_arn" {
   type        = string
   description = "ARN for an AWS-managed certificate. Used when a regional domain name is desired."
+  default     = null
+}
+
+# aws_api_gateway_usage_plan
+variable "usage_plan_name" {
+  type        = string
+  description = "Name of the usage plan."
+  default = null
+}
+
+variable "usage_plan_description" {
+  type        = string
+  description = "Description of the usage plan."
+  default     = null
+}
+
+variable "quota_settings" {
+  type        = map(object({
+    limit  = number
+    offset = number
+    period = string
+  }))
+  description = "Map of quota settings for the usage plan."
+  default     = {}
+}
+
+# aws_api_gateway_api_key
+variable "api_key_name" {
+  type        = string
+  description = "Name of the API key."
   default     = null
 }
