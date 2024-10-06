@@ -1,5 +1,5 @@
 module "apigateway" {
-  source = "../../modules/APIGateway/REST_API"
+  source = "../../../modules/APIGateway/REST_API"
 
   # aws_api_gateway_rest_api
   rest_api_name                = "REST-API"
@@ -20,7 +20,7 @@ module "apigateway" {
 }
 
 module "route53_apigateway_record" {
-  source = "../../modules/Route53"
+  source = "../../../modules/Route53"
 
   create_record = true
   zone_id       = data.terraform_remote_state.hoste_zone_id.outputs.hoste_zone_id
@@ -34,14 +34,14 @@ module "route53_apigateway_record" {
 }
 
 module "iam_for_apigateway" {
-  source          = "../../modules/IAM/Role"
+  source          = "../../../modules/IAM/Role"
   role_name       = "APIGatewayInvokeLambda"
   identifiers     = "apigateway.amazonaws.com"
   create_policies = local.create_policies
 }
 
 module "lambda" {
-  source = "../../modules/Lambda"
+  source = "../../../modules/Lambda"
 
   providers = {
     aws.alternate = aws
@@ -56,7 +56,7 @@ module "lambda" {
 }
 
 module "iam_for_lambda" {
-  source      = "../../modules/IAM/Role"
+  source      = "../../../modules/IAM/Role"
   role_name   = "TestAPIGatewayLambda"
   identifiers = "lambda.amazonaws.com"
   policies    = local.Lambdapolicies
