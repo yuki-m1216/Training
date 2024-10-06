@@ -9,6 +9,18 @@ module "apigateway" {
   # aws_api_gateway_stage
   stage_name = "dev"
 
+  # usage plan
+  usage_plan_name        = "Synthetics-Test-Usage-Plan"
+  usage_plan_description = "Synthetics Test Usage Plan"
+  quota_settings = [{
+    limit  = 50
+    offset = null
+    period = "DAY"
+  }]
+
+  # api_gateway_api_key
+  api_key_name = "Synthetics-Test-API-Key"
+
 }
 
 module "lambda" {
@@ -18,7 +30,7 @@ module "lambda" {
     aws.alternate = aws
   }
 
-  lambda_function_name     = "Test-APIGateway-Lambda"
+  lambda_function_name     = "Synthetics-Test-Lambda"
   runtime                  = "python3.11"
   lambda_filename          = data.archive_file.function.output_path
   handler                  = "main.lambda_handler"

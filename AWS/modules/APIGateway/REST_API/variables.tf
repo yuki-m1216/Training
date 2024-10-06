@@ -73,13 +73,13 @@ variable "usage_plan_description" {
 }
 
 variable "quota_settings" {
-  type        = map(object({
+  type        = list(object({
     limit  = number
     offset = number
     period = string
   }))
   description = "Map of quota settings for the usage plan."
-  default     = {}
+  default     = []
 }
 
 # aws_api_gateway_api_key
