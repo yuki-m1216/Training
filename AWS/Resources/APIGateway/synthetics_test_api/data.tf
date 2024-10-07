@@ -20,6 +20,6 @@ data "aws_iam_policy_document" "invokelambda" {
 # lambda
 data "archive_file" "function" {
   type        = "zip"
-  source_dir  = "lambda/source"
+  source_dir  = "lambda/dist"
   output_path = "lambda/upload/source.zip"
 }
