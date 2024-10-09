@@ -5,7 +5,8 @@ module.exports = {
   },
   output: {
     path: path.join(__dirname, "lambda/dist"),
-    filename: "[name].js", // [name]はentryで記述した名前(この例ではbundle）が入る
+    filename: "index.js",
+    libraryTarget: 'commonjs2',
   },
   resolve: {
     extensions: [".ts", ".js"],

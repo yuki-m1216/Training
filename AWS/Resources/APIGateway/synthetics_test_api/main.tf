@@ -4,7 +4,6 @@ module "apigateway" {
   # aws_api_gateway_rest_api
   rest_api_name                = "Synthetics-Test-API"
   rest_api_body                = data.template_file.openapi.rendered
-  disable_execute_api_endpoint = true
 
   # aws_api_gateway_stage
   stage_name = "dev"
@@ -20,7 +19,6 @@ module "apigateway" {
 
   # api_gateway_api_key
   api_key_name = "Synthetics-Test-API-Key"
-
 }
 
 module "lambda" {
@@ -35,7 +33,11 @@ module "lambda" {
   handler                  = "index.handler"
   lambda_filename          = data.archive_file.function.output_path
   lambda_role              = module.iam_for_lambda.role_arn
-  create_lambda_permission = false
+
+  create_lambda_permission = true
+  statement_id = "AllowExecutionFromAPIGateway"
+  principal    = "apigateway.amazonaws.com"
+  source_arn   = module.apigateway.apigateway_execution_arn
 }
 
 module "iam_for_lambda" {
@@ -44,3 +46,4 @@ module "iam_for_lambda" {
   identifiers = "lambda.amazonaws.com"
   policies    = local.Lambdapolicies
 }
+
