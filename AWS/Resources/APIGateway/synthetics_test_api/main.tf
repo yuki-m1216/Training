@@ -12,7 +12,7 @@ module "apigateway" {
   usage_plan_name        = "Synthetics-Test-Usage-Plan"
   usage_plan_description = "Synthetics Test Usage Plan"
   quota_settings = [{
-    limit  = 50
+    limit  = 3000
     offset = null
     period = "DAY"
   }]

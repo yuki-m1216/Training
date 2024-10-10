@@ -1,34 +1,22 @@
 resource "newrelic_synthetics_script_monitor" "this" {
-  status           = "ENABLED"
-  name             = "script_api_monitor"
-  type             = "SCRIPT_API"
-  locations_public = ["AWS_AP_NORTHEAST_1"]
-  period           = "EVERY_12_HOURS"
+  status           = var.script_monitor_status
+  name             = var.script_monitor_name
+  type             = var.script_monitor_type
+  locations_public = var.script_monitor_locations_public
+  period           = var.script_monitor_period
 
-  script = <<-EOT
-  //Import the 'assert' module to validate results.
-  var assert = require('assert');
-
-  var options = {
-      //Define endpoint URL.
-      url: "https://www.google.com",
-  };
-
-  //Define expected results using callback function.
-  function callback(error, response, body) {
-      //Log status code to Synthetics console.
-      console.log(response.statusCode + " status code")
-      //Verify endpoint returns 200 (OK) response code.
-      assert.ok(response.statusCode == 200, 'Expected 200 OK response');
-      //Log end of script.
-      console.log("End reached");
-  }
-
-  $http.get(options, callback);
-  
-  EOT
+  script = var.script_monitor_script
 
   script_language      = "JAVASCRIPT"
-  runtime_type         = "NODE_API"
-  runtime_type_version = "16.10"
+  runtime_type         = var.script_monitor_runtime_type
+  runtime_type_version = var.script_monitor_runtime_type_version
+
+dynamic "tag" {
+    for_each = var.script_monitor_tag
+    content {
+      key   = tags.value.key
+      values = tags.value.values
+  
+}
+}
 }
