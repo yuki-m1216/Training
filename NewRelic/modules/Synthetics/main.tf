@@ -14,8 +14,8 @@ resource "newrelic_synthetics_script_monitor" "this" {
 dynamic "tag" {
     for_each = var.script_monitor_tag
     content {
-      key   = tags.value.key
-      values = tags.value.values
+      key   = tag.value.key
+      values = tag.value.values
   
 }
 }
