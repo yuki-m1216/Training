@@ -28,6 +28,26 @@ variable "retention_in_days" {
   default     = 30
 }
 
+# access log
+variable "create_access_log" {
+  type        = bool
+  description = "Whether to enable access logging for the API Gateway."
+  default     = false
+  
+}
+
+variable "access_log_name" {
+  type        = string
+  description = "Name of the access log group."
+  default     = null
+}
+
+variable "access_log_retention_in_days" {
+  type        = number
+  description = "The number of days log events are kept in CloudWatch Logs."
+  default     = 30
+}
+
 # aws_api_gateway_method_settings
 variable "cloudwatch_log_level" {
   type        = string
@@ -50,29 +70,31 @@ variable "data_trace_enabled" {
   default     = false
 }
 
-# variable "access_log_format" {
-#   type        = string
-#   description = <<-EOF
-#   Formatting and values recorded in the logs. 
-#   For more information on configuring the log format rules visit the AWS documentation
-#   https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html
-#   EOF
-#   default     = <<-EOF
-#   {
-#   "requestId":"$context.requestId",
-#   "extendedRequestId":"$context.extendedRequestId",
-#   "ip": "$context.identity.sourceIp",
-#   "caller":"$context.identity.caller",
-#   "user":"$context.identity.user",
-#   "requestTime":"$context.requestTime",
-#   "httpMethod":"$context.httpMethod",
-#   "resourcePath":"$context.resourcePath",
-#   "status":"$context.status",
-#   "protocol":"$context.protocol",
-#   "responseLength":"$context.responseLength"
-#   }
-#   EOF
-# }
+variable "access_log_format" {
+  type        = string
+  description = <<-EOF
+  Formatting and values recorded in the logs. 
+  For more information on configuring the log format rules visit the AWS documentation
+  https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html
+  EOF
+  default     = <<-EOF
+  {
+  "requestId":"$context.requestId",
+  "extendedRequestId":"$context.extendedRequestId",
+  "ip": "$context.identity.sourceIp",
+  "caller":"$context.identity.caller",
+  "user":"$context.identity.user",
+  "userAgent":"$context.identity.userAgent",
+  "requestTime":"$context.requestTime",
+  "httpMethod":"$context.httpMethod",
+  "resourcePath":"$context.resourcePath",
+  "status":"$context.status",
+  "protocol":"$context.protocol",
+  "responseLength":"$context.responseLength",
+  "wafResponseCode":"$context.wafResponseCode"
+  }
+  EOF
+}
 
 # aws_api_gateway_stage
 variable "stage_name" {

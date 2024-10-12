@@ -38,6 +38,13 @@ resource "aws_cloudwatch_log_group" "main" {
   retention_in_days = var.retention_in_days 
 }
 
+resource "aws_cloudwatch_log_group" "access_log" {
+  count = var.create_access_log ? 1 : 0
+
+  name              = var.access_log_name != null ? var.access_log_name : "API-Gateway-Access-Logs_${aws_api_gateway_rest_api.main.id}/${var.stage_name}"
+  retention_in_days = var.access_log_retention_in_days
+}
+
 resource "aws_api_gateway_method_settings" "path_specific" {
   rest_api_id = aws_api_gateway_rest_api.main.id
   stage_name  = aws_api_gateway_stage.main.stage_name
@@ -55,14 +62,14 @@ resource "aws_api_gateway_stage" "main" {
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = var.stage_name
 
-  # dynamic "access_log_settings" {
-  #   for_each = var.create_log_group ? [1] : []
-  #   content {
-  #     destination_arn = aws_cloudwatch_log_group.main[0].arn
-  #     format          = replace(var.access_log_format, "\n", "")
-  #   }  
-  # }
-  # depends_on = [ aws_cloudwatch_log_group.main[0] ]
+  dynamic "access_log_settings" {
+    for_each = var.create_access_log ? [1] : []
+    content {
+      destination_arn = aws_cloudwatch_log_group.access_log[0].arn
+      format          = replace(var.access_log_format, "\n", "")
+    }  
+  }
+  depends_on = [ aws_cloudwatch_log_group.access_log[0] ]
 }
 
 resource "aws_api_gateway_rest_api_policy" "main" {

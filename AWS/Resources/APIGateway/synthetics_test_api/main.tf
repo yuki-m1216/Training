@@ -9,6 +9,9 @@ module "apigateway" {
   cloudwatch_log_level = "INFO"
   retention_in_days = 30
 
+  # access log
+  create_access_log = true
+
   # aws_api_gateway_stage
   stage_name = "dev"
 
