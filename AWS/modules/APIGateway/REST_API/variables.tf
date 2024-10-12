@@ -21,6 +21,59 @@ variable "disable_execute_api_endpoint" {
   default     = false
 }
 
+# cloudwatch logging
+variable "retention_in_days" {
+  type        = number
+  description = "The number of days log events are kept in CloudWatch Logs."
+  default     = 30
+}
+
+# aws_api_gateway_method_settings
+variable "cloudwatch_log_level" {
+  type        = string
+  description = <<-EOF
+    Logging level for this method, which effects the log entries pushed to Amazon CloudWatch Logs.
+    The available levels are OFF, ERROR, and INFO.
+  EOF
+  default     = "OFF"
+}
+
+variable "metrics_enabled" {
+  type        = bool
+  description = "Whether data trace logging is enabled for this method."
+  default     = false
+}
+
+variable "data_trace_enabled" {
+  type        = bool
+  description = "Whether data trace logging is enabled for this method, which effects the log entries pushed to Amazon CloudWatch Logs."
+  default     = false
+}
+
+# variable "access_log_format" {
+#   type        = string
+#   description = <<-EOF
+#   Formatting and values recorded in the logs. 
+#   For more information on configuring the log format rules visit the AWS documentation
+#   https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html
+#   EOF
+#   default     = <<-EOF
+#   {
+#   "requestId":"$context.requestId",
+#   "extendedRequestId":"$context.extendedRequestId",
+#   "ip": "$context.identity.sourceIp",
+#   "caller":"$context.identity.caller",
+#   "user":"$context.identity.user",
+#   "requestTime":"$context.requestTime",
+#   "httpMethod":"$context.httpMethod",
+#   "resourcePath":"$context.resourcePath",
+#   "status":"$context.status",
+#   "protocol":"$context.protocol",
+#   "responseLength":"$context.responseLength"
+#   }
+#   EOF
+# }
+
 # aws_api_gateway_stage
 variable "stage_name" {
   type        = string
@@ -63,7 +116,7 @@ variable "regional_certificate_arn" {
 variable "usage_plan_name" {
   type        = string
   description = "Name of the usage plan."
-  default = null
+  default     = null
 }
 
 variable "usage_plan_description" {
@@ -73,7 +126,7 @@ variable "usage_plan_description" {
 }
 
 variable "quota_settings" {
-  type        = list(object({
+  type = list(object({
     limit  = number
     offset = number
     period = string

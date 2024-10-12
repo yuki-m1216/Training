@@ -31,10 +31,38 @@ resource "aws_api_gateway_deployment" "main" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "main" {
+  count = var.cloudwatch_log_level != "OFF" ? 1 : 0
+
+  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.main.id}/${var.stage_name}"
+  retention_in_days = var.retention_in_days 
+}
+
+resource "aws_api_gateway_method_settings" "path_specific" {
+  rest_api_id = aws_api_gateway_rest_api.main.id
+  stage_name  = aws_api_gateway_stage.main.stage_name
+  method_path = "*/*"
+
+  settings {
+    logging_level      = var.cloudwatch_log_level
+    metrics_enabled    = var.metrics_enabled
+    data_trace_enabled = var.data_trace_enabled
+  }
+}
+
 resource "aws_api_gateway_stage" "main" {
   deployment_id = aws_api_gateway_deployment.main.id
   rest_api_id   = aws_api_gateway_rest_api.main.id
   stage_name    = var.stage_name
+
+  # dynamic "access_log_settings" {
+  #   for_each = var.create_log_group ? [1] : []
+  #   content {
+  #     destination_arn = aws_cloudwatch_log_group.main[0].arn
+  #     format          = replace(var.access_log_format, "\n", "")
+  #   }  
+  # }
+  # depends_on = [ aws_cloudwatch_log_group.main[0] ]
 }
 
 resource "aws_api_gateway_rest_api_policy" "main" {

@@ -5,6 +5,10 @@ module "apigateway" {
   rest_api_name                = "Synthetics-Test-API"
   rest_api_body                = data.template_file.openapi.rendered
 
+  # cloudwatch log group
+  cloudwatch_log_level = "INFO"
+  retention_in_days = 30
+
   # aws_api_gateway_stage
   stage_name = "dev"
 
