@@ -51,22 +51,18 @@ resource "newrelic_api_access_key" "newrelic_aws_access_key" {
 # firehoseの設定
 resource "aws_iam_role" "firehose_newrelic_role" {
   name = "firehose_newrelic_role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "firehose.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
+  assume_role_policy = data.aws_iam_policy_document.firehose_newrelic_assume_role_policy_document.json
 }
-EOF
+
+resource "aws_iam_policy" "firehose_newrelic_policy" {
+  name        = "firehose-newrelic-policy"
+  description = "firehose-newrelic-policy"
+  policy      = data.aws_iam_policy_document.firehose_newrelic_policy_document.json
+}
+
+resource "aws_iam_role_policy_attachment" "firehose_newrelic_attachment" {
+  role       = aws_iam_role.firehose_newrelic_role.name
+  policy_arn = aws_iam_policy.firehose_newrelic_policy.arn
 }
 
 resource "random_string" "s3-bucket-name" {
@@ -116,43 +112,18 @@ resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
 # CloudWatch メトリクスストリーム
 resource "aws_iam_role" "metric_stream_to_firehose" {
   name = "metric_stream_to_firehose_role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "streams.metrics.cloudwatch.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
+  assume_role_policy = data.aws_iam_policy_document.metric_stream_to_firehose_assume_role_policy_document.json
 }
 
-resource "aws_iam_role_policy" "metric_stream_to_firehose" {
-  name = "default"
-  role = aws_iam_role.metric_stream_to_firehose.id
-
-  policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "firehose:PutRecord",
-                "firehose:PutRecordBatch"
-            ],
-            "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream.arn}"
-        }
-    ]
+resource "aws_iam_policy" "metric_stream_to_firehose_policy" {
+  name        = "metric-stream-to-firehose-policy"
+  description = "metric-stream-to-firehose-policy"
+  policy      = data.aws_iam_policy_document.metric_stream_to_firehose_policy_document.json
 }
-EOF
+
+resource "aws_iam_role_policy_attachment" "metric_stream_to_firehose_attachment" {
+  role       = aws_iam_role.metric_stream_to_firehose.name
+  policy_arn = aws_iam_policy.metric_stream_to_firehose_policy.arn
 }
 
 resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
