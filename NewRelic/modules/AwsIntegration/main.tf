@@ -45,7 +45,7 @@ resource "newrelic_api_access_key" "newrelic_aws_access_key" {
   key_type    = "INGEST"
   ingest_type = "LICENSE"
   name        = "Ingest License key"
-  notes       = "AWS Cloud Integrations Firehost Key"
+  notes       = "AWS Cloud Integrations Firehose Key"
 }
 
 # firehoseの設定
@@ -86,8 +86,8 @@ resource "aws_s3_bucket_ownership_controls" "newrelic_ownership_controls" {
   }
 }
 
-resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehost_stream" {
-  name        = "newrelic_firehost_stream"
+resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
+  name        = "newrelic_firehose_stream"
   destination = "http_endpoint"
 
   http_endpoint_configuration {
@@ -148,7 +148,7 @@ resource "aws_iam_role_policy" "metric_stream_to_firehose" {
                 "firehose:PutRecord",
                 "firehose:PutRecordBatch"
             ],
-            "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_firehost_stream.arn}"
+            "Resource": "${aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream.arn}"
         }
     ]
 }
@@ -158,6 +158,6 @@ EOF
 resource "aws_cloudwatch_metric_stream" "newrelic_metric_stream" {
   name          = "newrelic-metric-stream"
   role_arn      = aws_iam_role.metric_stream_to_firehose.arn
-  firehose_arn  = aws_kinesis_firehose_delivery_stream.newrelic_firehost_stream.arn
+  firehose_arn  = aws_kinesis_firehose_delivery_stream.newrelic_firehose_stream.arn
   output_format = "opentelemetry0.7"
 }
