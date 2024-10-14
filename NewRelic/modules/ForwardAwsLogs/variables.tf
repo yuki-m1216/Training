@@ -4,10 +4,10 @@ variable "NEW_RELIC_ACCOUNT_ID" {
 }
 
 variable "subscription_filters" {
-  type =object({
+  type =map(object({
     log_group_name = string
     filter_pattern = string
-  })
+  }))
   description = "Subscription filter for New Relic"
-  default = {}
+  default = null
 }

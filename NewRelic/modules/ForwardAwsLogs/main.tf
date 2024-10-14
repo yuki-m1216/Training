@@ -80,16 +80,16 @@ resource "aws_cloudwatch_log_subscription_filter" "newrelic_firehose_stream_for_
 
 resource "aws_iam_role" "newrelic_firehose_stream_for_cloudwatch_logs_filter_role" {
   name = "firehose-newrelic-for-cloudwatch-logs-subscription-filter-role"
-  assume_role_policy = data.newrelic_firehose_stream_assume_role_for_cloudwatch_logs_filter_policy_document.json
+  assume_role_policy = data.aws_iam_policy_document.newrelic_firehose_stream_assume_role_for_cloudwatch_logs_filter_policy_document.json
 }
 
 resource "aws_iam_policy" "firehose_newrelic_for_cloudwatch_logs_filter_policy" {
   name        = "firehose-newrelic-for-cloudwatch-logs-subscription-filter-policy"
   description = "firehose-newrelic-for-cloudwatch-logs-subscription-filter-policy"
-  policy      = data.newrelic_firehose_stream_for_cloudwatch_logs_filter_policy_document.json
+  policy      = data.aws_iam_policy_document.newrelic_firehose_stream_for_cloudwatch_logs_filter_policy_document.json
 }
 
-resource "aws_iam_role_policy_attachment" "firehose_newrelic_for_cloudwatch_logs_attachment" {
+resource "aws_iam_role_policy_attachment" "firehose_newrelic_for_cloudwatch_logs_filter_attachment" {
   role       = aws_iam_role.newrelic_firehose_stream_for_cloudwatch_logs_filter_role.name
   policy_arn = aws_iam_policy.firehose_newrelic_for_cloudwatch_logs_filter_policy.arn
 }
