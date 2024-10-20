@@ -30,3 +30,13 @@ module "log_error_condition" {
   aggregation_method   = "event_timer"
   aggregation_timer = 1 
 }
+
+module "log_error_destination" {
+  source = "../../modules/Alerts/Destination"
+
+  newrelic_account_id          = var.NEW_RELIC_ACCOUNT_ID
+  notification_destination_name = "log-error-destination"
+  notification_destination_type = "WEBHOOK"
+  property_key                 = "url"
+  property_value               = data.aws_ssm_parameter.newrelic_alert.value
+}
