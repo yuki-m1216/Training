@@ -22,7 +22,7 @@ variable "property_key" {
   type        = string
   description = <<-EOT
     The notification property key.
-    https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/notification_channel#nested-property-blocks
+    https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/notification_destination#nested-property-blocks
   EOT
 }
 
@@ -30,6 +30,6 @@ variable "property_value" {
   type        = string
   description = <<-EOT
     The notification property value.
-    https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/notification_channel#nested-property-blocks
+    https://registry.terraform.io/providers/newrelic/newrelic/latest/docs/resources/notification_destination#nested-property-blocks
   EOT
 }
