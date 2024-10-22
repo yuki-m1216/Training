@@ -18,17 +18,17 @@ module "log_error_condition" {
   condition_query              = "SELECT count(*) FROM Log WHERE message LIKE '%error%'"
   critical = [
     {
-      operator              = "above"
+      operator              = "above_or_equals"
       threshold             = 1
-      threshold_duration    = 5
+      threshold_duration    = 60
       threshold_occurrences = "all"
     }
   ]
 
   fill_option        = "none"
-  aggregation_window = 1
+  aggregation_window = 60
   aggregation_method = "event_timer"
-  aggregation_timer  = 1
+  aggregation_timer  = 60
 }
 
 module "log_error_destination" {
