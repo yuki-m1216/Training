@@ -16,7 +16,7 @@ module "EventBridge_Receiver" {
       ]
     }
   )
-  state     = "ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS"
+  state = "ENABLED_WITH_ALL_CLOUDTRAIL_MANAGEMENT_EVENTS"
   rule_tags = {
     Name = "ConsoleLoginEvent"
   }

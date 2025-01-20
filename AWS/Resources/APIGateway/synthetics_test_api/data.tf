@@ -3,7 +3,7 @@ data "template_file" "openapi" {
   template = file("./OpenAPI/test_apigateway.yaml")
 
   vars = {
-    lambda_arn   = module.lambda.LambdaArn
+    lambda_arn = module.lambda.LambdaArn
   }
 }
 
