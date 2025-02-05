@@ -69,6 +69,6 @@ module "log_error_workflow" {
       )
     }
   ]
-  workflow_name               = "log-error-workflow"
+  workflow_name                         = "log-error-workflow"
   workflow_isue_filter_predicate_values = [module.main_policy.alert_policy_id]
 }

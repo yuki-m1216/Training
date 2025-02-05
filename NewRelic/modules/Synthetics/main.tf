@@ -11,12 +11,12 @@ resource "newrelic_synthetics_script_monitor" "this" {
   runtime_type         = var.script_monitor_runtime_type
   runtime_type_version = var.script_monitor_runtime_type_version
 
-dynamic "tag" {
+  dynamic "tag" {
     for_each = var.script_monitor_tag
     content {
-      key   = tag.value.key
+      key    = tag.value.key
       values = tag.value.values
-  
-}
-}
+
+    }
+  }
 }

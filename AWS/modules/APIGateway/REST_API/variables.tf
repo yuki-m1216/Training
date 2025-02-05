@@ -33,7 +33,7 @@ variable "create_access_log" {
   type        = bool
   description = "Whether to enable access logging for the API Gateway."
   default     = false
-  
+
 }
 
 variable "access_log_name" {

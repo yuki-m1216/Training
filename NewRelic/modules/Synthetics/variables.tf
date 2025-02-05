@@ -60,12 +60,12 @@ variable "script_monitor_runtime_type_version" {
 
 variable "script_monitor_tag" {
   type = list(object({
-    key  = string
+    key    = string
     values = list(string)
   }))
   description = "The tags that will be associated with the monitor."
   default = [{
-    key  = "Environment"
+    key    = "Environment"
     values = ["dev"]
   }]
 }

@@ -15,7 +15,7 @@ resource "aws_subnet" "public_subnet" {
   cidr_block              = each.value.cidr
   availability_zone       = each.value.az
   map_public_ip_on_launch = "true"
-  tags = each.value.tags
+  tags                    = each.value.tags
 }
 
 # private subnet
@@ -25,7 +25,7 @@ resource "aws_subnet" "private_subnet" {
   cidr_block              = each.value.cidr
   availability_zone       = each.value.az
   map_public_ip_on_launch = "false"
-  tags = each.value.tags
+  tags                    = each.value.tags
 }
 
 # internet_gateway

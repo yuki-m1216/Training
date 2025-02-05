@@ -14,8 +14,8 @@ module "main_VPC" {
       cidr = "10.0.0.0/24"
       az   = "ap-northeast-1a"
       tags = {
-        Name = "public-subnet-1a"
-       "kubernetes.io/role/el"=1
+        Name                    = "public-subnet-1a"
+        "kubernetes.io/role/el" = 1
       }
     }
     "public-subnet-1c" = {
@@ -23,8 +23,8 @@ module "main_VPC" {
       cidr = "10.0.1.0/24"
       az   = "ap-northeast-1c"
       tags = {
-        Name = "public-subnet-1c"
-        "kubernetes.io/role/el"=1
+        Name                    = "public-subnet-1c"
+        "kubernetes.io/role/el" = 1
       }
     }
   }
@@ -34,8 +34,8 @@ module "main_VPC" {
       cidr = "10.0.2.0/24"
       az   = "ap-northeast-1a"
       tags = {
-        Name = "private-subnet-1a"
-        "kubernetes.io/role/internal-elb"=1
+        Name                              = "private-subnet-1a"
+        "kubernetes.io/role/internal-elb" = 1
       }
     }
     "private-subnet-1c" = {
@@ -43,8 +43,8 @@ module "main_VPC" {
       cidr = "10.0.3.0/24"
       az   = "ap-northeast-1c"
       tags = {
-        Name = "private-subnet-1c"
-        "kubernetes.io/role/internal-elb"=1
+        Name                              = "private-subnet-1c"
+        "kubernetes.io/role/internal-elb" = 1
       }
     }
   }

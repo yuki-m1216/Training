@@ -50,7 +50,7 @@ resource "newrelic_api_access_key" "newrelic_aws_access_key" {
 
 # firehoseの設定
 resource "aws_iam_role" "firehose_newrelic_role" {
-  name = "firehose_newrelic_role"
+  name               = "firehose_newrelic_role"
   assume_role_policy = data.aws_iam_policy_document.firehose_newrelic_assume_role_policy_document.json
 }
 
@@ -111,7 +111,7 @@ resource "aws_kinesis_firehose_delivery_stream" "newrelic_firehose_stream" {
 
 # CloudWatch メトリクスストリーム
 resource "aws_iam_role" "metric_stream_to_firehose" {
-  name = "metric_stream_to_firehose_role"
+  name               = "metric_stream_to_firehose_role"
   assume_role_policy = data.aws_iam_policy_document.metric_stream_to_firehose_assume_role_policy_document.json
 }
 

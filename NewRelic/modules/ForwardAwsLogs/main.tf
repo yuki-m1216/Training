@@ -7,7 +7,7 @@ resource "newrelic_api_access_key" "newrelic_aws_for_cloudwatch_logs_access_key"
 }
 
 resource "aws_iam_role" "firehose_newrelic_for_cloudwatch_logs_role" {
-  name = "firehose-newrelic-for-cloudwatch-logs-role"
+  name               = "firehose-newrelic-for-cloudwatch-logs-role"
   assume_role_policy = data.aws_iam_policy_document.firehose_newrelic_assume_role_for_cloudwatch_logs_policy_document.json
 }
 
@@ -79,7 +79,7 @@ resource "aws_cloudwatch_log_subscription_filter" "newrelic_firehose_stream_for_
 }
 
 resource "aws_iam_role" "newrelic_firehose_stream_for_cloudwatch_logs_filter_role" {
-  name = "firehose-newrelic-for-cloudwatch-logs-subscription-filter-role"
+  name               = "firehose-newrelic-for-cloudwatch-logs-subscription-filter-role"
   assume_role_policy = data.aws_iam_policy_document.newrelic_firehose_stream_assume_role_for_cloudwatch_logs_filter_policy_document.json
 }
 

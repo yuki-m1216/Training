@@ -36,6 +36,6 @@ resource "newrelic_nrql_alert_condition" "main" {
   aggregation_window = var.aggregation_window
   aggregation_method = var.aggregation_method
   aggregation_delay  = var.aggregation_method == "event_flow" ? var.aggregation_delay : null
-  aggregation_timer = var.aggregation_method == "event_timer" ? var.aggregation_timer : null
+  aggregation_timer  = var.aggregation_method == "event_timer" ? var.aggregation_timer : null
   baseline_direction = var.baseline_direction
 }

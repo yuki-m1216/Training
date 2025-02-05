@@ -5,11 +5,11 @@ variable "vpc_tags" {
   type    = map(any)
   default = {}
 }
-  
+
 
 # public subnets
 variable "public_subnet" {
-  type    = map(object({
+  type = map(object({
     name = string
     cidr = string
     az   = string
@@ -20,7 +20,7 @@ variable "public_subnet" {
 
 # private subnets
 variable "private_subnet" {
-  type    = map(object({
+  type = map(object({
     name = string
     cidr = string
     az   = string
