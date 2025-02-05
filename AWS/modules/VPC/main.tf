@@ -5,9 +5,7 @@ resource "aws_vpc" "main" {
   enable_dns_support   = "true"
   enable_dns_hostnames = "true"
 
-  tags = {
-    Name = var.vpc_name
-  }
+  tags = var.vpc_tags
 }
 
 # public subnet
@@ -17,9 +15,7 @@ resource "aws_subnet" "public_subnet" {
   cidr_block              = each.value.cidr
   availability_zone       = each.value.az
   map_public_ip_on_launch = "true"
-  tags = {
-    Name = each.value.name
-  }
+  tags = each.value.tags
 }
 
 # private subnet
@@ -29,9 +25,7 @@ resource "aws_subnet" "private_subnet" {
   cidr_block              = each.value.cidr
   availability_zone       = each.value.az
   map_public_ip_on_launch = "false"
-  tags = {
-    Name = each.value.name
-  }
+  tags = each.value.tags
 }
 
 # internet_gateway
