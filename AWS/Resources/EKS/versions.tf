@@ -7,11 +7,11 @@ terraform {
       source = "hashicorp/template"
     }
   }
-  required_version = ">= 0.13"
+  required_version = ">= 1.9.5"
   backend "s3" {
     bucket         = "s3-terraform-state-y-mitsuyama"
     region         = "ap-northeast-1"
-    key            = "ECS_Fargate.tfstate"
+    key            = "EKS.tfstate"
     encrypt        = true
     dynamodb_table = "terrform-state"
   }

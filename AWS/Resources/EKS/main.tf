@@ -1,142 +1,107 @@
-# ECS
-module "ECS_Fargate" {
-  source = "../../modules/ECS"
-  # ecs_cluster
-  cluster_name = "test-cluster"
+module "key_pair" {
+  source  = "terraform-aws-modules/key-pair/aws"
+  version = "2.0.3"
 
-  # ecs_task_definition
-  family = "test-task-definition"
-  container_definitions = templatefile("${path.root}/container_definitions/container_definitions.tftpl",
-    {
-      log_group_name = local.log_group_name
-      region         = local.region
-      stream_prefix  = local.stream_prefix
-    }
-  )
-  network_mode = "awsvpc"
-  # ecs_service
-  service_name = "test-service"
-  service_subnets = [
-    "subnet-073f1baa14173c1a5",
-    "subnet-0c2980ee52f42fc8c",
-  ]
-  service_security_groups = [
-    module.sg_ecs.sg_id,
-  ]
-  container_name = "sample-fargate-app"
-  container_port = 80
-
-  # IAM
-  # execution_role
-  # create customer managed policy
-  # execution_customer_managed_policies = {
-  # test-execution-policy-01 = file(),
-  # }
-
-  # aws managed policy
-  execution_aws_managed_policies = [
-    data.aws_iam_policy.ecs_task_execution_role_policy.arn,
-  ]
-
-  # task_role
-  # create customer managed policy
-  task_customer_managed_policies = {
-    test-policy-01 = file("${path.root}/policies/test-policy-01.json"),
-  }
-
-  # aws managed policy
-  # task_aws_managed_policies = []
-
-  # lb
-  alb_name           = "test-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups = [
-    module.sg_lb.sg_id
-  ]
-  subnets = [
-    "subnet-0ef3a322300e969c2",
-    "subnet-03ad5ab676aea8179"
-  ]
-
-  # target_group
-  target_group_name     = "test-target-group"
-  target_group_port     = 80
-  target_group_protocol = "HTTP"
-  target_group_vpc_id   = "vpc-05b5aeed5c9d8e83e"
-
-  # lb_listener
-  listener = {
-    "listener_01" = {
-      port     = "80"
-      protocol = "HTTP"
-    }
-  }
-
-  # cloudwatch_log_group
-  cloudwatch_log_group_name = local.log_group_name
-
+  key_name_prefix    = "eks"
+  create_private_key = true
 }
 
+resource "aws_security_group" "remote_access" {
+  name_prefix = "eks-remote-access"
+  description = "allow ssh access to eks instances"
+  vpc_id      = data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
 
-# SecurityGroup
-module "sg_ecs" {
-  source         = "../../modules/SecurityGroup"
-  sg_name        = "test_ecs_security_group_01"
-  sg_description = "test_ecs_security_group_01"
-  sg_vpc_id      = "vpc-05b5aeed5c9d8e83e"
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
 
-  sg_rule = {
-    "ingress_01" = {
-      type                     = "ingress"
-      to_port                  = 80
-      from_port                = 80
-      protocol                 = "tcp"
-      source_security_group_id = null
-      cidr_blocks              = ["0.0.0.0/0"]
-      prefix_list_ids          = null
-      description              = "HTTP from Internet"
-    }
-    "egress_01" = {
-      type                     = "egress"
-      to_port                  = 0
-      from_port                = 0
-      protocol                 = "-1"
-      source_security_group_id = null
-      cidr_blocks              = ["0.0.0.0/0"]
-      prefix_list_ids          = null
-      description              = "Allow any outbound traffic"
-    }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "eks-remote-access"
   }
 }
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "20.33.1"
 
+  cluster_name                   = "eks-cluster"
+  cluster_version                = "1.31"
+  cluster_endpoint_public_access = true
+  cluster_ip_family              = "ipv4"
+  vpc_id                         = data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
+  subnet_ids = [
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.public_subnet_id)[0],
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.public_subnet_id)[1],
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[0],
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[1]
+  ]
+  control_plane_subnet_ids = [
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[0],
+    values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[1]
+  ]
+  create_kms_key            = false
+  cluster_encryption_config = {}
+  enable_irsa               = true
 
-module "sg_lb" {
-  source         = "../../modules/SecurityGroup"
-  sg_name        = "test_lb_security_group_01"
-  sg_description = "test_lb_security_group_01"
-  sg_vpc_id      = "vpc-05b5aeed5c9d8e83e"
-
-  sg_rule = {
-    "ingress_01" = {
-      type                     = "ingress"
-      to_port                  = 80
-      from_port                = 80
-      protocol                 = "tcp"
-      source_security_group_id = null
-      cidr_blocks              = ["0.0.0.0/0"]
-      prefix_list_ids          = null
-      description              = "HTTP from Internet"
+  cluster_addons = {
+    coredns = {
+      most_recent = true
     }
-    "egress_01" = {
-      type                     = "egress"
-      to_port                  = 0
-      from_port                = 0
-      protocol                 = "-1"
-      source_security_group_id = null
-      cidr_blocks              = ["0.0.0.0/0"]
-      prefix_list_ids          = null
-      description              = "Allow any outbound traffic"
+    kube-proxy = {
+      most_recent = true
     }
+    esk-pod-identity-agent = {
+      most_recent = true
+    }
+    aws-ebs-csi-driver = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent    = true
+      before_compute = true
+      configuration_values = jsonencode({
+        env = {
+          AWS_VPC_K8S_CNI_EXTERNALSNAT = "true"
+          ENABLE_PREFIX_DELEGATION     = "true"
+          WARM_PREFIX_TARGET           = "1"
+        }
+      })
+    }
+  }
+
+  eks_managed_node_group_defaults = {
+    ami_type       = "AL2_x86_64"
+    instance_types = ["t3a.medium"]
+    subnet_ids = [
+      values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[0],
+      values(data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id)[1]
+
+    ]
+  }
+
+  eks_managed_node_groups = {
+    default_node_group = {
+      use_custom_launch_template = false
+      disk_size                  = 20
+      remote_access = {
+        ec2_ssh_key               = module.key_pair.key_pair_name
+        source_security_group_ids = [aws_security_group.remote_access.id]
+      }
+    }
+  }
+
+  enable_cluster_creator_admin_permissions = true
+
+  tags = {
+    "Name" = "eks-cluster"
   }
 }

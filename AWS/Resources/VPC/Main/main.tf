@@ -98,7 +98,7 @@ module "main_VPC" {
 
 
   # nat
-  nat_gateway_create = true
+  nat_gateway_create = false
 
   # tags
   vpc_tags = {

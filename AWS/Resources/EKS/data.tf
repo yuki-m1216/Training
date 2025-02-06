@@ -1,4 +1,9 @@
-# execution_role
-data "aws_iam_policy" "ecs_task_execution_role_policy" {
-  name = "AmazonECSTaskExecutionRolePolicy"
+data "terraform_remote_state" "mainvpc" {
+  backend = "s3"
+
+  config = {
+    bucket = "s3-terraform-state-y-mitsuyama"
+    key    = "MainVPC.tfstate"
+    region = "ap-northeast-1"
+  }
 }
