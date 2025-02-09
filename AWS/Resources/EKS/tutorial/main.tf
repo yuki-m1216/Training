@@ -34,7 +34,7 @@ module "eks" {
   version = "20.33.1"
 
   cluster_name                   = "eks-cluster"
-  cluster_version                = "1.31"
+  cluster_version                = "1.32"
   cluster_endpoint_public_access = true
   cluster_ip_family              = "ipv4"
   vpc_id                         = data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
@@ -59,7 +59,7 @@ module "eks" {
     kube-proxy = {
       most_recent = true
     }
-    esk-pod-identity-agent = {
+    eks-pod-identity-agent = {
       most_recent = true
     }
     aws-ebs-csi-driver = {
