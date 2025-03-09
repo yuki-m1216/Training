@@ -1,6 +1,6 @@
 ### opensearch ###
 module "opensearch" {
-  source = "../../modules/OpenSearch/domain"
+  source = "../../../modules/OpenSearch/domain"
 
   # opensearch
   domain_name    = "test-domain"
@@ -54,7 +54,7 @@ resource "random_password" "password" {
 
 ### cognito ###
 module "cognito" {
-  source = "../../modules/Cognito"
+  source = "../../../modules/Cognito"
 
   # cognito
   user_pool_name        = "test-user-pool"
