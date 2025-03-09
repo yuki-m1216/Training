@@ -1,5 +1,5 @@
 # security_policy
-variable "security_poloicy_name" {
+variable "security_policy_name" {
   description = "The name of the security policy"
   type        = string
 }
@@ -9,7 +9,7 @@ variable "security_policy_type" {
   type        = string
 
   validation {
-    condition     = var.security_policy_type == "encryption " || var.security_policy_type == "network"
+    condition     = var.security_policy_type == "encryption" || var.security_policy_type == "network"
     error_message = "The security policy type must be either 'encryption' or 'network'"
   }
 }
@@ -25,7 +25,7 @@ variable "security_policy" {
 }
 
 # access_policy
-variable "access_plicy_name" {
+variable "access_policy_name" {
   description = "The name of the access policy"
   type        = string
 }

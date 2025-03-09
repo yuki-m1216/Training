@@ -1,12 +1,12 @@
 resource "aws_opensearchserverless_security_policy" "this" {
-  name = var.security_poloicy_name
+  name = var.security_policy_name
   type = var.security_policy_type
   description = var.security_policy_description
   policy = var.security_policy
 }
 
 resource "aws_opensearchserverless_access_policy" "this" {
-  name = var.access_plicy_name
+  name = var.access_policy_name
   type = "data"
   description = var.access_policy_description
   policy = var.access_policy
