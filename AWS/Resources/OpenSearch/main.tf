@@ -1,6 +1,6 @@
 ### opensearch ###
 module "opensearch" {
-  source = "../../modules/OpenSearch"
+  source = "../../modules/OpenSearch/domain"
 
   # opensearch
   domain_name    = "test-domain"
