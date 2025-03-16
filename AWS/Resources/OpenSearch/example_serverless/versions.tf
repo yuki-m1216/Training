@@ -9,10 +9,10 @@ terraform {
   }
   required_version = ">= 1.11.0"
   backend "s3" {
-    bucket         = "s3-terraform-state-y-mitsuyama"
-    region         = "ap-northeast-1"
-    key            = "OpenSearchServerless.tfstate"
-    encrypt        = true
+    bucket       = "s3-terraform-state-y-mitsuyama"
+    region       = "ap-northeast-1"
+    key          = "OpenSearchServerless.tfstate"
+    encrypt      = true
     use_lockfile = true
   }
 }

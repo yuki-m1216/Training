@@ -1,8 +1,15 @@
-resource "aws_opensearchserverless_security_policy" "this" {
-  name = var.security_policy_name
-  type = var.security_policy_type
-  description = var.security_policy_description
-  policy = var.security_policy
+resource "aws_opensearchserverless_security_policy" "encryption" {
+  name = var.encryption_security_policy_name
+  type = "encryption"
+  description = var.encryption_security_policy_description
+  policy = var.encryption_security_policy
+}
+
+resource "aws_opensearchserverless_security_policy" "network" {
+  name = var.network_security_policy_name
+  type = "network"
+  description = var.network_security_policy_description
+  policy = var.network_security_policy
 }
 
 resource "aws_opensearchserverless_access_policy" "this" {
@@ -18,4 +25,6 @@ resource "aws_opensearchserverless_collection" "this" {
   type = var.collection_type
   standby_replicas = var.standby_replicas
   tags = var.collection_tags
+
+  depends_on = [aws_opensearchserverless_security_policy.encryption ]
   }

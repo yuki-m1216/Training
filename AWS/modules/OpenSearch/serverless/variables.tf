@@ -1,26 +1,32 @@
-# security_policy
-variable "security_policy_name" {
-  description = "The name of the security policy"
+# encryption security_policy
+variable "encryption_security_policy_name" {
+  description = "The name of the encryption security policy"
   type        = string
 }
 
-variable "security_policy_type" {
-  description = "The type of the security policy"
-  type        = string
-
-  validation {
-    condition     = var.security_policy_type == "encryption" || var.security_policy_type == "network"
-    error_message = "The security policy type must be either 'encryption' or 'network'"
-  }
-}
-
-variable "security_policy_description" {
-  description = "The description of the security policy"
+variable "encryption_security_policy_description" {
+  description = "The description of the encryption security policy"
   type        = string
 }
 
-variable "security_policy" {
-  description = "The security policy"
+variable "encryption_security_policy" {
+  description = "The encryption security policy"
+  type        = string
+}
+
+# network security_policy
+variable "network_security_policy_name" {
+  description = "The name of the network security policy"
+  type        = string
+}
+
+variable "network_security_policy_description" {
+  description = "The description of the network security policy"
+  type        = string
+}
+
+variable "network_security_policy" {
+  description = "The network security policy"
   type        = string
 }
 
