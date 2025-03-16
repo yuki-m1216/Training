@@ -1,4 +1,4 @@
-module "OpensearchSeverless" {
+module "OpenSearchServerless" {
   source                 = "../../../modules/OpenSearch/serverless"
   collection_name        = "my-collection"
   collection_description = "My collection"

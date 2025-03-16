@@ -9,10 +9,10 @@ terraform {
   }
   required_version = ">= 1.9.5"
   backend "s3" {
-    bucket         = "s3-terraform-state-y-mitsuyama"
-    region         = "ap-northeast-1"
-    key            = "EKS.tfstate"
-    encrypt        = true
-    dynamodb_table = "terrform-state"
+    bucket       = "s3-terraform-state-y-mitsuyama"
+    region       = "ap-northeast-1"
+    key          = "EKS.tfstate"
+    encrypt      = true
+    use_lockfile = true
   }
 }

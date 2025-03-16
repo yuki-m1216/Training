@@ -11,8 +11,8 @@ terraform {
   backend "s3" {
     bucket         = "s3-terraform-state-y-mitsuyama"
     region         = "ap-northeast-1"
-    key            = "OpensearchSeverless.tfstate"
+    key            = "OpenSearchServerless.tfstate"
     encrypt        = true
-    dynamodb_table = "terrform-state"
+    use_lockfile = true
   }
 }

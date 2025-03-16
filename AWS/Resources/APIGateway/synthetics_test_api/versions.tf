@@ -11,10 +11,10 @@ terraform {
     }
   }
   backend "s3" {
-    bucket         = "s3-terraform-state-y-mitsuyama"
-    region         = "ap-northeast-1"
-    key            = "synthetics-test-api.tfstate"
-    encrypt        = true
-    dynamodb_table = "terrform-state"
+    bucket       = "s3-terraform-state-y-mitsuyama"
+    region       = "ap-northeast-1"
+    key          = "synthetics-test-api.tfstate"
+    encrypt      = true
+    use_lockfile = true
   }
 }
