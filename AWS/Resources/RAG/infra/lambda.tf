@@ -10,10 +10,11 @@ resource "aws_lambda_function" "this" {
   filename      = data.archive_file.lambda.output_path
   function_name = "my-lambda"
   role          = aws_iam_role.this.arn
-  handler       = "src/scraping.lambda_handler"
+  handler       = "scraping.lambda_handler"
 
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime = "python3.10"
+  layers = [aws_lambda_layer_version.this.arn]
 
   depends_on = [aws_cloudwatch_log_group.this]
 }
