@@ -10,7 +10,7 @@ resource "aws_lambda_function" "this" {
   filename      = data.archive_file.lambda.output_path
   function_name = "my-lambda"
   role          = aws_iam_role.this.arn
-  handler       = "scraping.lambda_handler"
+  handler       = "main.lambda_handler"
 
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime = "python3.10"
