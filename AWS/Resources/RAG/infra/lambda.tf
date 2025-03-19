@@ -52,6 +52,11 @@ resource "aws_iam_policy" "this" {
           "logs:PutLogEvents"
         ],
         Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "bedrock:InvokeModel",
+        Resource = "*"
       }
     ]
   })
