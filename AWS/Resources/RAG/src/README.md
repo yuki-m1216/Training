@@ -15,14 +15,15 @@ Invoke-Expression (poetry env activate)
 deactivate
 ```
 
-パッケージ追加
+パッケージ追加と削除
 
 ```ps
 poetry add <package-name>
+poetry remove <package-name>
 ```
 
 layerコマンド
 
 ```ps
-poetry run pip install -r requirements.txt -t ./python
+poetry run pip install --upgrade -r requirements.txt -t ./python
 ```

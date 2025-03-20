@@ -3,6 +3,7 @@
     "aoss",
     "mitsuyama",
     "newrelic",
+    "OPENSEARCH",
     "opensearchserverless",
     "VECTORSEARCH"
   ]
