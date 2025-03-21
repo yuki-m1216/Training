@@ -5,21 +5,28 @@ import json
 import uuid
 import os
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
 
 # 環境変数から OpenSearch のエンドポイントを取得
 OPENSEARCH_ENDPOINT = os.environ['OPENSEARCH_ENDPOINT'].replace("https://", "")
+S3BUCKET = os.environ['S3BUCKET']
+S3BUCKET_KEY = os.environ['S3BUCKET_KEY']
 OPENSEARCH_INDEX = "faqs"
 REGION = "ap-northeast-1"
+s3_client = boto3.client("s3")
 
-def get_document_text(url):
-    """指定されたURLからテキストを抽出する"""
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    return soup.get_text(separator=' ', strip=True)
+def download_pdf():
+    local_path = "/tmp/"
+    s3_client.download_file(S3BUCKET, S3BUCKET_KEY, local_path)
+    return local_path
 
-def chunk_text(text, chunk_size=8192):
-    """テキストを指定されたチャンクサイズで分割する"""
-    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+def embed_pdf(local_path):
+    loader = PyPDFLoader(local_path)
+    pages = loader.load_and_split()
+    splitter = CharacterTextSplitter(chunk_size=8192)
+    text = splitter.split_documents(pages)
+    return text
 
 def invoke_bedrock_embedding(client, model_id, input_text, dimensions=512, normalize=True):
     """Amazon Titan Text Embeddings V2 モデルを用いてベクトル化"""
