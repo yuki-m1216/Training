@@ -1,22 +1,32 @@
 # Layer
 resource "aws_lambda_layer_version" "this" {
-  filename         = data.archive_file.layer.output_path
+  # filename         = data.archive_file.layer.output_path
+  s3_bucket = aws_s3_bucket.embeddings_layer.bucket
+  s3_key    = aws_s3_object.embeddings_layer.key
   layer_name       = "bedrock-embeddings-lambda-layer"
   source_code_hash = filebase64sha256(data.archive_file.layer.output_path)
+  compatible_runtimes = ["python3.10"]
+  compatible_architectures = ["x86_64"]
 }
 
 # Lambda
 resource "aws_lambda_function" "this" {
   filename      = data.archive_file.lambda.output_path
   function_name = "bedrock-embeddings-lambda"
+  architectures = ["x86_64"]
   role          = aws_iam_role.this.arn
   handler       = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime = "python3.10"
-  timeout = 30
+  # todo: pdf読み込みに時間かかるので、性能調整してトライ
+  # まずはメモリサイズを2048に変更してみる
+  timeout = 180
+  memory_size = 512
   environment {
     variables = {
-      OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint
+      OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
+      S3BUCKET = aws_s3_bucket.embeddings.bucket,
+      S3BUCKET_KEY = aws_s3_object.embeddings.key
     }
   }
   layers = [aws_lambda_layer_version.this.arn]
@@ -67,6 +77,11 @@ resource "aws_iam_policy" "this" {
         Effect   = "Allow",
         Action   = "aoss:*",
         Resource = "*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "s3:*",
+        Resource = aws_s3_bucket.embeddings.arn
       }
     ]
   })

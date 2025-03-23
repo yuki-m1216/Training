@@ -1,0 +1,4 @@
+opensearch-py==2.8.0
+langchain==0.3.21
+langchain-community==0.3.20
+pypdf==5.4.0
