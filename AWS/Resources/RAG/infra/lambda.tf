@@ -18,9 +18,9 @@ resource "aws_lambda_function" "this" {
   handler       = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime = "python3.10"
-  # todo: pdf読み込みに時間かかるので、性能調整してトライ
-  # まずはメモリサイズを2048に変更してみる
-  timeout = 180
+  # すべての処理に6分必要のため、念のために10分に設定
+  # メモリサイズは500MBくらいで十分
+  timeout = 600
   memory_size = 512
   environment {
     variables = {
@@ -81,7 +81,9 @@ resource "aws_iam_policy" "this" {
       {
         Effect   = "Allow",
         Action   = "s3:*",
-        Resource = aws_s3_bucket.embeddings.arn
+        Resource = [
+          aws_s3_bucket.embeddings.arn,
+          "${aws_s3_bucket.embeddings.arn}/*"]
       }
     ]
   })

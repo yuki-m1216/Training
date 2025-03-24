@@ -4,6 +4,7 @@
     "AWSV",
     "boto",
     "langchain",
+    "manylinux",
     "mitsuyama",
     "newrelic",
     "OPENSEARCH",
