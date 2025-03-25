@@ -10,6 +10,7 @@
     "OPENSEARCH",
     "opensearchpy",
     "opensearchserverless",
+    "pyenv",
     "VECTORSEARCH"
   ]
 }

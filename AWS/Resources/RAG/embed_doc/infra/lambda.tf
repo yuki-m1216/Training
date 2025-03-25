@@ -1,7 +1,7 @@
 # Layer
 resource "aws_lambda_layer_version" "this" {
-  s3_bucket = aws_s3_bucket.embeddings_layer.bucket
-  s3_key    = aws_s3_object.embeddings_layer.key
+  s3_bucket = aws_s3_bucket.embed_doc_layer.bucket
+  s3_key    = aws_s3_object.embed_doc_layer.key
   layer_name       = "embed-doc-lambda-layer"
   source_code_hash = filebase64sha256(data.archive_file.layer.output_path)
   compatible_runtimes = ["python3.10"]
@@ -23,7 +23,6 @@ resource "aws_lambda_function" "this" {
   memory_size = 512
   environment {
     variables = {
-      OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
       S3BUCKET = aws_s3_bucket.embeddings.bucket,
       S3BUCKET_KEY = aws_s3_object.embeddings.key
     }
