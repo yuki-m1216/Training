@@ -11,8 +11,8 @@ resource "aws_s3_bucket" "embeddings" {
 resource "aws_s3_object" "embeddings" {
   bucket = aws_s3_bucket.embeddings.id
   key = "files/bedrock-ug.pdf"
-  source = "${path.module}/s3_files/bedrock-ug.pdf"
-  etag = filemd5("${path.module}/s3_files/bedrock-ug.pdf")
+  source = "${path.module}/files/bedrock-ug.pdf"
+  etag = filemd5("${path.module}/files/bedrock-ug.pdf")
 }
 
 resource "aws_s3_bucket" "embeddings_layer" {

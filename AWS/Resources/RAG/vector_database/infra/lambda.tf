@@ -1,6 +1,5 @@
 # Layer
 resource "aws_lambda_layer_version" "this" {
-  # filename         = data.archive_file.layer.output_path
   s3_bucket = aws_s3_bucket.embeddings_layer.bucket
   s3_key    = aws_s3_object.embeddings_layer.key
   layer_name       = "bedrock-embeddings-lambda-layer"
