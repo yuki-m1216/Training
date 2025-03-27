@@ -11,6 +11,7 @@
     "opensearchpy",
     "opensearchserverless",
     "pyenv",
+    "pypdf",
     "VECTORSEARCH"
   ]
 }

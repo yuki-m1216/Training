@@ -17,10 +17,13 @@ resource "aws_lambda_function" "this" {
   handler       = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime = "python3.10"
-  # すべての処理に6分必要のため、念のために10分に設定
-  # メモリサイズは500MBくらいで十分
+  # メモリサイズ2048ですべての処理に6分必要。
+  # メモリサイズ1024ですべての処理に10分弱必要。
+  # メモリサイズ512で10分だとタイムアウト。
+  # メモリサイズ2048で実行した際、Max Memory Used: 651 MB。
+  # メモリサイズは十分だがcpuパワーが必要なためと実行時間を考慮してメモリサイズ2048、タイムアウト600秒に設定。
   timeout = 600
-  memory_size = 512
+  memory_size = 2048
   environment {
     variables = {
       S3BUCKET = aws_s3_bucket.embeddings.bucket,

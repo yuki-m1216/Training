@@ -11,7 +11,7 @@ terraform {
   backend "s3" {
     bucket       = "s3-terraform-state-y-mitsuyama"
     region       = "ap-northeast-1"
-    key          = "embed_doc.tfstate"
+    key          = "embed-doc.tfstate"
     encrypt      = true
     use_lockfile = true
   }
