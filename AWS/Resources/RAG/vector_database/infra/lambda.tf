@@ -1,31 +1,31 @@
 # Layer
 resource "aws_lambda_layer_version" "this" {
-  s3_bucket = aws_s3_bucket.embeddings_layer.bucket
-  s3_key    = aws_s3_object.embeddings_layer.key
-  layer_name       = "bedrock-embeddings-lambda-layer"
-  source_code_hash = filebase64sha256(data.archive_file.layer.output_path)
-  compatible_runtimes = ["python3.10"]
+  s3_bucket                = aws_s3_bucket.this.bucket
+  s3_key                   = aws_s3_object.this.key
+  layer_name               = "vector-ingest-lambda-layer"
+  source_code_hash         = filebase64sha256(data.archive_file.layer.output_path)
+  compatible_runtimes      = ["python3.10"]
   compatible_architectures = ["x86_64"]
 }
 
 # Lambda
 resource "aws_lambda_function" "this" {
-  filename      = data.archive_file.lambda.output_path
-  function_name = "bedrock-embeddings-lambda"
-  architectures = ["x86_64"]
-  role          = aws_iam_role.this.arn
-  handler       = "main.lambda_handler"
+  filename         = data.archive_file.lambda.output_path
+  function_name    = "vector-ingest-lambda"
+  architectures    = ["x86_64"]
+  role             = aws_iam_role.this.arn
+  handler          = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
-  runtime = "python3.10"
+  runtime          = "python3.10"
   # すべての処理に6分必要のため、念のために10分に設定
   # メモリサイズは500MBくらいで十分
-  timeout = 600
+  timeout     = 600
   memory_size = 512
   environment {
     variables = {
       OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
-      S3BUCKET = aws_s3_bucket.embeddings.bucket,
-      S3BUCKET_KEY = aws_s3_object.embeddings.key
+      S3BUCKET            = data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.bucket,
+      S3BUCKET_KEY        = "output/text-with-embedding.json"
     }
   }
   layers = [aws_lambda_layer_version.this.arn]
@@ -35,17 +35,17 @@ resource "aws_lambda_function" "this" {
 
 # Role
 resource "aws_iam_role" "this" {
-  name = "bedrock-embeddings-lambda-role"
+  name = "vector-ingest-lambda-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
+        Effect = "Allow",
         Principal = {
           Service = "lambda.amazonaws.com"
         },
-        Action    = "sts:AssumeRole" 
+        Action = "sts:AssumeRole"
       }
     ]
   })
@@ -53,14 +53,14 @@ resource "aws_iam_role" "this" {
 
 # Policy
 resource "aws_iam_policy" "this" {
-  name        = "bedrock-embeddings-lambda-policy"
-  description = "bedrock-embeddings-lambda policy"
-  policy      = jsonencode({
+  name        = "vector-ingest-lambda-policy"
+  description = "vector-ingest-lambda policy"
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
@@ -69,22 +69,17 @@ resource "aws_iam_policy" "this" {
       },
       {
         Effect   = "Allow",
-        Action   = "bedrock:InvokeModel",
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow",
         Action   = "aoss:*",
         Resource = "*"
       },
       {
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Effect = "Allow",
+        Action = "s3:*",
         Resource = [
-          aws_s3_bucket.embeddings.arn,
-          "${aws_s3_bucket.embeddings.arn}/*"]
-      }
-    ]
+          data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.arn,
+          "${data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.arn}/*"
+        ]
+    }]
   })
 }
 
@@ -96,10 +91,10 @@ resource "aws_iam_role_policy_attachment" "this" {
 
 # CloudWatch Logs
 resource "aws_cloudwatch_log_group" "this" {
-  name              = "/aws/lambda/bedrock-embeddings-lambda"
+  name              = "/aws/lambda/vector-ingest-lambda"
   retention_in_days = 30
 
   tags = {
-    Name = "/aws/lambda/bedrock-embeddings-lambda"
+    Name = "/aws/lambda/vector-ingest-lambda"
   }
 }

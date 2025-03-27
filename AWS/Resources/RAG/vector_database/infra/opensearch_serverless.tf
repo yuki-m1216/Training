@@ -1,5 +1,5 @@
 module "OpenSearchServerless" {
-  source                 = "../../../modules/OpenSearch/serverless"
+  source                 = "../../../../modules/OpenSearch/serverless"
   collection_name        = "bedrock-faq"
   collection_description = "bedrock-faq"
   collection_type        = "VECTORSEARCH"

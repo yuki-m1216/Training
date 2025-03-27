@@ -60,7 +60,7 @@ variable "collection_description" {
 variable "collection_type" {
   description = "The type of the collection"
   type        = string
-  default = "TIMESERIES"
+  default     = "TIMESERIES"
 
   validation {
     condition     = var.collection_type == "SEARCH" || var.collection_type == "TIMESERIES" || var.collection_type == "VECTORSEARCH"

@@ -1,32 +1,32 @@
 # Layer
 resource "aws_lambda_layer_version" "this" {
-  s3_bucket = aws_s3_bucket.embed_doc_layer.bucket
-  s3_key    = aws_s3_object.embed_doc_layer.key
-  layer_name       = "embed-doc-lambda-layer"
-  source_code_hash = filebase64sha256(data.archive_file.layer.output_path)
-  compatible_runtimes = ["python3.10"]
+  s3_bucket                = aws_s3_bucket.embed_doc_layer.bucket
+  s3_key                   = aws_s3_object.embed_doc_layer.key
+  layer_name               = "embed-doc-lambda-layer"
+  source_code_hash         = filebase64sha256(data.archive_file.layer.output_path)
+  compatible_runtimes      = ["python3.10"]
   compatible_architectures = ["x86_64"]
 }
 
 # Lambda
 resource "aws_lambda_function" "this" {
-  filename      = data.archive_file.lambda.output_path
-  function_name = "embed-doc-lambda"
-  architectures = ["x86_64"]
-  role          = aws_iam_role.this.arn
-  handler       = "main.lambda_handler"
+  filename         = data.archive_file.lambda.output_path
+  function_name    = "embed-doc-lambda"
+  architectures    = ["x86_64"]
+  role             = aws_iam_role.this.arn
+  handler          = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
-  runtime = "python3.10"
+  runtime          = "python3.10"
   # メモリサイズ2048ですべての処理に6分必要。
   # メモリサイズ1024ですべての処理に10分弱必要。
   # メモリサイズ512で10分だとタイムアウト。
   # メモリサイズ2048で実行した際、Max Memory Used: 651 MB。
   # メモリサイズは十分だがcpuパワーが必要なためと実行時間を考慮してメモリサイズ2048、タイムアウト600秒に設定。
-  timeout = 600
+  timeout     = 600
   memory_size = 2048
   environment {
     variables = {
-      S3BUCKET = aws_s3_bucket.embeddings.bucket,
+      S3BUCKET     = aws_s3_bucket.embeddings.bucket,
       S3BUCKET_KEY = aws_s3_object.embeddings.key
     }
   }
@@ -43,11 +43,11 @@ resource "aws_iam_role" "this" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect    = "Allow",
+        Effect = "Allow",
         Principal = {
           Service = "lambda.amazonaws.com"
         },
-        Action    = "sts:AssumeRole" 
+        Action = "sts:AssumeRole"
       }
     ]
   })
@@ -57,12 +57,12 @@ resource "aws_iam_role" "this" {
 resource "aws_iam_policy" "this" {
   name        = "embed-doc-lambda-policy"
   description = "embed-doc-lambda policy"
-  policy      = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
           "logs:PutLogEvents"
@@ -75,11 +75,11 @@ resource "aws_iam_policy" "this" {
         Resource = "*"
       },
       {
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Effect = "Allow",
+        Action = "s3:*",
         Resource = [
           aws_s3_bucket.embeddings.arn,
-          "${aws_s3_bucket.embeddings.arn}/*"]
+        "${aws_s3_bucket.embeddings.arn}/*"]
       }
     ]
   })

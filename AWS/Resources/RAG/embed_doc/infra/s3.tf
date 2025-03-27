@@ -4,13 +4,15 @@ s3_filesに配置したベクトルストアで使用するファイルを格納
 resource "aws_s3_bucket" "embeddings" {
   bucket = "bedrock-embeddings-files-bucket"
   tags = {
-    Name        = "bedrock-embeddings-files-bucket"
+    Name = "bedrock-embeddings-files-bucket"
   }
+
+  force_destroy = true
 }
 
 resource "aws_s3_object" "embeddings" {
   bucket = aws_s3_bucket.embeddings.id
-  key = "files/bedrock-ug.pdf"
+  key    = "files/bedrock-ug.pdf"
   source = "${path.module}/files/bedrock-ug.pdf"
   # etag = filemd5("${path.module}/files/bedrock-ug.pdf")
   # zipサイズが16MBを超えるため、etagが変わるため、source_hashを使用する
@@ -20,13 +22,13 @@ resource "aws_s3_object" "embeddings" {
 resource "aws_s3_bucket" "embed_doc_layer" {
   bucket = "embed-doc-lambda-layer-bucket"
   tags = {
-    Name        = "embed-doc-lambda-layer-bucket"
+    Name = "embed-doc-lambda-layer-bucket"
   }
 }
 
 resource "aws_s3_object" "embed_doc_layer" {
   bucket = aws_s3_bucket.embed_doc_layer.id
-  key = "layer.zip"
+  key    = "layer.zip"
   source = data.archive_file.layer.output_path
   # etag = filemd5(data.archive_file.layer.output_path)ではすでに存在しているファイルのmd5を取得してしまうためエラーになる 
   # data.archive_file.layer.output_md5を使用することで解決し、depends_onを使用しなくても正常に動作する
