@@ -1,7 +1,7 @@
 resource "aws_s3_bucket" "this" {
-  bucket = "vector-ingest-lambda-layer-bucket"
+  bucket = "answer-user-query-lambda-layer-bucket"
   tags = {
-    Name = "vector-ingest-lambda-layer-bucket"
+    Name = "answer-user-query-lambda-layer-bucket"
   }
 }
 

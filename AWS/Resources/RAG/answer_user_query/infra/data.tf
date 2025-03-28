@@ -12,12 +12,12 @@ data "archive_file" "layer" {
   output_path = "${path.module}/../dist/layer.zip"
 }
 
-# embed-doc.tfstateから取得した値を使用する
-data "terraform_remote_state" "embed_doc" {
+# vector-database.tfstateから取得した値を使用する
+data "terraform_remote_state" "vector_database" {
   backend = "s3"
   config = {
     bucket = "s3-terraform-state-y-mitsuyama"
-    key    = "embed-doc.tfstate"
+    key    = "vector-database.tfstate"
     region = "ap-northeast-1"
   }
 }

@@ -50,9 +50,10 @@ module "OpenSearchServerless" {
         ]
       }
     ],
+    # todo: このtfでOpenSearchにアクセスするiamロールを作成して、他のtfで参照するようにする
     Principal = [
       data.aws_caller_identity.current.arn,
-      aws_iam_role.this.arn
+      aws_iam_role.this.arn, 
     ]
   }])
 }

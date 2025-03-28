@@ -11,7 +11,7 @@ terraform {
   backend "s3" {
     bucket       = "s3-terraform-state-y-mitsuyama"
     region       = "ap-northeast-1"
-    key          = "vector_database.tfstate"
+    key          = "answer-user-query.tfstate"
     encrypt      = true
     use_lockfile = true
   }
