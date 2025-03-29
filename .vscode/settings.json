@@ -3,6 +3,7 @@
     "aoss",
     "AWSV",
     "boto",
+    "healthcheck",
     "langchain",
     "manylinux",
     "mitsuyama",

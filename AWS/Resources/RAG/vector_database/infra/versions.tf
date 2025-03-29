@@ -3,6 +3,9 @@ terraform {
     aws = {
       source = "hashicorp/aws"
     }
+    opensearch = {
+      source = "opensearch-project/opensearch"
+    }
     template = {
       source = "hashicorp/template"
     }

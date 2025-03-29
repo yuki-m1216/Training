@@ -13,7 +13,7 @@ resource "aws_lambda_function" "this" {
   filename         = data.archive_file.lambda.output_path
   function_name    = "answer-user-query-lambda"
   architectures    = ["x86_64"]
-  role             = aws_iam_role.this.arn
+  role             = data.terraform_remote_state.vector_database.outputs.opensearch_access_role_arn
   handler          = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime          = "python3.10"
@@ -21,30 +21,12 @@ resource "aws_lambda_function" "this" {
   memory_size = 512
   environment {
     variables = {
-      OPENSEARCH_ENDPOINT = data.terraform_remote_state.vector_database.outputs.collection.collection_endpoint
+      OPENSEARCH_ENDPOINT = data.terraform_remote_state.vector_database.outputs.collection_endpoint,
     }
   }
   layers = [aws_lambda_layer_version.this.arn]
 
   depends_on = [aws_cloudwatch_log_group.this]
-}
-
-# Role
-resource "aws_iam_role" "this" {
-  name = "answer-user-query-lambda-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        },
-        Action = "sts:AssumeRole"
-      }
-    ]
-  })
 }
 
 # Policy
@@ -65,11 +47,6 @@ resource "aws_iam_policy" "this" {
       },
       {
         Effect   = "Allow",
-        Action   = "aoss:*",
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow",
         Action   = "bedrock:InvokeModel",
         Resource = "*"
       },
@@ -79,7 +56,7 @@ resource "aws_iam_policy" "this" {
 
 # Attachment
 resource "aws_iam_role_policy_attachment" "this" {
-  role       = aws_iam_role.this.name
+  role       = data.terraform_remote_state.vector_database.outputs.opensearch_access_role_id
   policy_arn = aws_iam_policy.this.arn
 }
 

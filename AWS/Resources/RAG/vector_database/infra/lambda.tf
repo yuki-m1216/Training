@@ -24,7 +24,7 @@ resource "aws_lambda_function" "this" {
   environment {
     variables = {
       OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
-      S3BUCKET            = data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.bucket,
+      S3BUCKET            = data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket_bucket,
       S3BUCKET_KEY        = "output/text-with-embedding.json"
     }
   }
@@ -76,8 +76,8 @@ resource "aws_iam_policy" "this" {
         Effect = "Allow",
         Action = "s3:*",
         Resource = [
-          data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.arn,
-          "${data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket.arn}/*"
+          data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket_arn,
+          "${data.terraform_remote_state.embed_doc.outputs.bedrock_embeddings_files_bucket_arn}/*"
         ]
     }]
   })
