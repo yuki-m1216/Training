@@ -51,11 +51,51 @@ def search_opensearch(embedding, top_k=5):
     opensearch_client = connect_opensearch()
     response = opensearch_client.search(body=query, index=INDEX_NAME)
 
-    if 'hits' in response and 'hits' in response['hits']:
-        return response['hits']['hits']
-    else:
-        print(f"Error searching OpenSearch: {response}")
-        return []
+    return [hit["_source"]["text"] for hit in response["hits"]["hits"]]
+
+def ask_claude(client, user_question, context_text):
+    """Claude に検索結果を渡して回答を生成"""
+    model_id = "apac.anthropic.claude-3-5-sonnet-20241022-v2:0"
+    prompt = f"""
+    あなたは AWS の公式 FAQ から情報を取得して質問に回答する AI です。
+
+    【重要なルール】  
+    - 提供された情報 **のみ** を使って回答してください。  
+    - もし提供された情報の中に答えがない場合は、「提供された情報には回答が見つかりませんでした」と返答してください。  
+    - 知識を補完しようとせず、提供された情報を **そのまま** 活用してください。  
+
+    【質問】  
+    {user_question}
+
+    【提供された情報】  
+    {context_text}
+
+    提供された情報のみを使い、分かりやすく簡潔に回答してください。
+    """
+    
+    response = client.invoke_model(
+        modelId=model_id,
+        contentType="application/json",
+        accept="application/json",
+        body=json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 2000,
+            "temperature": 0.0,
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                    {
+                    "type": "text",
+                    "text": prompt
+                 }
+            ]
+              }
+            ],
+        })
+    )
+    result = json.loads(response['body'].read())
+    return result["content"][0]["text"]
 
 def lambda_handler(event, context):
     body = json.loads(event["body"])
@@ -74,7 +114,16 @@ def lambda_handler(event, context):
     # OpenSearch で検索
     search_results = search_opensearch(embedding, top_k=5)
     
+    if not search_results:
+        return {
+            "statusCode": 200,
+            "body": json.dumps({"answer": "提供された情報には回答が見つかりませんでした"}, ensure_ascii=False)
+        }
+    
+    context_text = "\n".join(search_results)
+    answer = ask_claude(bedrock_client, user_question, context_text)
+
     return {
         "statusCode": 200,
-        "body": json.dumps({"results": search_results}, ensure_ascii=False)
+        "body": json.dumps({"question": user_question, "answer": answer}, ensure_ascii=False)
     }
