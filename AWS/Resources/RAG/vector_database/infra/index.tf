@@ -12,4 +12,5 @@ resource "opensearch_index" "this" {
             }
         }
     })
+  force_destroy = true
 }
