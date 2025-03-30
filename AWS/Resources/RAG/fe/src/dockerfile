@@ -1,0 +1,29 @@
+# 1. ベースイメージを指定（軽量な公式 Node.js イメージ）
+FROM node:18-alpine AS builder
+
+# 2. 作業ディレクトリを設定
+WORKDIR /app
+
+# 3. パッケージ情報をコピー＆インストール（キャッシュ活用）
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# 4. ソースコードをコピーしてビルド
+COPY . .
+RUN npm run build
+
+# 5. 実行環境を設定
+FROM node:18-alpine AS runner
+WORKDIR /app
+
+# 6. 依存関係とビルド済みファイルをコピー
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY package.json ./
+
+# 7. ポートを公開
+EXPOSE 3000
+
+# 8. Next.js のアプリを実行
+CMD ["npm", "run", "start"]
