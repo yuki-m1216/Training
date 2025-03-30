@@ -72,3 +72,18 @@ resource "aws_vpc_endpoint" "cwl" {
         Name = "cwl-vpc-endpoint"
     }
 }
+
+# resource "aws_vpc_endpoint" "api_gateway" {
+#     vpc_id = data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
+#     service_name = "com.amazonaws.${data.aws_region.current.name}.execute-api"
+#     vpc_endpoint_type = "Interface"
+#     security_group_ids = [aws_security_group.ecr.id]
+#     subnet_ids = [
+#         data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1a"],
+#         data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1c"]
+#     ]
+#     private_dns_enabled = true
+#     tags = {
+#         Name = "api-gateway-vpc-endpoint"
+#     }
+# }

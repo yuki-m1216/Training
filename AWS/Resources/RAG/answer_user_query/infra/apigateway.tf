@@ -2,6 +2,7 @@ resource "aws_api_gateway_rest_api" "this" {
   name = "rag-be-api"
   endpoint_configuration {
     types = ["REGIONAL"]
+    #types = ["PRIVATE"]
   }
   put_rest_api_mode = "merge"
 }

@@ -25,7 +25,7 @@ export default function Home() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          mode: "cors", // CORS設定を追加
+          mode: "cors",
           body: JSON.stringify({ question }),
         }
       );
