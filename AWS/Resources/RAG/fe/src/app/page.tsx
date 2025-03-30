@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-
+console.log(process.env.NEXT_PUBLIC_API_URL);
+console.log(process.env.ENV);
 export default function Home() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
@@ -15,11 +16,19 @@ export default function Home() {
     setAnswer("");
 
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL + "/question", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question }),
-      });
+      if (!process.env.NEXT_PUBLIC_API_URL) {
+        throw new Error("API URL is not defined in the environment variables.");
+      }
+
+      const response = await fetch(
+        process.env.NEXT_PUBLIC_API_URL + "resource",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          mode: "cors", // CORS設定を追加
+          body: JSON.stringify({ question }),
+        }
+      );
 
       const data = await response.json();
       setAnswer(data.answer || "回答が取得できませんでした。");
@@ -35,7 +44,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4">
       <h1 className="text-2xl font-bold mb-4">AWS Bedrock FAQ 質問システム</h1>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-lg bg-white p-6 shadow-md rounded-lg">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-lg bg-white p-6 shadow-md rounded-lg"
+      >
         <textarea
           value={question}
           onChange={(e) => setQuestion(e.target.value)}

@@ -128,5 +128,10 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 200,
+        "headers": {  # 必要なCORSヘッダーを最終的なreturnにのみ追加
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
         "body": json.dumps({"question": user_question, "answer": answer}, ensure_ascii=False)
     }

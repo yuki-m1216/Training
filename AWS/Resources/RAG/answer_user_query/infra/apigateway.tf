@@ -1,7 +1,7 @@
 resource "aws_api_gateway_rest_api" "this" {
   name = "rag-be-api"
   endpoint_configuration {
-    types = ["PRIVATE"]
+    types = ["REGIONAL"]
   }
   put_rest_api_mode = "merge"
 }
@@ -18,6 +18,35 @@ resource "aws_api_gateway_method" "this" {
   http_method   = "POST"
   authorization = "NONE"
 }
+
+resource "aws_api_gateway_deployment" "this" {
+  rest_api_id = aws_api_gateway_rest_api.this.id
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_resource.this,
+      aws_api_gateway_method.this,
+      aws_api_gateway_integration.this,
+      aws_api_gateway_rest_api.this,
+    ]))
+  }
+  lifecycle {
+    create_before_destroy = true
+  } 
+
+  # depends_on = [ aws_api_gateway_rest_api_policy.this ]
+}
+
+resource "aws_api_gateway_stage" "this" {
+  stage_name    = "dev"
+  rest_api_id   = aws_api_gateway_rest_api.this.id
+  deployment_id = aws_api_gateway_deployment.this.id
+}
+
+# resource "aws_api_gateway_rest_api_policy" "this" {
+#   rest_api_id = aws_api_gateway_rest_api.this.id
+#   policy      = data.aws_iam_policy_document.aws_api_gateway_resource_policy.json
+# }
 
 resource "aws_api_gateway_integration" "this" {
   rest_api_id             = aws_api_gateway_rest_api.this.id
