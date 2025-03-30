@@ -79,7 +79,7 @@ def ask_claude(client, user_question, context_text):
         accept="application/json",
         body=json.dumps({
             "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 2000,
+            "max_tokens": 4096,
             "temperature": 0.0,
             "messages": [
               {
@@ -98,6 +98,9 @@ def ask_claude(client, user_question, context_text):
     return result["content"][0]["text"]
 
 def lambda_handler(event, context):
+    print(f"[info] Start Lambda Handler")
+    print(f"[info] Event: {event}")
+    print(f"[info] Context: {context}")
     body = json.loads(event["body"])
     user_question = body.get("question", "")
     
