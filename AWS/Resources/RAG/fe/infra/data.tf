@@ -22,12 +22,12 @@ data "terraform_remote_state" "mainvpc" {
   }
 }
 
-data "terraform_remote_state" "answer_user_query" {
-  backend = "s3"
+# data "terraform_remote_state" "answer_user_query" {
+#   backend = "s3"
 
-  config = {
-    bucket = "s3-terraform-state-y-mitsuyama"
-    key    = "answer-user-query.tfstate"
-    region = "ap-northeast-1"
-  }
-}
+#   config = {
+#     bucket = "s3-terraform-state-y-mitsuyama"
+#     key    = "answer-user-query.tfstate"
+#     region = "ap-northeast-1"
+#   }
+# }

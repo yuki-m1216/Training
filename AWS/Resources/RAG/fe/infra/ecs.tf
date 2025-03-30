@@ -23,16 +23,6 @@ resource "aws_ecs_task_definition" "this" {
           protocol      = "tcp"
         }
       ]
-      environment = [
-        {
-          name  = "ENV"
-          value = "dev"
-        },
-        {
-          name  = "NEXT_PUBLIC_API_URL"
-          value = "${data.terraform_remote_state.answer_user_query.outputs.api_gateway_invoke_url}"
-        }
-      ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
