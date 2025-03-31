@@ -54,8 +54,8 @@ deactivate
 パッケージ追加と削除
 
 ```ps
-poetry add <package-name>
-poetry remove <package-name>
+poetry add package-name
+poetry remove package-name
 ```
 
 layerコマンド
