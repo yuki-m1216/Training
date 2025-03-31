@@ -1,3 +1,7 @@
+apply順
+
+embed_doc -> vector_database -> answer_user_query -> fe
+
 https://dev.classmethod.jp/articles/pyenv-and-poetry/
 https://qiita.com/ShotaDeguchi/items/d2e08c135f2eebaa624b#pyenv--pyenv-win
 https://python-poetry.org/docs/managing-environments/#powershell
