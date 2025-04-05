@@ -5,83 +5,24 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AWS_ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsRole
-  AWS_DEFAULT_REGION: ap-northeast-1
-
 permissions:
   id-token: write
   contents: read
-  actions: write
+
 
 jobs:
   call-terraform:
-    runs-on: ubuntu-20.04
+    uses: ./.github/workflows/TerraformChild.yml # 子ワークフローを呼び出す
+    with:
+      tf_dir: ${{ matrix.TF_DIR }} # 子ワークフローにディレクトリを渡す
+    secrets:
+      ACTIONS_ROLE_ARN: ${{ secrets.ACTIONS_ROLE_ARN }}
     strategy:
       fail-fast: false
       matrix:
         TF_DIR:
           - AWS/Resources/RAG/vector_database/infra
-          - AWS/Resources/RAG/another_directory
-          - AWS/Resources/RAG/yet_another_directory
+          - AWS/Resources/RAG/fe/infra
+          - AWS/Resources/RAG/embed_doc/infra
+          - AWS/Resources/RAG/answer_user_query/infra
 
-    steps:
-      - name: Trigger Terraform Workflow
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'TerraformChild.yml',
-              ref: context.ref,
-              inputs: {
-                tf_dir: '${{ matrix.TF_DIR }}'
-              }
-            })
-
-# 以下はworkflow_callとusesを使うケースの例。必要に応じて切り替えて使う。
-# jobs:
-#   call-terraform:
-#     uses: ./github/workflows/reusable.yaml
-#     with:
-#       tf_dir: ${{ matrix.TF_DIR }}
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         TF_DIR:
-#           - AWS/Resources/RAG/vector_database/infra
-#           - AWS/Resources/RAG/another_directory
-#           - AWS/Resources/RAG/yet_another_directory
-#
-# reusable.yamlの例:
-# on:
-#   workflow_call:
-#     inputs:
-#       tf_dir:
-#         required: true
-#         type: string
-#
-# jobs:
-#   terraform:
-#     runs-on: ubuntu-20.04
-#     defaults:
-#       run:
-#         shell: bash
-#         working-directory: ${{ inputs.tf_dir }}
-#     steps:
-#       - name: Checkout branch
-#         uses: actions/checkout@v4
-#       - name: Configure AWS credentials
-#         uses: aws-actions/configure-aws-credentials@v4
-#         with:
-#           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-#           role-to-assume: ${{ env.AWS_ROLE_ARN }}
-#       - name: Setup Terraform
-#         uses: hashicorp/setup-terraform@v2
-#       - name: Exec Terraform fmt check
-#         run: terraform fmt -recursive -check
-#       - name: Exec Terraform init
-#         run: terraform init
-#       - name: Exec Terraform plan
-#         run: terraform plan -no-color

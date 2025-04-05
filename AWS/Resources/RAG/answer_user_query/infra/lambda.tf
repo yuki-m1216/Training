@@ -17,8 +17,8 @@ resource "aws_lambda_function" "this" {
   handler          = "main.lambda_handler"
   source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
   runtime          = "python3.10"
-  timeout     = 600
-  memory_size = 512
+  timeout          = 600
+  memory_size      = 512
   environment {
     variables = {
       OPENSEARCH_ENDPOINT = data.terraform_remote_state.vector_database.outputs.collection_endpoint,

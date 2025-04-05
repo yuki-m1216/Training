@@ -1,11 +1,17 @@
 name: TerraformChild
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
-      tf_dir: 
+      tf_dir:
         description: "The directory to run Terraform in"
         required: true
         type: string
+    secrets:
+      ACTIONS_ROLE_ARN:
+        required: true
+
+env:
+  AWS_DEFAULT_REGION: "ap-northeast-1"
 
 jobs:
   terraform:
@@ -23,7 +29,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          role-to-assume: ${{ secrets.ACTIONS_ROLE_ARN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2

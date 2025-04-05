@@ -27,7 +27,7 @@ resource "aws_ecs_task_definition" "this" {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.ecs_log_group.name
-          "awslogs-region"       = "ap-northeast-1"
+          "awslogs-region"        = "ap-northeast-1"
           "awslogs-stream-prefix" = "ecs"
         }
       }
@@ -45,9 +45,9 @@ resource "aws_ecs_service" "this" {
   launch_type = "FARGATE"
 
   network_configuration {
-    subnets          = [
-    data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1a"],
-    data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1c"]
+    subnets = [
+      data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1a"],
+      data.terraform_remote_state.mainvpc.outputs.mainvpc.private_subnet_id["private-subnet-1c"]
     ]
     security_groups  = [aws_security_group.this.id]
     assign_public_ip = false
@@ -62,21 +62,21 @@ resource "aws_ecs_service" "this" {
 
 # Security Group
 resource "aws_security_group" "this" {
-  name = "fe-ecs-sg"
+  name   = "fe-ecs-sg"
   vpc_id = data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
 }
 
 resource "aws_vpc_security_group_ingress_rule" "this" {
   security_group_id = aws_security_group.this.id
   ip_protocol       = "-1"
-  cidr_ipv4 = "0.0.0.0/0"
+  cidr_ipv4         = "0.0.0.0/0"
 }
 
 resource "aws_vpc_security_group_egress_rule" "this" {
   security_group_id = aws_security_group.this.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
-  }
+}
 
 resource "aws_cloudwatch_log_group" "ecs_log_group" {
   name              = "/ecs/fe-ecs-task"
@@ -88,7 +88,7 @@ resource "aws_lb" "this" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.this.id]
-  subnets            = [
+  subnets = [
     data.terraform_remote_state.mainvpc.outputs.mainvpc.public_subnet_id["public-subnet-1a"],
     data.terraform_remote_state.mainvpc.outputs.mainvpc.public_subnet_id["public-subnet-1c"]
   ]
