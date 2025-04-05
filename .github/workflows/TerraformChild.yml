@@ -1,11 +1,11 @@
 name: TerraformChild
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      tf_dir:
+      tf_dir: 
+        description: "The directory to run Terraform in"
         required: true
         type: string
-  workflow_dispatch:
 
 jobs:
   terraform:
@@ -29,13 +29,10 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Exec Terraform fmt check
-        run: |
-          terraform fmt -recursive -check
+        run: terraform fmt -recursive -check
 
       - name: Exec Terraform init
-        run: |
-          terraform init
+        run: terraform init
 
       - name: Exec Terraform plan
-        run: |
-          terraform plan -no-color
+        run: terraform plan -no-color
