@@ -24,6 +24,9 @@ jobs:
     steps:
       - name: Trigger Terraform Workflow
         uses: actions/github-script@v6
+        env: # 親から環境変数を渡す
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
         with:
           script: |
             github.rest.actions.createWorkflowDispatch({
