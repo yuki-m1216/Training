@@ -20,5 +20,5 @@ jobs:
       matrix:
         TF_DIR:
           - AWS/Resources/RAG/vector_database/infra
-          - AWS/Resources/RAG/another_directory
-          - AWS/Resources/RAG/yet_another_directory
+          # - AWS/Resources/RAG/another_directory
+          # - AWS/Resources/RAG/yet_another_directory
