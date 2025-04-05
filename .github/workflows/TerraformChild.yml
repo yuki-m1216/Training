@@ -10,6 +10,9 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-20.04
+    env:
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     defaults:
       run:
         shell: bash
