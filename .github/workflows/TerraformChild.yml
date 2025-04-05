@@ -1,0 +1,40 @@
+name: TerraformChild
+on:
+  workflow_call:
+    inputs:
+      tf_dir:
+        required: true
+        type: string
+
+jobs:
+  terraform:
+    runs-on: ubuntu-20.04
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.tf_dir }}
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Exec Terraform fmt check
+        run: |
+          terraform fmt -recursive -check
+
+      - name: Exec Terraform init
+        run: |
+          terraform init
+
+      - name: Exec Terraform plan
+        run: |
+          terraform plan -no-color

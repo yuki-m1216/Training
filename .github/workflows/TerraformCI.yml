@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 env:
   AWS_ROLE_ARN: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsRole
@@ -13,66 +14,73 @@ permissions:
   contents: read
 
 jobs:
-  set-matrix:
+  call-terraform:
     runs-on: ubuntu-20.04
-
-    env:
-      TF_ROOT_DIR: .
-
-    outputs:
-      dirs: ${{ steps.find-tfstate-dirs.outputs.dirs }}
-
-    steps:
-      - uses: actions/checkout@v3
-
-      # https://zenn.dev/shonansurvivors/articles/22e83a31abeb62
-      - name: Find tfstate dirs
-        id: find-tfstate-dirs
-        run: |
-          # https://stackoverflow.com/questions/26287130/converting-lines-to-json-in-bash
-          dirs=$(find ${TF_ROOT_DIR} -type f -name '*.tf' | xargs dirname | grep -v 'modules\|\.terraform\|NewRelic' | sort | uniq | jq -R -s -c 'split("\n")[:-1]')
-          echo $dirs 
-          echo "dirs=$dirs" >> $GITHUB_OUTPUT
-
-  terraform:
-    needs: set-matrix
-    runs-on: ubuntu-20.04
-    timeout-minutes: 30
-
     strategy:
       fail-fast: false
-      max-parallel: 10
       matrix:
-        TF_DIR: ${{ fromJson(needs.set-matrix.outputs.dirs) }}
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ matrix.TF_DIR }}
+        TF_DIR:
+          - AWS/Resources/RAG/vector_database/infra
+          - AWS/Resources/RAG/another_directory
+          - AWS/Resources/RAG/yet_another_directory
 
     steps:
-      - name: Checkout branch
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Trigger Terraform Workflow
+        uses: actions/github-script@v6
         with:
-          aws-region: ${{ env.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'TerraformChild.yml',
+              ref: context.ref,
+              inputs: {
+                tf_dir: matrix.TF_DIR
+              }
+            })
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Exec Terraform fmt check
-        run: |
-          terraform fmt -recursive -check
-
-      - name: Exec Terraform init
-        run: |
-          pwd; terraform init
-
-      - name: Exec Terraform plan
-        run: |
-          pwd
-          terraform plan -no-color
-        timeout-minutes: 1
+# 以下はworkflow_callとusesを使うケースの例。必要に応じて切り替えて使う。
+# jobs:
+#   call-terraform:
+#     uses: ./github/workflows/reusable.yaml
+#     with:
+#       tf_dir: ${{ matrix.TF_DIR }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         TF_DIR:
+#           - AWS/Resources/RAG/vector_database/infra
+#           - AWS/Resources/RAG/another_directory
+#           - AWS/Resources/RAG/yet_another_directory
+#
+# reusable.yamlの例:
+# on:
+#   workflow_call:
+#     inputs:
+#       tf_dir:
+#         required: true
+#         type: string
+#
+# jobs:
+#   terraform:
+#     runs-on: ubuntu-20.04
+#     defaults:
+#       run:
+#         shell: bash
+#         working-directory: ${{ inputs.tf_dir }}
+#     steps:
+#       - name: Checkout branch
+#         uses: actions/checkout@v4
+#       - name: Configure AWS credentials
+#         uses: aws-actions/configure-aws-credentials@v4
+#         with:
+#           aws-region: ${{ env.AWS_DEFAULT_REGION }}
+#           role-to-assume: ${{ env.AWS_ROLE_ARN }}
+#       - name: Setup Terraform
+#         uses: hashicorp/setup-terraform@v2
+#       - name: Exec Terraform fmt check
+#         run: terraform fmt -recursive -check
+#       - name: Exec Terraform init
+#         run: terraform init
+#       - name: Exec Terraform plan
+#         run: terraform plan -no-color
