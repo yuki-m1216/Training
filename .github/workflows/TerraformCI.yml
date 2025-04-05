@@ -4,12 +4,19 @@ on:
     branches:
       - main
   workflow_dispatch:
-    
+
+permissions:
+  id-token: write
+  contents: read
+
+
 jobs:
   call-terraform:
     uses: ./.github/workflows/TerraformChild.yml # 子ワークフローを呼び出す
     with:
       tf_dir: ${{ matrix.TF_DIR }} # 子ワークフローにディレクトリを渡す
+    secrets:
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }} 
     strategy:
       fail-fast: false
       matrix:
