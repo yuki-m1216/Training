@@ -5,6 +5,7 @@ on:
       tf_dir:
         required: true
         type: string
+  workflow_dispatch:
 
 jobs:
   terraform:
