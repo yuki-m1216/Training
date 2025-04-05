@@ -35,7 +35,7 @@ jobs:
               workflow_id: 'TerraformChild.yml',
               ref: context.ref,
               inputs: {
-                tf_dir: matrix.TF_DIR
+                tf_dir: '${{ matrix.TF_DIR }}'
               }
             })
 
