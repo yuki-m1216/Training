@@ -5,11 +5,6 @@ on:
       - main
   workflow_dispatch:
     
-permissions:
-  id-token: write
-  contents: read
-
-
 jobs:
   call-terraform:
     uses: ./.github/workflows/TerraformChild.yml # 子ワークフローを呼び出す
@@ -20,5 +15,5 @@ jobs:
       matrix:
         TF_DIR:
           - AWS/Resources/RAG/vector_database/infra
-          # - AWS/Resources/RAG/another_directory
-          # - AWS/Resources/RAG/yet_another_directory
+          - AWS/Resources/RAG/another_directory
+          - AWS/Resources/RAG/yet_another_directory
