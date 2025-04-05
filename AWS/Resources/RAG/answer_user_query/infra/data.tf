@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "aws_api_gateway_resource_policy" {
     condition {
       test     = "StringEqualsIfExists"
       variable = "aws:SourceVpc"
-      values   = [
+      values = [
         data.terraform_remote_state.mainvpc.outputs.mainvpc.mainvpc_id
       ]
     }
