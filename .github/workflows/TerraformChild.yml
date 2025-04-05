@@ -1,6 +1,6 @@
 name: TerraformChild
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       tf_dir:
         description: "The directory to run Terraform in"
@@ -10,6 +10,9 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-20.04
+    env:
+      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
     defaults:
       run:
         shell: bash
@@ -22,8 +25,8 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
