@@ -16,7 +16,7 @@ jobs:
     with:
       tf_dir: ${{ matrix.TF_DIR }} # 子ワークフローにディレクトリを渡す
     secrets:
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }} 
+      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }} # 親ワークフローからシークレットを渡す
     strategy:
       fail-fast: false
       matrix:
