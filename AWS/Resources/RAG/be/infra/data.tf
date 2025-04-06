@@ -1,5 +1,6 @@
 data "aws_caller_identity" "current" {}
 
+### embed-doc ###
 data "archive_file" "embed_doc_lambda" {
   type        = "zip"
   source_file = "${path.module}/../src/embed_doc/main.py"
@@ -10,4 +11,17 @@ data "archive_file" "embed_doc_layer" {
   type        = "zip"
   source_dir  = "${path.module}/../src/embed_doc/layer"
   output_path = "${path.module}/../dist/embed_doc/layer.zip"
+}
+
+### vector_database ###
+data "archive_file" "vector_database_lambda" {
+  type        = "zip"
+  source_file = "${path.module}/../src/vector_database/main.py"
+  output_path = "${path.module}/../dist/vector_database/main.zip"
+}
+
+data "archive_file" "vector_database_layer" {
+  type        = "zip"
+  source_dir  = "${path.module}/../src/vector_database/layer"
+  output_path = "${path.module}/../dist/vector_database/layer.zip"
 }

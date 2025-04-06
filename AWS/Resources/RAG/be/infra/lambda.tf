@@ -1,3 +1,4 @@
+### embed-doc-lambda ###
 # Layer
 resource "aws_lambda_layer_version" "embed-doc" {
   s3_bucket                = aws_s3_bucket.embed_doc_layer.bucket
@@ -98,5 +99,107 @@ resource "aws_cloudwatch_log_group" "embed-doc" {
 
   tags = {
     Name = "/aws/lambda/embed-doc-lambda"
+  }
+}
+
+### vector-database-lambda ###
+# Layer
+resource "aws_lambda_layer_version" "vector_database" {
+  s3_bucket                = aws_s3_bucket.vector_database.bucket
+  s3_key                   = aws_s3_object.vector_database.key
+  layer_name               = "vector-ingest-lambda-layer"
+  source_code_hash         = filebase64sha256(data.archive_file.vector_database_layer.output_path)
+  compatible_runtimes      = ["python3.10"]
+  compatible_architectures = ["x86_64"]
+}
+
+# Lambda
+resource "aws_lambda_function" "vector_database" {
+  filename         = data.archive_file.vector_database_lambda.output_path
+  function_name    = "vector-ingest-lambda"
+  architectures    = ["x86_64"]
+  role             = aws_iam_role.vector_database.arn
+  handler          = "main.lambda_handler"
+  source_code_hash = filebase64sha256(data.archive_file.vector_database_lambda.output_path)
+  runtime          = "python3.10"
+  # すべての処理に6分必要のため、念のために10分に設定
+  # メモリサイズは500MBくらいで十分
+  timeout     = 600
+  memory_size = 512
+  environment {
+    variables = {
+      OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
+      S3BUCKET            = aws_s3_bucket.embeddings.bucket,
+      S3BUCKET_KEY        = "output/text-with-embedding.json"
+    }
+  }
+  layers = [aws_lambda_layer_version.vector_database.arn]
+
+  depends_on = [aws_cloudwatch_log_group.vector_database]
+}
+
+# Role
+resource "aws_iam_role" "vector_database" {
+  name = "vector-ingest-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Policy
+resource "aws_iam_policy" "vector_database" {
+  name        = "vector-ingest-lambda-policy"
+  description = "vector-ingest-lambda policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "aoss:*",
+        Resource = "*"
+      },
+      {
+        Effect = "Allow",
+        Action = "s3:*",
+        Resource = [
+          aws_s3_bucket.embeddings.arn,
+          "${aws_s3_bucket.embeddings.arn}/*",
+        ]
+    }]
+  })
+}
+
+# Attachment
+resource "aws_iam_role_policy_attachment" "vector_database" {
+  role       = aws_iam_role.vector_database.name
+  policy_arn = aws_iam_policy.vector_database.arn
+}
+
+# CloudWatch Logs
+resource "aws_cloudwatch_log_group" "vector_database" {
+  name              = "/aws/lambda/vector-ingest-lambda"
+  retention_in_days = 30
+
+  tags = {
+    Name = "/aws/lambda/vector-ingest-lambda"
   }
 }
