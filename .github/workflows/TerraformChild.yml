@@ -1,4 +1,5 @@
 name: TerraformChild
+
 on:
   workflow_call:
     inputs:
@@ -31,49 +32,28 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Setup Python
+        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Install dependencies for embed_doc
+      # Python deps を matrix で処理（be/infra のときだけ実行）
+      - name: Install dependencies
         if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
         run: |
-          python -m pip install --upgrade pip
-          pip install \
-          --platform manylinux2014_x86_64 \
-          --implementation cp \
-          --python-version 3.10 \
-          --only-binary=:all: \
-          --upgrade \
-          -r requirements.txt -t ./layer/python
-        working-directory: AWS/Resources/RAG/be/src/embed_doc
-
-      - name: Install dependencies for vector_database
-        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install \
-          --platform manylinux2014_x86_64 \
-          --implementation cp \
-          --python-version 3.10 \
-          --only-binary=:all: \
-          --upgrade \
-          -r requirements.txt -t ./layer/python
-        working-directory: AWS/Resources/RAG/be/src/vector_database
-
-      - name: Install dependencies for answer_user_query
-        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
-        run: |
-          python -m pip install --upgrade pip
-          pip install \
-          --platform manylinux2014_x86_64 \
-          --implementation cp \
-          --python-version 3.10 \
-          --only-binary=:all: \
-          --upgrade \
-          -r requirements.txt -t ./layer/python
-        working-directory: AWS/Resources/RAG/be/src/answer_user_query
-
+          for dir in embed_doc vector_database answer_user_query; do
+            echo "Installing dependencies for $dir"
+            cd AWS/Resources/RAG/be/src/$dir
+            python -m pip install --upgrade pip
+            pip install \
+              --platform manylinux2014_x86_64 \
+              --implementation cp \
+              --python-version 3.10 \
+              --only-binary=:all: \
+              --upgrade \
+              -r requirements.txt -t ./layer/python
+            cd -
+          done
 
       - name: Exec Terraform fmt check
         run: terraform fmt -recursive -check
