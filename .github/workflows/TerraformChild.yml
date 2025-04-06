@@ -45,6 +45,7 @@ jobs:
         working-directory: AWS/Resources/RAG/be/src/${{ matrix.subdir }}
 
   terraform:
+    needs: install-dependencies
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout branch
