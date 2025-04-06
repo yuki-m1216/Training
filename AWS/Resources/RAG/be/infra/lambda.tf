@@ -1,21 +1,21 @@
 # Layer
-resource "aws_lambda_layer_version" "this" {
+resource "aws_lambda_layer_version" "embed-doc" {
   s3_bucket                = aws_s3_bucket.embed_doc_layer.bucket
   s3_key                   = aws_s3_object.embed_doc_layer.key
   layer_name               = "embed-doc-lambda-layer"
-  source_code_hash         = filebase64sha256(data.archive_file.layer.output_path)
+  source_code_hash         = filebase64sha256(data.archive_file.embed_doc_layer.output_path)
   compatible_runtimes      = ["python3.10"]
   compatible_architectures = ["x86_64"]
 }
 
 # Lambda
-resource "aws_lambda_function" "this" {
-  filename         = data.archive_file.lambda.output_path
+resource "aws_lambda_function" "embed-doc" {
+  filename         = data.archive_file.embed_doc_lambda.output_path
   function_name    = "embed-doc-lambda"
   architectures    = ["x86_64"]
-  role             = aws_iam_role.this.arn
+  role             = aws_iam_role.embed-doc.arn
   handler          = "main.lambda_handler"
-  source_code_hash = filebase64sha256(data.archive_file.lambda.output_path)
+  source_code_hash = filebase64sha256(data.archive_file.embed_doc_lambda.output_path)
   runtime          = "python3.10"
   # メモリサイズ2048ですべての処理に6分必要。
   # メモリサイズ1024ですべての処理に10分弱必要。
@@ -30,13 +30,13 @@ resource "aws_lambda_function" "this" {
       S3BUCKET_KEY = aws_s3_object.embeddings.key
     }
   }
-  layers = [aws_lambda_layer_version.this.arn]
+  layers = [aws_lambda_layer_version.embed-doc.arn]
 
-  depends_on = [aws_cloudwatch_log_group.this]
+  depends_on = [aws_cloudwatch_log_group.embed-doc]
 }
 
 # Role
-resource "aws_iam_role" "this" {
+resource "aws_iam_role" "embed-doc" {
   name = "embed-doc-lambda-role"
 
   assume_role_policy = jsonencode({
@@ -54,7 +54,7 @@ resource "aws_iam_role" "this" {
 }
 
 # Policy
-resource "aws_iam_policy" "this" {
+resource "aws_iam_policy" "embed-doc" {
   name        = "embed-doc-lambda-policy"
   description = "embed-doc-lambda policy"
   policy = jsonencode({
@@ -86,13 +86,13 @@ resource "aws_iam_policy" "this" {
 }
 
 # Attachment
-resource "aws_iam_role_policy_attachment" "this" {
-  role       = aws_iam_role.this.name
-  policy_arn = aws_iam_policy.this.arn
+resource "aws_iam_role_policy_attachment" "embed-doc" {
+  role       = aws_iam_role.embed-doc.name
+  policy_arn = aws_iam_policy.embed-doc.arn
 }
 
 # CloudWatch Logs
-resource "aws_cloudwatch_log_group" "this" {
+resource "aws_cloudwatch_log_group" "embed-doc" {
   name              = "/aws/lambda/embed-doc-lambda"
   retention_in_days = 30
 
