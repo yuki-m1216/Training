@@ -203,3 +203,76 @@ resource "aws_cloudwatch_log_group" "vector_database" {
     Name = "/aws/lambda/vector-ingest-lambda"
   }
 }
+
+### answer-user-query-lambda ###
+# Layer
+resource "aws_lambda_layer_version" "answer_user_query" {
+  s3_bucket                = aws_s3_bucket.answer_user_query.bucket
+  s3_key                   = aws_s3_object.answer_user_query.key
+  layer_name               = "answer-user-query-lambda-layer"
+  source_code_hash         = filebase64sha256(data.archive_file.answer_user_query_layer.output_path)
+  compatible_runtimes      = ["python3.10"]
+  compatible_architectures = ["x86_64"]
+}
+
+# Lambda
+resource "aws_lambda_function" "answer_user_query" {
+  filename         = data.archive_file.answer_user_query_lambda.output_path
+  function_name    = "answer-user-query-lambda"
+  architectures    = ["x86_64"]
+  role             = aws_iam_role.opensearch_access_role.arn
+  handler          = "main.lambda_handler"
+  source_code_hash = filebase64sha256(data.archive_file.answer_user_query_lambda.output_path)
+  runtime          = "python3.10"
+  timeout          = 600
+  memory_size      = 512
+  environment {
+    variables = {
+      OPENSEARCH_ENDPOINT = module.OpenSearchServerless.collection.collection_endpoint,
+    }
+  }
+  layers = [aws_lambda_layer_version.answer_user_query.arn]
+
+  depends_on = [aws_cloudwatch_log_group.answer_user_query]
+}
+
+# Policy
+resource "aws_iam_policy" "answer_user_query" {
+  name        = "answer-user-query-lambda-policy"
+  description = "answer-user-query-lambda policy"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "arn:aws:logs:*:*:*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "bedrock:InvokeModel",
+        Resource = "*"
+      },
+    ]
+  })
+}
+
+# Attachment
+resource "aws_iam_role_policy_attachment" "answer_user_query" {
+  role       = aws_iam_role.opensearch_access_role.id
+  policy_arn = aws_iam_policy.answer_user_query.arn
+}
+
+# CloudWatch Logs
+resource "aws_cloudwatch_log_group" "answer_user_query" {
+  name              = "/aws/lambda/answer-user-query-lambda"
+  retention_in_days = 30
+
+  tags = {
+    Name = "/aws/lambda/answer-user-query-lambda"
+  }
+}
