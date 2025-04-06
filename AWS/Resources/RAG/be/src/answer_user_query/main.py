@@ -101,6 +101,20 @@ def lambda_handler(event, context):
     print(f"[info] Start Lambda Handler")
     print(f"[info] Event: {event}")
     print(f"[info] Context: {context}")
+
+
+    # CORS preflight (OPTIONS)
+    if event["httpMethod"] == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
+            "body": json.dumps({"message": "CORS preflight OK"})
+        }
+
     body = json.loads(event["body"])
     user_question = body.get("question", "")
     
