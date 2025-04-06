@@ -52,7 +52,7 @@ module "OpenSearchServerless" {
     ],
     Principal = [
       data.aws_caller_identity.current.arn,
-      aws_iam_role.this.arn,
+      aws_iam_role.vector_database.arn,
       aws_iam_role.opensearch_access_role.arn
     ]
   }])

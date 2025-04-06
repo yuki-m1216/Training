@@ -3,6 +3,9 @@ terraform {
     aws = {
       source = "hashicorp/aws"
     }
+    opensearch = {
+      source = "opensearch-project/opensearch"
+    }
     template = {
       source = "hashicorp/template"
     }
@@ -11,7 +14,7 @@ terraform {
   backend "s3" {
     bucket       = "s3-terraform-state-y-mitsuyama"
     region       = "ap-northeast-1"
-    key          = "embed-doc.tfstate"
+    key          = "rag-be.tfstate"
     encrypt      = true
     use_lockfile = true
   }

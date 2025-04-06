@@ -1,4 +1,4 @@
-resource "opensearch_index" "this" {
+resource "opensearch_index" "vector_database" {
   name      = "faqs"
   index_knn = true
   mappings = jsonencode({

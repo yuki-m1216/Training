@@ -21,8 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         TF_DIR:
-          - AWS/Resources/RAG/vector_database/infra
           - AWS/Resources/RAG/fe/infra
-          - AWS/Resources/RAG/embed_doc/infra
-          - AWS/Resources/RAG/answer_user_query/infra
+          - AWS/Resources/RAG/be/infra
 

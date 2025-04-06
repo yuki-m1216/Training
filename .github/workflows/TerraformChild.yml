@@ -1,4 +1,5 @@
 name: TerraformChild
+
 on:
   workflow_call:
     inputs:
@@ -16,10 +17,6 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ inputs.tf_dir }}
 
     steps:
       - name: Checkout branch
@@ -34,11 +31,38 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
+      - name: Setup Python
+        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      # Python deps を matrix で処理（be/infra のときだけ実行）
+      - name: Install dependencies
+        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        run: |
+          for dir in embed_doc vector_database answer_user_query; do
+            echo "Installing dependencies for $dir"
+            cd AWS/Resources/RAG/be/src/$dir
+            python -m pip install --upgrade pip
+            pip install \
+              --platform manylinux2014_x86_64 \
+              --implementation cp \
+              --python-version 3.10 \
+              --only-binary=:all: \
+              --upgrade \
+              -r requirements.txt -t ./layer/python
+            cd -
+          done
+
       - name: Exec Terraform fmt check
         run: terraform fmt -recursive -check
+        working-directory: ${{ inputs.tf_dir }}
 
       - name: Exec Terraform init
         run: terraform init
+        working-directory: ${{ inputs.tf_dir }}
 
       - name: Exec Terraform plan
         run: terraform plan -no-color
+        working-directory: ${{ inputs.tf_dir }}
