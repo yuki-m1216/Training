@@ -16,10 +16,6 @@ env:
 jobs:
   terraform:
     runs-on: ubuntu-20.04
-    defaults:
-      run:
-        shell: bash
-        working-directory: ${{ inputs.tf_dir }}
 
     steps:
       - name: Checkout branch
@@ -39,7 +35,7 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install dependencies for RAG/be/infra
+      - name: Install dependencies for embed_doc
         if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
         run: |
           python -m pip install --upgrade pip
@@ -50,12 +46,43 @@ jobs:
           --only-binary=:all: \
           --upgrade \
           -r requirements.txt -t ./layer/python
+        working-directory: AWS/Resources/RAG/be/src/embed_doc
+
+      - name: Install dependencies for vector_database
+        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+          --platform manylinux2014_x86_64 \
+          --implementation cp \
+          --python-version 3.10 \
+          --only-binary=:all: \
+          --upgrade \
+          -r requirements.txt -t ./layer/python
+        working-directory: AWS/Resources/RAG/be/src/vector_database
+
+      - name: Install dependencies for answer_user_query
+        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+          --platform manylinux2014_x86_64 \
+          --implementation cp \
+          --python-version 3.10 \
+          --only-binary=:all: \
+          --upgrade \
+          -r requirements.txt -t ./layer/python
+        working-directory: AWS/Resources/RAG/be/src/answer_user_query
+
 
       - name: Exec Terraform fmt check
         run: terraform fmt -recursive -check
+        working-directory: ${{ inputs.tf_dir }}
 
       - name: Exec Terraform init
         run: terraform init
+        working-directory: ${{ inputs.tf_dir }}
 
       - name: Exec Terraform plan
         run: terraform plan -no-color
+        working-directory: ${{ inputs.tf_dir }}
