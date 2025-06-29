@@ -13,11 +13,6 @@ output "cluster_certificate_authority_data" {
   value       = module.eks_cluster.cluster_certificate_authority_data
 }
 
-output "cluster_token" {
-  description = "The authentication token for the cluster"
-  value       = module.eks_cluster.cluster_token
-  sensitive   = true
-}
 
 output "kubectl_config_command" {
   description = "Command to configure kubectl"

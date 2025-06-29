@@ -62,31 +62,7 @@ variable "enable_irsa" {
 variable "cluster_addons" {
   description = "Map of cluster addon configurations to enable for the cluster"
   type        = any
-  default = {
-    coredns = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    eks-pod-identity-agent = {
-      most_recent = true
-    }
-    aws-ebs-csi-driver = {
-      most_recent = true
-    }
-    vpc-cni = {
-      most_recent    = true
-      before_compute = true
-      configuration_values = jsonencode({
-        env = {
-          AWS_VPC_K8S_CNI_EXTERNALSNAT = "true"
-          ENABLE_PREFIX_DELEGATION     = "true"
-          WARM_PREFIX_TARGET           = "1"
-        }
-      })
-    }
-  }
+  default = null
 }
 
 variable "eks_managed_node_group_defaults" {

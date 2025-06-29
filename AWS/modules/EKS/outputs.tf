@@ -28,11 +28,6 @@ output "cluster_certificate_authority_data" {
   value       = module.eks.cluster_certificate_authority_data
 }
 
-output "cluster_token" {
-  description = "The authentication token for the cluster"
-  value       = module.eks.cluster_token
-  sensitive   = true
-}
 
 output "node_groups" {
   description = "EKS node groups"

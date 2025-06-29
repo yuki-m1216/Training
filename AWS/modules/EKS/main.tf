@@ -50,28 +50,22 @@ module "eks" {
 
   cluster_addons = var.cluster_addons
 
-  eks_managed_node_group_defaults = merge(
-    var.eks_managed_node_group_defaults,
-    {
-      ami_type       = var.node_ami_type
-      instance_types = var.node_instance_types
-      subnet_ids     = var.node_subnet_ids
-    }
-  )
+  eks_managed_node_group_defaults = {
+    ami_type       = var.node_ami_type
+    instance_types = var.node_instance_types
+    subnet_ids     = var.node_subnet_ids
+  }
 
-  eks_managed_node_groups = merge(
-    var.eks_managed_node_groups,
-    {
-      default_node_group = {
-        use_custom_launch_template = false
-        disk_size                  = var.node_disk_size
-        remote_access = {
-          ec2_ssh_key               = module.key_pair.key_pair_name
-          source_security_group_ids = [aws_security_group.remote_access.id]
-        }
+  eks_managed_node_groups = {
+    default_node_group = {
+      use_custom_launch_template = false
+      disk_size                  = var.node_disk_size
+      remote_access = {
+        ec2_ssh_key               = module.key_pair.key_pair_name
+        source_security_group_ids = [aws_security_group.remote_access.id]
       }
     }
-  )
+  }
 
   enable_cluster_creator_admin_permissions = var.enable_cluster_creator_admin_permissions
 
