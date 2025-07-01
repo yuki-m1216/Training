@@ -37,8 +37,7 @@ kustomize-example/
 
 ```bash
 # 環境変数の設定
-export TF_VAR_access_key="AKIAXXXXXXXXXXXXXXXXXX"
-export TF_VAR_secret_key="XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+export AWS_PROFILE="your-profile-name"
 
 # Terraformでクラスター作成
 terraform init
@@ -54,6 +53,11 @@ aws eks update-kubeconfig --region ap-northeast-1 --name kustomize-example-clust
 
 # 接続確認
 kubectl get nodes
+
+# 正常に動作している場合、以下のような出力が表示されます：
+# NAME                                            STATUS   ROLES    AGE   VERSION
+# ip-10-0-1-xxx.ap-northeast-1.compute.internal   Ready    <none>   5m    v1.28.x
+# ip-10-0-2-xxx.ap-northeast-1.compute.internal   Ready    <none>   5m    v1.28.x
 ```
 
 ### 3. kustomizeを使用したアプリケーションデプロイ
@@ -119,10 +123,31 @@ terraform destroy
 
 ### よくある問題
 
-1. **kubectlがクラスターに接続できない**
+1. **kubectlがクラスターに接続できない（i/o timeout エラー）**
+   
+   以下の順序で確認・対処してください：
+   
    ```bash
+   # 1. AWS認証情報とプロファイルの確認
+   aws sts get-caller-identity
+   
+   # 2. EKSクラスターの状態確認
+   aws eks describe-cluster --name kustomize-example-cluster --region ap-northeast-1
+   
+   # 3. kubeconfigの再設定
    aws eks update-kubeconfig --region ap-northeast-1 --name kustomize-example-cluster
+   
+   # 4. VPCエンドポイントの確認（プライベートサブネットの場合）
+   aws ec2 describe-vpc-endpoints --region ap-northeast-1
+   
+   # 5. セキュリティグループの確認
+   aws eks describe-cluster --name kustomize-example-cluster --region ap-northeast-1 --query 'cluster.resourcesVpcConfig.securityGroupIds'
    ```
+   
+   **原因と対処法：**
+   - ネットワーク接続の問題：VPCエンドポイントの設定確認
+   - セキュリティグループの設定：必要なポート（443）の許可確認
+   - プライベートサブネット使用時：NATゲートウェイまたはVPCエンドポイントが必要
 
 2. **ポッドが起動しない**
    ```bash

@@ -10,9 +10,9 @@ replicas:
   - name: sample-app
     count: 1
 
-patchesStrategicMerge:
-  - deployment-patch.yaml
+patches:
+  - path: deployment-patch.yaml
 
 images:
   - name: nginx
-    newTag: 1.21-alpine
+    newTag: "1.21-alpine"

@@ -6,11 +6,12 @@ resources:
   - deployment.yaml
   - service.yaml
 
-commonLabels:
-  app: sample-app
+labels:
+- pairs:
+    app: sample-app
 
 namePrefix: base-
 
 images:
   - name: nginx
-    newTag: 1.21
+    newTag: "1.21"

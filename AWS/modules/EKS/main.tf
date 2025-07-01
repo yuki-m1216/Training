@@ -6,6 +6,7 @@ module "key_pair" {
   create_private_key = var.create_private_key
 }
 
+# SSH接続用セキュリティグループ（EKSノード用）
 resource "aws_security_group" "remote_access" {
   name_prefix = "${var.cluster_name}-remote-access"
   description = "Allow SSH access to EKS instances"
