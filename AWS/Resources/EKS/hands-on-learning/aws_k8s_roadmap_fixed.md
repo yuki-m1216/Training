@@ -171,10 +171,12 @@ kubectl proxy  # 別ターミナルで実行
 ### 課題1-2.5: kindでWebアプリケーションとルーティングを体験しよう
 **目標**: Kubernetesの基本的なリソース（Pod、Service、ConfigMap）を使ったWebアプリケーション構築とアクセス
 
+**ファイル場所**: `04-web-application/`
+
 **課題内容**
 1. テスト用アプリケーションを作成
 ```yaml
-# test-apps.yaml
+# test-apps.yaml - シンプルで確実に動作する版
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -193,9 +195,9 @@ spec:
     spec:
       containers:
       - name: app1
-        image: nginxdemos/hello:plain-text
+        image: httpd:alpine
         ports:
-        - containerPort: 8080
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -206,7 +208,7 @@ spec:
     app: app1
   ports:
   - port: 80
-    targetPort: 8080
+    targetPort: 80
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -226,11 +228,9 @@ spec:
     spec:
       containers:
       - name: app2
-        image: hashicorp/http-echo:0.2.3
-        args:
-        - "-text=Hello from App2!"
+        image: nginx:alpine
         ports:
-        - containerPort: 5678
+        - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
@@ -241,7 +241,7 @@ spec:
     app: app2
   ports:
   - port: 80
-    targetPort: 5678
+    targetPort: 80
 ```
 
 2. シンプルなWebサーバーとConfigMapを作成
@@ -299,8 +299,8 @@ data:
             <hr>
             <h2>Running Services:</h2>
             <ul>
-                <li>App1 - nginx demo service</li>
-                <li>App2 - echo service</li>
+                <li>App1 - Apache httpd service</li>
+                <li>App2 - nginx service</li>
             </ul>
         </div>
     </body>
@@ -337,147 +337,83 @@ kubectl port-forward svc/web-server-service 8000:80
 
 **個別サービスのテスト**
 ```bash
-# App1サービスのテスト
+# App1サービスのテスト（Apache httpd）
 kubectl port-forward svc/app1-service 8001:80
-# ブラウザで http://localhost:8001 にアクセス
+# ブラウザで http://localhost:8001 にアクセス → "It works!" が表示
 
-# App2サービスのテスト  
+# App2サービスのテスト（nginx）
 kubectl port-forward svc/app2-service 8002:80
-# ブラウザで http://localhost:8002 にアクセス
+# ブラウザで http://localhost:8002 にアクセス → nginxデフォルトページが表示
+```
+
+**トラブルシューティング**
+```bash
+# Pod状態確認
+kubectl get pods,svc -o wide
+kubectl get endpoints
+
+# ログ確認
+kubectl logs -l app=app1
+kubectl logs -l app=app2
+
+# Pod内接続テスト
+kubectl exec -it $(kubectl get pod -l app=app1 -o jsonpath='{.items[0].metadata.name}') -- wget -qO- localhost:80
+kubectl exec -it $(kubectl get pod -l app=app2 -o jsonpath='{.items[0].metadata.name}') -- wget -qO- localhost:80
 ```
 
 **チェックポイント**
-- ConfigMapを使ったWebページが正しく表示されるか
+- App1（Apache httpd）で "It works!" ページが表示されるか
+- App2（nginx）でnginxデフォルトページが表示されるか
 - port-forwardを使ってローカルからアクセスできるか
 - 複数のPodがロードバランシングされているか（app1、app2で確認）
 - ServiceとPodの関係が理解できたか
 
 **学習のポイント**
-- **ConfigMap**: 設定ファイルやWebコンテンツをPodに注入する方法
+- **複数アプリケーション**: 異なるWebサーバー（Apache httpd、nginx）の比較
 - **Service**: Podへの安定したアクセスポイントの提供
 - **port-forward**: ローカル開発環境でのサービステスト方法
-- **NodePort**: クラスター外部からのアクセス方法
+- **シンプルなデプロイメント**: 確実に動作する基本的な設定
 
-### 課題1-2.6: Helm を使った本格的な Ingress Controller 体験（上級者向け）
-**目標**: Helmパッケージマネージャーを使って、本格的なNGINX Ingress Controllerを構築
+### 課題1-2.6: Nginx Ingress Controller 完全マスター（上級者向け）
+**目標**: kindクラスタでNGINX Ingress Controllerを構築し、企業環境に近いIngress運用を学習
+
+**ファイル場所**: `05-ingress-controller/`
 
 **事前準備**
 ```bash
-# Helmのインストール（macOS）
-brew install helm
-# または Linux
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-
-# Helmバージョン確認
-helm version
+# kindクラスタをIngress用設定で作成
+kind create cluster --config 05-ingress-controller/kind-cluster.yaml --name nginx-demo
 ```
 
-**課題内容**
-1. Helmfileを使ったIngress Controller インストール
-```yaml
-# helmfile-ingress-nginx.yaml
-repositories:
-- name: ingress-nginx
-  url: https://kubernetes.github.io/ingress-nginx
+**学習アプローチ**
 
-releases:
-- name: ingress-nginx
-  namespace: ingress-nginx
-  createNamespace: true
-  chart: ingress-nginx/ingress-nginx
-  version: 4.11.2
-  values:
-  - controller:
-      hostPort:
-        enabled: true
-      service:
-        type: NodePort
-      nodeSelector:
-        kubernetes.io/os: linux
-      tolerations:
-      - key: "node-role.kubernetes.io/control-plane"
-        operator: "Equal"
-        effect: "NoSchedule"
-      - key: "node-role.kubernetes.io/master"
-        operator: "Equal"
-        effect: "NoSchedule"
-```
-
-2. インストール実行
+**方法1: マニフェストベース（推奨・初心者向け）**
 ```bash
-# Helmfileを使ったインストール（Helmfileがある場合）
-helmfile apply -f helmfile-ingress-nginx.yaml
+# 1. Nginx Ingress Controllerのデプロイ
+kubectl apply -f 05-ingress-controller/nginx-ingress-controller.yaml
 
-# または、直接Helmコマンドを使用
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.hostPort.enabled=true \
-  --set controller.service.type=NodePort
+# 2. サンプルアプリケーションのデプロイ
+kubectl apply -f 05-ingress-controller/sample-app.yaml
+
+# 3. Ingressリソースの作成
+kubectl apply -f 05-ingress-controller/ingress-demo.yaml
+
+# 4. テスト用ホスト設定
+echo "127.0.0.1 nginx-demo.local" | sudo tee -a /etc/hosts
+echo "127.0.0.1 httpbin.local" | sudo tee -a /etc/hosts
+
+# 5. アクセステスト
+curl -H "Host: nginx-demo.local" http://localhost/
+curl -H "Host: httpbin.local" http://localhost/
 ```
 
-3. インストール確認
+**方法2: Helmベース（上級者向け）**
 ```bash
-# Deploymentの確認
-kubectl get deploy -n ingress-nginx
+# 1. Helmのインストール（必要に応じて）
+chmod +x 05-ingress-controller/install-helm.sh
+./05-ingress-controller/install-helm.sh
 
-# Serviceの確認
-kubectl get svc -n ingress-nginx
-
-# IngressClassの確認
-kubectl get ingressclasses
-
-# Pod状態の確認
-kubectl get pods -n ingress-nginx
-```
-
-4. 本格的なIngressリソースの作成
-```yaml
-# advanced-ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: web-ingress
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
-spec:
-  ingressClassName: nginx
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: web-server-service
-            port:
-              number: 80
-      - path: /app1
-        pathType: ImplementationSpecific  
-        backend:
-          service:
-            name: app1-service
-            port:
-              number: 80
-      - path: /app2
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: app2-service
-            port:
-              number: 80
-```
-
-**実行手順**
-```bash
-# 前提: 課題1-2.5のアプリケーションがデプロイ済みであること
-kubectl get pods
-kubectl get services
-
-# Ingress Controllerのインストール
+# 2. Ingress Controllerのインストール
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 helm install ingress-nginx ingress-nginx/ingress-nginx \
@@ -486,58 +422,50 @@ helm install ingress-nginx ingress-nginx/ingress-nginx \
   --set controller.hostPort.enabled=true \
   --set controller.service.type=NodePort
 
-# インストール完了まで待機
-kubectl wait --namespace ingress-nginx \
-  --for=condition=ready pod \
-  --selector=app.kubernetes.io/component=controller \
-  --timeout=90s
+# 3. 04-web-applicationのアプリケーションをデプロイ
+kubectl apply -f 04-web-application/test-apps.yaml
+kubectl apply -f 04-web-application/simple-ingress-demo.yaml
 
-# Ingressリソースの作成
-kubectl apply -f advanced-ingress.yaml
+# 4. Ingressリソースの作成
+kubectl apply -f 05-ingress-controller/advanced-ingress.yaml
 
-# Ingress状態の確認
-kubectl get ingress
-kubectl describe ingress web-ingress
-
-# アクセステスト
+# 5. アクセステスト
 curl http://localhost/
 curl http://localhost/app1
 curl http://localhost/app2
 ```
 
-**トラブルシューティング**
+**クイックスタート**
 ```bash
-# Ingress Controller Pod のログ確認
-kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller
+# 自動セットアップスクリプト
+cd 05-ingress-controller
+chmod +x quick-start.sh
 
-# Ingress Controller の詳細状態確認
-kubectl describe pods -n ingress-nginx
+# マニフェストベース
+./quick-start.sh
 
-# サービスエンドポイントの確認
-kubectl get endpoints
-
-# Ingressのイベント確認
-kubectl describe ingress web-ingress
+# Helmベース
+METHOD=helm ./quick-start.sh
 ```
 
+**学習内容**
+- **ホストベースルーティング**: 異なるドメインでの分離
+- **パスベースルーティング**: 複数のバックエンドサービスへの振り分け
+- **アノテーション**: nginx.ingress.kubernetes.io/rewrite-target等の活用
+- **マニフェスト vs Helm**: 2つのデプロイメント方法の比較
+
 **チェックポイント**
-- Helmを使ったパッケージ管理の理解
 - Ingress Controllerが正常にインストールされているか
-- パスベースルーティングが正常に動作するか
-- ブラウザで http://localhost/, http://localhost/app1, http://localhost/app2 に正しくアクセスできるか
-- 設定変更時のIngress Controllerの動的反映を確認
+- ホストベース・パスベースルーティングが動作するか
+- アノテーションを使った設定が反映されているか
+- 複数のデプロイメント方法を理解できたか
 
-**学習のポイント**
-- **Helm**: Kubernetesのパッケージマネージャーの活用
-- **Ingress Controller**: 本格的な外部アクセス制御
-- **アノテーション**: nginx特有の設定方法
-- **pathType**: パスマッチングの動作制御
-- **SSL終端**: HTTPS対応の基礎理解
-
-**注意事項**
-- この課題は基本課題（1-2.5まで）が完了してから実施
-- エラーが発生した場合は、基本的なport-forward方式に戻ることも可能
-- 企業環境での実装に近い本格的な内容
+**クリーンアップ**
+```bash
+kind delete cluster --name nginx-demo
+sudo sed -i '/nginx-demo.local/d' /etc/hosts
+sudo sed -i '/httpbin.local/d' /etc/hosts
+```
 
 ### 課題1-3: カスタムアプリケーションの作成
 **目標**: 独自のDockerイメージを使ったアプリケーションデプロイ
@@ -1279,6 +1207,82 @@ kind load docker-image [IMAGE_NAME] --name [CLUSTER_NAME]
 
 # kindノードのシェルアクセス
 docker exec -it [CLUSTER_NAME]-control-plane bash
+```
+
+## 学習後のクリーンアップ
+
+### ローカル環境（kind）のクリーンアップ
+
+**レベル1学習後の推奨クリーンアップ手順**
+
+```bash
+# 1. アプリケーションリソースの削除（課題完了後）
+kubectl delete deployment --all
+kubectl delete service --all --ignore-not-found
+kubectl delete configmap --all --ignore-not-found
+kubectl delete ingress --all --ignore-not-found
+
+# 2. クラスター全体の削除（学習終了時）
+kind delete cluster --name [CLUSTER_NAME]
+
+# 例：マルチノードクラスターの削除
+kind delete cluster --name multi-node-cluster
+
+# 3. 削除確認
+kind get clusters
+docker ps --filter name=kind
+```
+
+**段階的クリーンアップ（課題ごと）**
+
+```bash
+# 課題1-2.5完了後
+kubectl delete -f 04-web-application/test-apps.yaml
+kubectl delete -f 04-web-application/simple-ingress-demo.yaml
+
+# 課題1-2.6完了後  
+kubectl delete -f 05-ingress-controller/ingress-demo.yaml
+kubectl delete -f 05-ingress-controller/sample-app.yaml
+kubectl delete -f 05-ingress-controller/nginx-ingress-controller.yaml
+
+# またはHelmでインストールした場合
+helm uninstall ingress-nginx -n ingress-nginx
+kubectl delete namespace ingress-nginx
+```
+
+### AWS環境のクリーンアップ
+
+**レベル2以降（AWS EKS）の学習後**
+
+```bash
+# EKSクラスターの削除
+eksctl delete cluster --name my-first-cluster --region ap-northeast-1
+
+# ECRリポジトリの削除
+aws ecr delete-repository --repository-name my-node-app --region ap-northeast-1 --force
+
+# CloudFormationスタックの確認・削除
+aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE
+```
+
+### 注意事項
+
+- **kindクラスター**: ローカルリソースのみ使用、削除は安全
+- **AWS EKS**: **課金が発生**するため、学習完了後は必ず削除
+- **段階的削除**: 各課題完了後にアプリケーションリソースのみ削除し、クラスターは次の課題で再利用可能
+- **完全削除**: 学習終了時にクラスター全体を削除
+
+### クリーンアップ確認
+
+```bash
+# ローカル環境の確認
+kind get clusters
+kubectl config get-contexts
+docker ps --filter name=kind
+
+# AWS環境の確認
+aws eks list-clusters --region ap-northeast-1
+aws ecr describe-repositories --region ap-northeast-1
 ```
 
 ---
