@@ -374,97 +374,470 @@ kubectl exec -it $(kubectl get pod -l app=app2 -o jsonpath='{.items[0].metadata.
 - **port-forward**: ローカル開発環境でのサービステスト方法
 - **シンプルなデプロイメント**: 確実に動作する基本的な設定
 
-### 課題1-2.6: Nginx Ingress Controller 完全マスター（上級者向け）
-**目標**: kindクラスタでNGINX Ingress Controllerを構築し、企業環境に近いIngress運用を学習
+### 課題1-2.6: Nginx Ingress Controller ハンズオン（kind環境）
+**目標**: kind環境でNginx Ingress Controllerを構築し、マニフェストベースでのデプロイ方法を学習
 
 **ファイル場所**: `05-ingress-controller/`
 
-**事前準備**
+**使用ファイル一覧**
+- `kind-cluster.yaml`: Ingress用ポートマッピング設定のkindクラスタ設定
+- `sample-app.yaml`: サンプルアプリケーション（nginx、httpbin）
+- `ingress-demo.yaml`: 複数種類のIngressリソース
+
+**前提条件**
+- kindがインストールされていること
+- kubectlがインストールされていること
+
+**ステップ1: kindクラスタの作成**
 ```bash
-# kindクラスタをIngress用設定で作成
-kind create cluster --config 05-ingress-controller/kind-cluster.yaml --name nginx-demo
+# Ingress用ポートマッピングを含むkindクラスタを作成
+kind create cluster --config=05-ingress-controller/kind-cluster.yaml --name nginx-demo
 ```
 
-**学習アプローチ**
-
-**方法1: マニフェストベース（推奨・初心者向け）**
+**ステップ2: Nginx Ingress Controllerのデプロイ**
 ```bash
-# 1. Nginx Ingress Controllerのデプロイ
-kubectl apply -f 05-ingress-controller/nginx-ingress-controller.yaml
+# kind環境用（bare metal）マニフェストを直接適用
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.3/deploy/static/provider/baremetal/deploy.yaml
 
-# 2. サンプルアプリケーションのデプロイ
+# デプロイメントの確認
+kubectl get pods --namespace=ingress-nginx
+
+# Ingress Controllerの準備完了を待機
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
+```
+
+> **📋 マニフェスト選択の補足**
+> 
+> **公式ドキュメント参照**: [Deploy - Ingress NGINX Controller](https://github.com/kubernetes/ingress-nginx/blob/main/docs/deploy/index.md)
+>
+> Ingress NGINX Controllerには環境別の複数のマニフェストが提供されています：
+> - **Cloud Provider用** (`/provider/cloud/`): LoadBalancerサービスを使用（AWS、GCP、Azure等）
+> - **Bare Metal用** (`/provider/baremetal/`): NodePortサービスを使用（クラウドプロバイダー統合なし）
+> - **プロバイダー個別用**: AWS、Digital Ocean、Exoscale等の専用設定
+>
+> **kind環境でbare metal用を使用する理由：**
+> - kind環境はLoadBalancerサービスをサポートしていない
+> - 「clusters without cloud provider integrations」に該当
+> - NodePortベースの設定が適している
+> 
+> **追加設定**: kind環境では、さらにhostPort設定（80、443）が必要な場合があります。
+> これにより、localhost経由での直接アクセスが可能になります。
+
+**ステップ3: サンプルアプリケーションのデプロイ**
+```bash
+# サンプルアプリケーションをデプロイ
 kubectl apply -f 05-ingress-controller/sample-app.yaml
 
-# 3. Ingressリソースの作成
+# Ingressリソースを適用
 kubectl apply -f 05-ingress-controller/ingress-demo.yaml
+```
 
-# 4. テスト用ホスト設定
-echo "127.0.0.1 nginx-demo.local" | sudo tee -a /etc/hosts
-echo "127.0.0.1 httpbin.local" | sudo tee -a /etc/hosts
+**ステップ4: 動作確認**
+```bash
+# ローカルでのテスト
+curl -H "Host: nginx-demo.local" http://localhost
+curl -H "Host: httpbin.local" http://localhost/get
+```
 
-# 5. アクセステスト
+**学習のポイント**
+
+1. **kind環境での特別な設定**: 
+   - `kind-cluster.yaml`でのポートマッピング設定
+   - ローカルホストでのアクセス方法
+
+2. **Nginx Ingress Controllerの理解**:
+   - 公式マニフェストの構造
+   - 名前空間の分離
+   - ServiceとDeploymentの関係
+
+3. **Ingressリソースの設定**:
+   - ホストベースルーティング
+   - パスベースルーティング
+   - バックエンドサービスの設定
+
+4. **トラブルシューティング**:
+   - ログの確認方法
+   - サービスの疎通確認
+   - DNSの設定
+
+**詳細な動作確認とデバッグ**
+```bash
+# Ingress Controllerの状態確認
+kubectl get pods -n ingress-nginx -o wide
+kubectl describe pod -n ingress-nginx -l app.kubernetes.io/component=controller
+
+# Serviceの確認
+kubectl get svc -n ingress-nginx
+kubectl get endpoints -n ingress-nginx
+
+# Ingressリソースの確認
+kubectl get ingress
+kubectl describe ingress -A
+
+# ログの確認
+kubectl logs -n ingress-nginx -l app.kubernetes.io/component=controller
+
+# サンプルアプリケーションの確認
+kubectl get pods,svc -l app=nginx-demo
+kubectl get pods,svc -l app=httpbin
+```
+
+**応用テスト**
+```bash
+# 直接Podへのアクセステスト
+kubectl port-forward svc/nginx-service 8080:80
+curl http://localhost:8080
+
+kubectl port-forward svc/httpbin-service 8081:80  
+curl http://localhost:8081/get
+
+# Ingress経由でのアクセステスト
 curl -H "Host: nginx-demo.local" http://localhost/
-curl -H "Host: httpbin.local" http://localhost/
+curl -H "Host: httpbin.local" http://localhost/status/200
+curl -H "Host: httpbin.local" http://localhost/json
 ```
 
-**方法2: Helmベース（上級者向け）**
+**トラブルシューティング: localhost接続できない場合**
+
+もし `curl -H "Host: nginx-demo.local" http://localhost/` で接続エラーが発生する場合、hostPort設定が必要です：
+
 ```bash
-# 1. Helmのインストール（必要に応じて）
-chmod +x 05-ingress-controller/install-helm.sh
-./05-ingress-controller/install-helm.sh
+# Ingress ControllerにhostPort設定を追加
+kubectl patch deployment ingress-nginx-controller -n ingress-nginx -p '{
+  "spec": {
+    "template": {
+      "spec": {
+        "containers": [{
+          "name": "controller",
+          "ports": [
+            {"containerPort": 80, "hostPort": 80, "protocol": "TCP"},
+            {"containerPort": 443, "hostPort": 443, "protocol": "TCP"},
+            {"containerPort": 8443, "hostPort": 8443, "protocol": "TCP"}
+          ]
+        }]
+      }
+    }
+  }
+}'
 
-# 2. Ingress Controllerのインストール
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo update
-helm install ingress-nginx ingress-nginx/ingress-nginx \
-  --namespace ingress-nginx \
-  --create-namespace \
-  --set controller.hostPort.enabled=true \
-  --set controller.service.type=NodePort
-
-# 3. 04-web-applicationのアプリケーションをデプロイ
-kubectl apply -f 04-web-application/test-apps.yaml
-kubectl apply -f 04-web-application/simple-ingress-demo.yaml
-
-# 4. Ingressリソースの作成
-kubectl apply -f 05-ingress-controller/advanced-ingress.yaml
-
-# 5. アクセステスト
-curl http://localhost/
-curl http://localhost/app1
-curl http://localhost/app2
+# Podの再起動を待機
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=120s
 ```
 
-**クイックスタート**
-```bash
-# 自動セットアップスクリプト
-cd 05-ingress-controller
-chmod +x quick-start.sh
-
-# マニフェストベース
-./quick-start.sh
-
-# Helmベース
-METHOD=helm ./quick-start.sh
-```
-
-**学習内容**
-- **ホストベースルーティング**: 異なるドメインでの分離
-- **パスベースルーティング**: 複数のバックエンドサービスへの振り分け
-- **アノテーション**: nginx.ingress.kubernetes.io/rewrite-target等の活用
-- **マニフェスト vs Helm**: 2つのデプロイメント方法の比較
+これにより、kind-cluster.yamlで設定したポートマッピング（80→80, 443→443）とIngress Controllerが正しく連携します。
 
 **チェックポイント**
-- Ingress Controllerが正常にインストールされているか
-- ホストベース・パスベースルーティングが動作するか
-- アノテーションを使った設定が反映されているか
-- 複数のデプロイメント方法を理解できたか
+- kindクラスタが適切なポートマッピングで作成されているか
+- Nginx Ingress Controllerが正常にデプロイされているか
+- サンプルアプリケーションがRunning状態になっているか
+- Ingressリソースが正しく設定されているか
+- ホストヘッダーを指定したcurlでアクセスできるか
+- 各サービスが独立してアクセス可能か
+
+## 🔍 通信フローの詳細解説
+
+### curl → Pod への通信経路
+
+```
+[Client] → [Docker Host] → [kind Container] → [Ingress Controller] → [Service] → [Pod]
+   ↓           ↓              ↓                    ↓                ↓         ↓
+  curl    localhost:80   hostPort:80        nginx proxy      ClusterIP   Pod IP
+```
+
+### 具体的な通信フロー
+
+**1. クライアント → Docker Host**
+```bash
+curl -H "Host: nginx-demo.local" http://localhost/
+```
+- `localhost:80` に HTTP リクエスト送信
+- Hostヘッダーで `nginx-demo.local` を指定
+
+**2. Docker Host → kind Container**
+```
+kind-cluster.yaml の extraPortMappings:
+- containerPort: 80    # kindコンテナ内のポート80
+  hostPort: 80         # ホストのポート80
+```
+- ホストの80番ポートがkindコンテナの80番ポートにマッピング
+
+**3. kind Container → Ingress Controller**
+```
+Ingress Controllerの hostPort設定:
+- containerPort: 80
+  hostPort: 80       # kindコンテナのポート80にバインド
+```
+- kindコンテナ内でIngress Controllerが直接80番ポートを使用
+
+**4. Ingress Controller → Service選択**
+```yaml
+# Ingressリソースでのルーティング設定
+rules:
+- host: nginx-demo.local      # Hostヘッダーによる判定
+  http:
+    paths:
+    - path: /
+      pathType: Prefix
+      backend:
+        service:
+          name: nginx-demo    # 転送先サービス
+          port:
+            number: 80
+```
+- Hostヘッダー `nginx-demo.local` に基づいて `nginx-demo` サービスを選択
+
+**5. Service → Pod選択**
+```yaml
+# nginx-demo Service
+spec:
+  selector:
+    app: nginx-demo    # Podセレクター
+  ports:
+  - port: 80
+    targetPort: 80
+```
+- `app: nginx-demo` ラベルを持つPodにロードバランシング
+
+**6. 最終的なPod**
+```yaml
+# nginx-demo Pod
+metadata:
+  labels:
+    app: nginx-demo
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+```
+- 実際のnginxコンテナがリクエストを処理
+
+### ネットワーク層での詳細
+
+**IPアドレスとポートの変換:**
+
+```
+1. Client:        localhost:80 (127.0.0.1:80)
+2. kind Node:     172.18.0.2:80 (kind container IP)
+3. Ingress Pod:   10.244.0.X:80 (Pod network)
+4. Service:       10.96.Y.Z:80 (ClusterIP)
+5. Target Pod:    10.244.0.W:80 (Pod network)
+```
+
+**パケットの流れ:**
+
+```
+HTTP Request Headers:
+GET / HTTP/1.1
+Host: nginx-demo.local     ← Ingressルーティングで使用
+User-Agent: curl/8.5.0
+```
+
+**Ingress Controllerでの処理:**
+1. **Host Header解析**: `nginx-demo.local` → `nginx-demo-ingress` ルール適用
+2. **Path Matching**: `/` → `pathType: Prefix` で一致
+3. **Backend選択**: `nginx-demo` サービスに転送
+4. **Load Balancing**: サービスが複数Podから1つを選択
+
+**レスポンスの逆経路:**
+```
+[Pod] → [Service] → [Ingress Controller] → [kind Container] → [Docker Host] → [Client]
+```
+
+### 重要なポイント
+
+**1. ホストヘッダーの重要性**
+- `curl http://localhost/` だけでは不十分
+- `curl -H "Host: nginx-demo.local" http://localhost/` が必要
+- Ingressはこのヘッダーでルーティングを決定
+
+**2. kind環境特有の設定**
+- **extraPortMappings**: Docker ↔ kind container
+- **hostPort**: kind container ↔ Ingress Controller
+- この2段階のポートマッピングが必要
+
+**3. Kubernetesネットワーク**
+- **Pod Network**: 10.244.0.0/16 (通常)
+- **Service Network**: 10.96.0.0/12 (通常)
+- **NodePort Range**: 30000-32767 (デフォルト)
+
+### デバッグコマンド
+
+```bash
+# 通信フローの各段階を確認
+docker ps | grep nginx-demo                    # 1. kind container確認
+kubectl get pods -n ingress-nginx -o wide      # 2. Ingress Controller確認  
+kubectl get svc                                # 3. Service確認
+kubectl get pods -o wide                       # 4. Target Pod確認
+kubectl get ingress                             # 5. Ingress rules確認
+```
+
+## 📝 アプリケーション別の動作の違い
+
+### nginx vs httpbin のアクセス方法の違い
+
+テストコマンドで異なるパスを使用している理由を理解しましょう：
+
+```bash
+# nginx: ルートパス（/）にアクセス
+curl -H "Host: nginx-demo.local" http://localhost/
+
+# httpbin: 特定のエンドポイント（/get）にアクセス  
+curl -H "Host: httpbin.local" http://localhost/get
+```
+
+**なぜこの違いがあるのか？**
+
+### 1. **nginx** - 静的Webサーバー
+```yaml
+# nginx-demo は静的HTMLファイルを配信
+image: nginx:1.25-alpine
+volumeMounts:
+- name: nginx-html
+  mountPath: /usr/share/nginx/html  # 静的ファイルの配置場所
+```
+
+**動作特性:**
+- **`/` (ルートパス)**にアクセス → `index.html` を自動配信
+- Webサーバーとして標準的な動作
+- HTMLコンテンツを返す
+
+**アクセス例:**
+```bash
+curl -H "Host: nginx-demo.local" http://localhost/
+# → カスタムHTMLページが表示される
+```
+
+### 2. **httpbin** - HTTP API モック・テスティングサービス
+```yaml
+# httpbin は HTTP リクエスト/レスポンステスト用のAPIサービス
+image: kennethreitz/httpbin:latest
+```
+
+> **💡 httpbin とは？**
+> 
+> [httpbin.org](https://httpbin.org/) は Kenneth Reitz 氏によって開発された **HTTP API のモック・テスティングツール** です。
+> 
+> **主な用途:**
+> - **API開発時のテスト**: 実際のAPIを開発する前のプロトタイピング
+> - **HTTP通信の検証**: リクエスト/レスポンスの内容確認
+> - **ネットワーク設定のテスト**: プロキシ、ロードバランサー等の動作確認
+> - **CI/CDパイプラインでのテスト**: 外部APIに依存しないテスト環境
+
+**動作特性:**
+- **API エンドポイント**を提供する動的サービス
+- 各エンドポイントが異なる機能を持つ
+- JSON レスポンスを返す
+- **実際のAPIの代替** として機能（モックAPI）
+
+**利用可能なエンドポイント:**
+```bash
+# /get - HTTPリクエスト情報をJSON形式で返す
+curl -H "Host: httpbin.local" http://localhost/get
+
+# /post - POSTデータのテスト
+curl -X POST -H "Host: httpbin.local" http://localhost/post
+
+# /status/200 - 指定したHTTPステータスを返す
+curl -H "Host: httpbin.local" http://localhost/status/200
+
+# /headers - リクエストヘッダー情報を表示
+curl -H "Host: httpbin.local" http://localhost/headers
+
+# /json - サンプルJSONデータを返す
+curl -H "Host: httpbin.local" http://localhost/json
+```
+
+### /get エンドポイントの詳細
+
+httpbinの `/get` エンドポイントは以下の情報を JSON 形式で返します：
+
+```json
+{
+  "args": {},                    # URL クエリパラメータ
+  "headers": {                   # リクエストヘッダー
+    "Accept": "*/*",
+    "Host": "httpbin.local",
+    "User-Agent": "curl/8.5.0",
+    "X-Forwarded-Host": "httpbin.local",
+    "X-Forwarded-Scheme": "http"
+  },
+  "origin": "172.18.0.1",        # クライアントIP
+  "url": "http://httpbin.local/get"  # リクエストURL
+}
+```
+
+### パスベースルーティングでの使用例
+
+`demo.local` を使ったパスベースルーティングの場合：
+
+```bash
+# nginx アプリケーションへのアクセス
+curl -H "Host: demo.local" http://localhost/nginx/
+# → /nginx/(.*) パターンにマッチ → nginx-demo サービス → HTMLページ
+
+# httpbin アプリケーションのAPIテスト
+curl -H "Host: demo.local" http://localhost/httpbin/get  
+# → /httpbin/(.*) パターンにマッチ → httpbin サービス → /get API
+```
+
+### 学習のポイント
+
+**1. アプリケーションタイプの理解**
+- **静的コンテンツ配信** (nginx): `/` でindex.htmlを配信
+- **API モックサービス** (httpbin): 特定エンドポイントで機能提供
+
+**2. Ingress でのパス処理**
+```yaml
+nginx.ingress.kubernetes.io/rewrite-target: /$1
+# /nginx/(.*)  → /$1 → / (nginxのルート)
+# /httpbin/(.*) → /$1 → /get (httpbinのAPIエンドポイント)
+```
+
+**3. 実用的なテストパターン**
+- **nginx**: Webアプリケーションの動作確認
+- **httpbin**: API通信の詳細な検証（モックAPIとして）
+
+**4. 実際の開発現場での応用**
+- **フロントエンド開発**: nginxでSPAアプリケーション配信
+- **バックエンド開発**: httpbinでAPI設計・テストの初期段階
+- **マイクロサービス**: 複数の異なるサービスタイプの組み合わせ
+
+### なぜモックAPIが重要なのか？
+
+**開発フローでの活用例:**
+```
+1. API設計段階    → httpbin でエンドポイント設計
+2. フロントエンド開発 → httpbin をモックAPIとして使用
+3. バックエンド開発  → 実際のAPIを開発
+4. 統合テスト     → nginx + 実API の組み合わせテスト
+```
+
+**Ingress Controller学習での意義:**
+- **現実的なシナリオ**: 実際のマイクロサービス環境を模擬
+- **異なるプロトコル**: HTTP/HTTPS、静的/動的コンテンツの混在
+- **運用パターン**: 単一エントリーポイントでの複数サービス管理
+
+この違いにより、Ingress Controller を通じた **実際のマイクロサービス環境** でのルーティング学習ができます。
 
 **クリーンアップ**
 ```bash
+# アプリケーションリソースの削除
+kubectl delete -f 05-ingress-controller/ingress-demo.yaml
+kubectl delete -f 05-ingress-controller/sample-app.yaml
+
+# Ingress Controllerの削除
+kubectl delete -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.12.3/deploy/static/provider/baremetal/deploy.yaml
+
+# kindクラスタの削除
 kind delete cluster --name nginx-demo
-sudo sed -i '/nginx-demo.local/d' /etc/hosts
-sudo sed -i '/httpbin.local/d' /etc/hosts
 ```
 
 ### 課題1-3: カスタムアプリケーションの作成

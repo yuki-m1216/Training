@@ -54,14 +54,14 @@ spec:
     http:
       paths:
       - path: /nginx/(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: nginx-demo
             port:
               number: 80
       - path: /httpbin/(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: httpbin
