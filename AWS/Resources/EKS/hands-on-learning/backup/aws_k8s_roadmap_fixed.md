@@ -1516,7 +1516,11 @@ app.get('/health', async (req, res) => {
 });
 ```
 
-### K8sプローブの詳細設定
+### K8sプローブの詳細設定とベストプラクティス
+
+これから課題1-3でプローブの基本を実践しますが、まず理論的な背景を理解しておきましょう。
+
+**プローブの全オプション設定例**：
 ```yaml
 livenessProbe:
   httpGet:
@@ -1529,12 +1533,45 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /ready
+    path: /ready           # 異なるエンドポイントを使用することも可能
     port: 3000
   initialDelaySeconds: 5   # 準備確認開始
   periodSeconds: 5         # チェック間隔
+  timeoutSeconds: 3        # タイムアウト
   successThreshold: 1      # 1回成功でトラフィック開始
+  failureThreshold: 3      # 3回失敗でトラフィック停止
 ```
+
+**プローブの種類と実装方法**：
+
+1. **httpGet**: HTTP GETリクエスト（最も一般的）
+   ```yaml
+   livenessProbe:
+     httpGet:
+       path: /health
+       port: 3000
+   ```
+
+2. **tcpSocket**: TCP接続確認
+   ```yaml
+   livenessProbe:
+     tcpSocket:
+       port: 3000
+   ```
+
+3. **exec**: コマンド実行
+   ```yaml
+   livenessProbe:
+     exec:
+       command:
+       - cat
+       - /tmp/healthy
+   ```
+
+**本番環境でのベストプラクティス**：
+- **異なるエンドポイント**: `/health`（liveness）と`/ready`（readiness）で用途別に分ける
+- **適切なタイムアウト**: readinessはlivenessより短く設定
+- **段階的な遅延**: readinessを先に開始し、livenessは十分な起動時間を確保
 
 ### 本番運用での考慮事項
 **imagePullPolicy の理解**:
@@ -1623,6 +1660,19 @@ kind load docker-image k8s-demo-app:v1.0.0 --name learning-cluster
 docker exec -it learning-cluster-control-plane crictl images | grep k8s-demo-app
 ```
 
+> **注意：** `docker build`コマンド実行時に以下のような警告メッセージが表示される場合があります：
+> ```
+> failed to fetch metadata: fork/exec /usr/local/lib/docker/cli-plugins/docker-buildx: no such file or directory
+> DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+> ```
+> これらは警告メッセージで、ビルド処理自体は正常に完了します。より新しいBuildKitを使用したい場合は、Docker Buildxをインストールすることを推奨します。
+>
+> **Buildxを使用する場合（オプション）：**
+> ```bash
+> # Buildxを使用してビルド（推奨）
+> docker buildx build -t k8s-demo-app:v1.0.0 .
+> ```
+
 4. K8sマニフェストでデプロイ
 ```yaml
 # demo-app.yaml
@@ -1691,6 +1741,70 @@ curl http://localhost:8080/health
 - 複数のPod間でロードバランシングされているか（hostnameが異なる）
 - ヘルスチェックが正常に動作するか
 - 環境変数が正しく設定されているか
+
+**学習ポイント：KubernetesのServiceによる自動ロードバランシング**
+
+KubernetesのServiceは**自動的にロードバランシング**を行います：
+
+1. **Serviceの仕組み**
+   - `selector`でマッチするPodを自動検出
+   - これらのPodのIPアドレスをEndpointsとして管理
+   - Round-robin方式で各Podにトラフィックを分散
+
+2. **Endpointsの確認**
+   ```bash
+   kubectl get endpoints demo-app-service -o yaml
+   ```
+
+3. **設定不要の利点**
+   - 特別な設定は不要（selectorでPodを指定するだけ）
+   - Podが増減しても自動でEndpointsを更新
+   - 1つのPodが落ちても他のPodにトラフィックを分散
+
+**学習ポイント：ヘルスチェック（livenessProbe / readinessProbe）**
+
+マニフェストファイルで設定した`livenessProbe`と`readinessProbe`の基本的な動作を理解しましょう：
+
+```yaml
+# demo-app.yamlで設定したヘルスチェック
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30    # 30秒後から開始
+  periodSeconds: 10          # 10秒間隔で実行
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 5     # 5秒後から開始
+  periodSeconds: 5           # 5秒間隔で実行
+```
+
+**2つのプローブの違い**:
+- **livenessProbe**: Podが「生きているか」→ 失敗時は**Pod再起動**
+- **readinessProbe**: Podが「準備完了か」→ 失敗時は**トラフィック停止**
+
+**実際の状態確認**:
+```bash
+kubectl describe pod -l app=demo-app | grep -A 3 "Liveness\|Readiness"
+```
+
+> **詳細なプローブ設定については、前の「K8sプローブの詳細設定とベストプラクティス」セクションを参照してください**
+
+> **重要：ロードバランシングの検証について**
+> 
+> `kubectl port-forward`は単一のTCP接続を維持するため、同じPodに繰り返しリクエストが送られます。
+> そのため、`curl http://localhost:8080`を複数回実行しても、同じhostnameが返される場合があります。
+> 
+> **正確なロードバランシング検証方法：**
+> ```bash
+> # クラスター内から直接サービスにアクセスしてテスト
+> kubectl run test-pod --image=curlimages/curl:latest --rm -it --restart=Never -- sh -c "for i in \$(seq 1 30); do curl -s demo-app-service | grep -o 'hostname\":\"[^\"]*' | cut -d'\"' -f3; done | sort | uniq -c"
+> ```
+> 
+> この方法で、3つのPodすべてにリクエストが分散されていることを確認できます。
 
 ### 課題1-4: kindクラスターの管理とデバッグ
 **目標**: kindクラスターの運用とトラブルシューティング技術
