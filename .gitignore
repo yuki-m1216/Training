@@ -31,3 +31,10 @@ override.tf.json
 node_modules/
 dist
 upload
+
+# Python
+**/__pycache__/**
+**/*.py[cod]
+**/*$py.class
+**/*.pyc
+**/.pytest_cache/
