@@ -1,6 +1,6 @@
 locals {
   allowed_github_repositories = [
-    "Terraform",
+    "Training",
   ]
   github_org_name = "y-mitsuyama1216"
   full_paths = [
