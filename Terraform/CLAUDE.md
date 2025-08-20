@@ -10,7 +10,7 @@
 
 リポジトリは2つの主要なプロバイダーセクションに整理されています：
 
-### AWSインフラストラクチャ (`/AWS/`)
+### AWSインフラストラクチャ (`/Terraform/AWS/`)
 - **Resources**: AWSサービス別に整理された完全なインフラストラクチャ例（ACM、API Gateway、Lambda、ECS、VPCなど）
 - **Modules**: 一般的なAWSサービス用の再利用可能なTerraformモジュール
 - **主要機能**:
@@ -20,7 +20,7 @@
   - 様々な用途のLambda関数（コンソールログインアラーム、synthetics）
   - VPC、セキュリティグループ、ルーティングを含む完全なネットワークセットアップ
 
-### New Relicモニタリング (`/NewRelic/`)
+### New Relicモニタリング (`/Terraform/NewRelic/`)
 - **Resources**: New Relicアラート、AWS統合、ログ転送、synthetics
 - **Modules**: アラート、ワークフロー、統合用の再利用可能なコンポーネント
 
@@ -36,13 +36,13 @@ terraform destroy
 ```
 
 ### Lambda関数開発
-TypeScriptを使用するLambda関数の場合（例：`AWS/Resources/APIGateway/synthetics_test_api/`）：
+TypeScriptを使用するLambda関数の場合（例：`Terraform/AWS/Resources/APIGateway/synthetics_test_api/`）：
 ```bash
 npm run build      # TypeScript Lambda関数をビルド
 npm start          # webpackを使用した開発サーバー
 ```
 
-Next.jsフロントエンドの場合（`AWS/Resources/RAG/fe/src/`）：
+Next.jsフロントエンドの場合（`Terraform/AWS/Resources/RAG/fe/src/`）：
 ```bash
 npm run dev        # turbopackを使用した開発サーバー
 npm run build      # プロダクションビルド
@@ -100,8 +100,8 @@ aws s3api put-bucket-versioning --bucket $BUCKET_NAME --versioning-configuration
 
 ### モジュール使用法
 すべてのAWSリソースはローカルモジュールを使用した一貫したパターンに従います：
-- `/AWS/modules/`でのモジュール定義
-- `/AWS/Resources/`でのリソース実装
+- `/Terraform/AWS/modules/`でのモジュール定義
+- `/Terraform/AWS/Resources/`でのリソース実装
 - 標準ファイル構造：`main.tf`、`variables.tf`、`outputs.tf`、`versions.tf`、`provider.tf`
 
 ### Lambda関数構造

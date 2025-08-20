@@ -55,7 +55,7 @@ poetry show
 ### 基本実行
 ```bash
 # ディレクトリ移動
-cd /home/linux/git/Terraform/AWS/Resources/RAG/be/src/vector_database
+cd /home/linux/git/Training/Terraform/AWS/Resources/RAG/be/src/vector_database
 
 # 環境変数を設定してテスト実行
 OPENSEARCH_ENDPOINT="https://test-endpoint.region.aoss.amazonaws.com" S3BUCKET="test-bucket" S3BUCKET_KEY="output/text-with-embedding.json" poetry run pytest test_main.py -v
@@ -447,7 +447,7 @@ print(f"Actions: {json.dumps(actions, indent=2)}")
 ```yaml
 - name: Run vector_database tests
   run: |
-    cd AWS/Resources/RAG/be/src/vector_database
+    cd Terraform/AWS/Resources/RAG/be/src/vector_database
     OPENSEARCH_ENDPOINT="https://test-endpoint.region.aoss.amazonaws.com" S3BUCKET="test-bucket" S3BUCKET_KEY="output/text-with-embedding.json" poetry run pytest test_main.py -v
 ```
 

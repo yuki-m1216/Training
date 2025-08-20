@@ -57,7 +57,7 @@ poetry show
 ### 基本実行
 ```bash
 # ディレクトリ移動
-cd /home/linux/git/Terraform/AWS/Resources/RAG/be/src/embed_doc
+cd /home/linux/git/Training/Terraform/AWS/Resources/RAG/be/src/embed_doc
 
 # 環境変数を設定してテスト実行
 S3BUCKET="test-bucket" S3BUCKET_KEY="test-document.pdf" poetry run pytest test_main.py -v
@@ -395,7 +395,7 @@ print(f"load_and_split call args: {mock_loader.load_and_split.call_args}")
 ```yaml
 - name: Run embed_doc tests
   run: |
-    cd AWS/Resources/RAG/be/src/embed_doc
+    cd Terraform/AWS/Resources/RAG/be/src/embed_doc
     S3BUCKET="test-bucket" S3BUCKET_KEY="test-document.pdf" poetry run pytest test_main.py -v
 ```
 
