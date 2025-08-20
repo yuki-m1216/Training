@@ -32,18 +32,18 @@ jobs:
         uses: hashicorp/setup-terraform@v2
 
       - name: Setup Python
-        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        if: ${{ inputs.tf_dir == 'Terraform/AWS/Resources/RAG/be/infra' }}
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
       # Python deps を matrix で処理（be/infra のときだけ実行）
       - name: Install dependencies
-        if: ${{ inputs.tf_dir == 'AWS/Resources/RAG/be/infra' }}
+        if: ${{ inputs.tf_dir == 'Terraform/AWS/Resources/RAG/be/infra' }}
         run: |
           for dir in embed_doc vector_database answer_user_query; do
             echo "Installing dependencies for $dir"
-            cd AWS/Resources/RAG/be/src/$dir
+            cd Terraform/AWS/Resources/RAG/be/src/$dir
             python -m pip install --upgrade pip
             pip install \
               --platform manylinux2014_x86_64 \

@@ -50,7 +50,7 @@ poetry show
 ### 基本実行
 ```bash
 # ディレクトリ移動
-cd /home/linux/git/Terraform/AWS/Resources/RAG/be/src/answer_user_query
+cd /home/linux/git/Training/Terraform/AWS/Resources/RAG/be/src/answer_user_query
 
 # 環境変数を設定してテスト実行
 OPENSEARCH_ENDPOINT="https://test-endpoint.region.aoss.amazonaws.com" poetry run pytest test_main.py -v
@@ -362,7 +362,7 @@ print(f"mock_function.call_args: {mock_function.call_args}")
 ```yaml
 - name: Run tests
   run: |
-    cd AWS/Resources/RAG/be/src/answer_user_query
+    cd Terraform/AWS/Resources/RAG/be/src/answer_user_query
     OPENSEARCH_ENDPOINT="https://test-endpoint.region.aoss.amazonaws.com" poetry run pytest test_main.py -v
 ```
 
