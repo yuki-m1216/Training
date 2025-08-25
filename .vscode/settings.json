@@ -17,5 +17,6 @@
     "pyenv",
     "pypdf",
     "VECTORSEARCH"
-  ]
+  ],
+  "cSpell.ignoreWords": ["refetches"]
 }
