@@ -1,5 +1,7 @@
 {
   "cSpell.words": [
+    "addgroup",
+    "adduser",
     "aoss",
     "apac",
     "AWSV",
@@ -11,6 +13,7 @@
     "manylinux",
     "mitsuyama",
     "newrelic",
+    "nextjs",
     "OPENSEARCH",
     "opensearchpy",
     "opensearchserverless",
