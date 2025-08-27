@@ -33,6 +33,7 @@
     "eslint-config-next": "15.5.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
