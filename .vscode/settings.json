@@ -19,6 +19,7 @@
     "opensearchserverless",
     "pyenv",
     "pypdf",
+    "turbopack",
     "VECTORSEARCH"
   ],
   "cSpell.ignoreWords": ["refetches"]
