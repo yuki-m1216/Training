@@ -5,21 +5,21 @@ WORKDIR /app
 
 COPY package.json package-lock.json* ./
 
-RUN npm ci --only=production
-
-FROM base AS build-deps
-WORKDIR /app
-
-COPY package.json package-lock.json* ./
-
 RUN npm ci
 
-FROM build-deps AS builder
+FROM deps AS builder
 WORKDIR /app
 
 COPY . .
 
 RUN npm run build
+
+FROM base AS prod-deps
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+
+RUN npm ci --only=production
 
 FROM base AS runner
 WORKDIR /app
@@ -29,7 +29,7 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=prod-deps /app/node_modules ./node_modules
 
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/package.json ./

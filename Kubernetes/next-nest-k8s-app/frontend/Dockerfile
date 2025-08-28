@@ -10,6 +10,10 @@ RUN npm ci --only=production
 FROM base AS builder
 WORKDIR /app
 
+# Build-time argument and environment variable
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

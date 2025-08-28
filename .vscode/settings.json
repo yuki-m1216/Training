@@ -9,6 +9,7 @@
     "boto",
     "Fargate",
     "healthcheck",
+    "isready",
     "langchain",
     "manylinux",
     "mitsuyama",
