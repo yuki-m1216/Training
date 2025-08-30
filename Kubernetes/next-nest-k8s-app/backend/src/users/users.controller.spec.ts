@@ -89,7 +89,7 @@ describe('UsersController', () => {
   });
 
   describe('remove', () => {
-    it('should remove a user by id', async() => {
+    it('should remove a user by id', async () => {
       const user: User = {
         id: 1,
         name: 'John Doe',

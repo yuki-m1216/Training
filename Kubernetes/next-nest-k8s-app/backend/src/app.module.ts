@@ -24,4 +24,3 @@ import { User } from './users/entities/user.entity';
   providers: [],
 })
 export class AppModule {}
-

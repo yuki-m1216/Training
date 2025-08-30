@@ -39,9 +39,7 @@ describe('UsersService', () => {
 
   describe('findAll', () => {
     it('should return an array of users', async () => {
-      const users = [
-        {id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date()},
-      ];
+      const users = [{ id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date() }];
       mockRepository.find.mockResolvedValue(users);
 
       const result = await service.findAll();
@@ -52,7 +50,7 @@ describe('UsersService', () => {
 
   describe('findOne', () => {
     it('should return a user by id', async () => {
-      const user = {id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date()};
+      const user = { id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date() };
       mockRepository.findOne.mockResolvedValue(user);
 
       const result = await service.findOne(1);
@@ -69,12 +67,12 @@ describe('UsersService', () => {
   });
 
   describe('create', () => {
-    it('should create a new user', async() => {
+    it('should create a new user', async () => {
       const createUserDto: CreateUserDto = {
         name: 'Test User',
         email: 'test@example.com',
       };
-      const user = {id: 1, ...createUserDto, createdAt: new Date()};
+      const user = { id: 1, ...createUserDto, createdAt: new Date() };
       mockRepository.create.mockReturnValue(user);
       mockRepository.save.mockResolvedValue(user);
 
@@ -84,13 +82,13 @@ describe('UsersService', () => {
       expect(mockRepository.save).toHaveBeenCalledWith(user);
     });
 
-    it('should create a user with avatar', async() => {
+    it('should create a user with avatar', async () => {
       const createUserDto: CreateUserDto = {
         name: 'Avatar User',
         email: 'avatar@example.com',
         avatar: 'http://example.com/avatar.jpg',
       };
-      const user = {id: 2, ...createUserDto, createdAt: new Date()};
+      const user = { id: 2, ...createUserDto, createdAt: new Date() };
       mockRepository.create.mockReturnValue(user);
       mockRepository.save.mockResolvedValue(user);
 
@@ -101,7 +99,7 @@ describe('UsersService', () => {
 
   describe('remove', () => {
     it('should remove a user by id', async () => {
-      const user = {id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date()};
+      const user = { id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date() };
       mockRepository.findOne.mockResolvedValue(user);
       mockRepository.delete.mockResolvedValue({ affected: 1 });
 

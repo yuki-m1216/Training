@@ -87,14 +87,14 @@ describe('AppController (e2e)', () => {
         name: 'Test User for Get',
         email: `testget-${timestamp}@example.com`,
       };
-      
+
       const createResponse = await request(app.getHttpServer())
         .post('/users')
         .send(createUserDto)
         .expect(201);
-      
+
       const userId = createResponse.body.id;
-      
+
       // 作成したユーザーを取得
       return request(app.getHttpServer())
         .get(`/users/${userId}`)
