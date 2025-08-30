@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 interface User {
   id: number;
@@ -18,7 +18,7 @@ export default function Home() {
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -36,67 +36,73 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiUrl]);
 
-  const createUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newUser.name.trim() || !newUser.email.trim()) {
-      setError('Name and email are required');
-      return;
-    }
-
-    setCreating(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`${apiUrl}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newUser),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create user');
+  const createUser = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!newUser.name.trim() || !newUser.email.trim()) {
+        setError('Name and email are required');
+        return;
       }
 
-      const createdUser = await response.json();
-      setUsers((prev) => [...prev, createdUser]);
-      setNewUser({ name: '', email: '' });
-      setShowCreateForm(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setCreating(false);
-    }
-  };
+      setCreating(true);
+      setError(null);
 
-  const deleteUser = async (userId: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
+      try {
+        const response = await fetch(`${apiUrl}/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newUser),
+        });
 
-    setError(null);
+        if (!response.ok) {
+          throw new Error('Failed to create user');
+        }
 
-    try {
-      const response = await fetch(`${apiUrl}/users/${userId}`, {
-        method: 'DELETE',
-      });
+        const createdUser = await response.json();
+        setUsers((prev) => [...prev, createdUser]);
+        setNewUser({ name: '', email: '' });
+        setShowCreateForm(false);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setCreating(false);
+      }
+    },
+    [apiUrl, newUser]
+  );
 
-      if (!response.ok) {
-        throw new Error('Failed to delete user');
+  const deleteUser = useCallback(
+    async (userId: number) => {
+      if (!confirm('Are you sure you want to delete this user?')) {
+        return;
       }
 
-      setUsers((prev) => prev.filter((user) => user.id !== userId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    }
-  };
+      setError(null);
+
+      try {
+        const response = await fetch(`${apiUrl}/users/${userId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to delete user');
+        }
+
+        setUsers((prev) => prev.filter((user) => user.id !== userId));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      }
+    },
+    [apiUrl]
+  );
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   return (
     <div className="container mx-auto px-4 py-8">
