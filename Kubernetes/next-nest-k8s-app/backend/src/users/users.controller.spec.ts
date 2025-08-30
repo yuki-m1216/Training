@@ -40,73 +40,73 @@ describe('UsersController', () => {
   });
 
   describe('findAll', () => {
-    it('should return an array of users', () => {
+    it('should return an array of users', async () => {
       const result: User[] = [
         { id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date() },
       ];
-      mockUsersService.findAll.mockReturnValue(result);
+      mockUsersService.findAll.mockResolvedValue(result);
 
-      expect(controller.findAll()).toBe(result);
+      expect(await controller.findAll()).toBe(result);
       expect(service.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
-    it('should return a user by id', () => {
+    it('should return a user by id', async () => {
       const user: User = {
         id: 1,
         name: 'John Doe',
         email: 'john@example.com',
         createdAt: new Date(),
       };
-      mockUsersService.findOne.mockReturnValue(user);
+      mockUsersService.findOne.mockResolvedValue(user);
 
-      expect(controller.findOne(1)).toBe(user);
+      expect(await controller.findOne(1)).toBe(user);
       expect(service.findOne).toHaveBeenCalledWith(1);
     });
 
-    it('should throw HttpException when user not found', () => {
-      mockUsersService.findOne.mockReturnValue(undefined);
+    it('should throw HttpException when user not found', async () => {
+      mockUsersService.findOne.mockResolvedValue(undefined);
 
-      expect(() => controller.findOne(999)).toThrow(HttpException);
-      expect(() => controller.findOne(999)).toThrow('User not found');
+      await expect(controller.findOne(999)).rejects.toThrow(HttpException);
+      await expect(controller.findOne(999)).rejects.toThrow('User not found');
     });
   });
 
   describe('create', () => {
-    it('should create a new user', () => {
+    it('should create a new user', async () => {
       const createUserDto: CreateUserDto = {
         name: 'Test User',
         email: 'test@example.com',
       };
       const user: User = { id: 1, ...createUserDto, createdAt: new Date() };
 
-      mockUsersService.create.mockReturnValue(user);
+      mockUsersService.create.mockResolvedValue(user);
 
-      expect(controller.create(createUserDto)).toBe(user);
+      expect(await controller.create(createUserDto)).toBe(user);
       expect(service.create).toHaveBeenCalledWith(createUserDto);
     });
   });
 
   describe('remove', () => {
-    it('should remove a user by id', () => {
+    it('should remove a user by id', async() => {
       const user: User = {
         id: 1,
         name: 'John Doe',
         email: 'john@example.com',
         createdAt: new Date(),
       };
-      mockUsersService.remove.mockReturnValue(user);
+      mockUsersService.remove.mockResolvedValue(user);
 
-      expect(controller.remove(1)).toBe(user);
+      expect(await controller.remove(1)).toBe(user);
       expect(service.remove).toHaveBeenCalledWith(1);
     });
 
-    it('should throw HttpException when user not found', () => {
-      mockUsersService.remove.mockReturnValue(undefined);
+    it('should throw HttpException when user not found', async () => {
+      mockUsersService.remove.mockResolvedValue(undefined);
 
-      expect(() => controller.remove(999)).toThrow(HttpException);
-      expect(() => controller.remove(999)).toThrow('User not found');
+      await expect(controller.remove(999)).rejects.toThrow(HttpException);
+      await expect(controller.remove(999)).rejects.toThrow('User not found');
     });
   });
 });
