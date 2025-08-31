@@ -28,20 +28,26 @@ spec:
       containers:
         - name: backend
           image: next-nest-k8s-app-backend:latest
+          # imagePullPolicy: Never は kind クラスター用の設定
+          # 本番環境では Always または IfNotPresent を使用
+          imagePullPolicy: Never
           ports:
             - containerPort: 3001
           envFrom:
             - configMapRef:
                 name: backend-config
+          # ヘルスチェック: /health エンドポイントが存在しないため
+          # 既存の /users エンドポイントを使用
+          # 本番環境では専用の /health エンドポイントを実装推奨
           livenessProbe:
             httpGet:
-              path: /health
+              path: /users
               port: 3001
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
-              path: /health
+              path: /users
               port: 3001
             initialDelaySeconds: 5
             periodSeconds: 5

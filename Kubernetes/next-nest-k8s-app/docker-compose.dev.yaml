@@ -1,42 +1,47 @@
+# 開発環境用Docker Compose設定
+# 各サービスに直接アクセス可能（デバッグ用）
+# 使用方法: docker-compose -f docker-compose.dev.yaml up
+
 services:
   # PostgreSQLデータベース
   postgres:
     image: postgres:17
-    container_name: postgres
+    container_name: postgres-dev
     restart: unless-stopped
     environment:
       POSTGRES_DB: nestjs_app
       POSTGRES_USER: nestjs_user
       POSTGRES_PASSWORD: nestjs_password
       POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"  # 開発用：直接アクセス可能
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U nestjs_user -d nestjs_app"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - app-network-dev
 
   # バックエンドサービス（Nest.js）
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: backend-dev
     restart: unless-stopped
+    ports:
+      - "3001:3001"  # 開発用：直接アクセス可能
     environment:
-      NODE_ENV: production
-      DATABASE_URL: postgresql://nestjs_user:nestjs_password@postgres:5432/nestjs_app
+      NODE_ENV: development
+      DATABASE_URL: postgresql://nestjs_user:nestjs_password@postgres-dev:5432/nestjs_app
     depends_on:
       postgres:
         condition: service_healthy
     networks:
-      - app-network
-    # nginxからの内部通信のみ許可（直接アクセスを防ぐ）
-    expose:
-      - "3001"
+      - app-network-dev
 
   # フロントエンドサービス（Next.js）
   frontend:
@@ -44,39 +49,38 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # K8s環境と同じ/api経由でアクセス
+        # 開発環境では両方のアクセス方法をサポート
         NEXT_PUBLIC_API_URL: /api
-    container_name: frontend
+    container_name: frontend-dev
     restart: unless-stopped
+    ports:
+      - "3000:3000"  # 開発用：直接アクセス可能
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
     depends_on:
       - backend
     networks:
-      - app-network
-    # nginxからの内部通信のみ許可（直接アクセスを防ぐ）
-    expose:
-      - "3000"
+      - app-network-dev
 
-  # nginxリバースプロキシ（K8s Ingressの役割）
+  # nginxリバースプロキシ（統合アクセス用）
   nginx:
     image: nginx:alpine
-    container_name: nginx
+    container_name: nginx-dev
     restart: unless-stopped
     ports:
-      - "8080:80"  # ポート8080でアクセス（Kubernetes環境との競合回避）
+      - "80:80"  # 統合アクセスポイント
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - frontend
       - backend
     networks:
-      - app-network
+      - app-network-dev
 
 volumes:
-  postgres_data:
+  postgres_data_dev:
     driver: local
 
 networks:
-  app-network:
+  app-network-dev:
     driver: bridge

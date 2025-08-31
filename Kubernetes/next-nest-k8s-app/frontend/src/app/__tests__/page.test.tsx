@@ -7,7 +7,7 @@ const originalEnv = process.env;
 beforeAll(() => {
   process.env = {
     ...originalEnv,
-    NEXT_PUBLIC_API_URL: 'http://localhost:3001',
+    NEXT_PUBLIC_API_URL: '/api',
   };
 });
 
@@ -28,6 +28,7 @@ describe('Home Component', () => {
     mockFetch.mockClear();
     mockFetch.mockResolvedValue({
       ok: true,
+      status: 200,
       json: async () => mockUsers,
     } as Response);
   });
@@ -54,7 +55,7 @@ describe('Home Component', () => {
       expect(screen.getByText('jane@example.com')).toBeInTheDocument();
     });
 
-    expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/users');
+    expect(mockFetch).toHaveBeenCalledWith('/api/users');
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -66,7 +67,9 @@ describe('Home Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Error: Network error')).toBeInTheDocument();
+      const errorDiv = document.querySelector('.bg-red-100');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv?.textContent).toContain('Error: Network error');
     });
   });
 
@@ -149,11 +152,13 @@ describe('Home Component', () => {
       if (options && options.method === 'POST') {
         return Promise.resolve({
           ok: true,
+          status: 201,
           json: async () => newUser,
         } as Response);
       }
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: async () => mockUsers,
       } as Response);
     });
@@ -191,7 +196,7 @@ describe('Home Component', () => {
 
     // Check if POST request was made
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/users', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -224,6 +229,7 @@ describe('Home Component', () => {
       }
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: async () => mockUsers,
       } as Response);
     });
@@ -257,9 +263,9 @@ describe('Home Component', () => {
 
     // Check if error message is displayed
     await waitFor(() => {
-      expect(
-        screen.getByText('Error: Failed to create user')
-      ).toBeInTheDocument();
+      const errorDiv = document.querySelector('.bg-red-100');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv?.textContent).toContain('Error: Failed to create user');
     });
   });
 
@@ -299,9 +305,9 @@ describe('Home Component', () => {
 
     // Check if validation error is displayed
     await waitFor(() => {
-      expect(
-        screen.getByText('Error: Name and email are required')
-      ).toBeInTheDocument();
+      const errorDiv = document.querySelector('.bg-red-100');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv?.textContent).toContain('Error: Name and email are required');
     });
 
     // No POST request should be made
@@ -314,10 +320,12 @@ describe('Home Component', () => {
       if (options && options.method === 'DELETE') {
         return Promise.resolve({
           ok: true,
+          status: 200,
         } as Response);
       }
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: async () => mockUsers,
       } as Response);
     });
@@ -342,7 +350,7 @@ describe('Home Component', () => {
 
     // Check if DELETE request was made
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:3001/users/1', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
         method: 'DELETE',
       });
     });
@@ -394,6 +402,7 @@ describe('Home Component', () => {
       }
       return Promise.resolve({
         ok: true,
+        status: 200,
         json: async () => mockUsers,
       } as Response);
     });
@@ -418,9 +427,9 @@ describe('Home Component', () => {
 
     // Check if error message is displayed
     await waitFor(() => {
-      expect(
-        screen.getByText('Error: Failed to delete user')
-      ).toBeInTheDocument();
+      const errorDiv = document.querySelector('.bg-red-100');
+      expect(errorDiv).toBeInTheDocument();
+      expect(errorDiv?.textContent).toContain('Error: Failed to delete user');
     });
 
     // User should still be in the list

@@ -2,6 +2,19 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 
+/**
+ * Next.js App Routerでのクライアントコンポーネント
+ * 
+ * 重要な技術的決定:
+ * 1. SSR/SSGを無効化してクライアントサイドレンダリングのみ使用
+ *    - 理由: Kubernetes環境でのハイドレーション問題を回避
+ * 2. APIエンドポイントは環境変数ではなく相対パス'/api'を使用
+ *    - 理由: ビルド時と実行時の環境差異を解消
+ * 3. isClientフラグでクライアントサイドのみでレンダリング
+ *    - 理由: サーバーサイドとクライアントサイドの不整合を防止
+ */
+export const dynamic = 'force-dynamic';
+
 interface User {
   id: number;
   name: string;
@@ -15,28 +28,38 @@ export default function Home() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newUser, setNewUser] = useState({ name: '', email: '' });
   const [creating, setCreating] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  // APIエンドポイント: Ingressで/apiパスをバックエンドにプロキシ
+  // Docker Compose環境では直接ポート3001を使用
+  // Kubernetes環境ではIngressが/apiを適切にルーティング
+  const apiUrl = '/api';
 
   const fetchUsers = useCallback(async () => {
+    if (!isClient) return;
+    
+    console.log('fetchUsers called, apiUrl:', apiUrl);
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`${apiUrl}/users`);
+      console.log('Response status:', response.status, 'ok:', response.ok);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error(`Failed to fetch users: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Fetched data:', data);
       setUsers(data);
     } catch (err) {
+      console.error('fetchUsers error:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
-  }, [apiUrl]);
+  }, [apiUrl, isClient]);
 
   const createUser = useCallback(
     async (e: React.FormEvent) => {
@@ -100,9 +123,30 @@ export default function Home() {
     [apiUrl]
   );
 
+  // クライアントサイドハイドレーション用のフラグ設定
+  // サーバーサイドでは false、クライアントサイドで true になる
   useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+    setIsClient(true);
+  }, []);
+
+  // クライアントサイドでのみユーザーデータを取得
+  // これによりSSR時のAPIコール失敗を防ぐ
+  useEffect(() => {
+    if (isClient) {
+      fetchUsers();
+    }
+  }, [isClient, fetchUsers]);
+
+  // サーバーサイドレンダリング時は簡易版を表示
+  // ハイドレーションミスマッチを防ぐため
+  if (!isClient) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">User Management</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -190,6 +234,15 @@ export default function Home() {
           </form>
         </div>
       )}
+
+      <div className="mb-4 p-4 bg-yellow-100 rounded">
+        <p><strong>Debug Info:</strong></p>
+        <p>Users count: {users.length}</p>
+        <p>Loading: {loading.toString()}</p>
+        <p>Client-side: {isClient.toString()}</p>
+        <p>Error: {error || 'none'}</p>
+        <p>API URL: {apiUrl}</p>
+      </div>
 
       <div className="grid gap-4">
         {users.map((user) => (
