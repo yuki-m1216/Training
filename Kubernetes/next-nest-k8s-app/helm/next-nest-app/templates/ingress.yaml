@@ -1,0 +1,69 @@
+{{- if .Values.ingress.enabled }}
+# ===========================================
+# メインIngress: 静的ファイルとフロントエンド
+# ===========================================
+# このIngressは静的ファイル（JS/CSS）とフロントエンドのルーティングを処理
+# リライトを行わないため、Next.jsの静的ファイルが正しく配信される
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "next-nest-app.fullname" . }}-ingress
+  labels:
+    {{- include "next-nest-app.labels" . | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: localhost
+      http:
+        paths:
+        # Backend API（リライトなし版）
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "next-nest-app.fullname" . }}-backend
+              port:
+                number: {{ .Values.backend.service.port }}
+        # Frontend - すべての他のパス（必ず最後に配置）
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ include "next-nest-app.fullname" . }}-frontend
+              port:
+                number: {{ .Values.frontend.service.port }}
+---
+# ===========================================
+# API専用Ingress: パスリライト処理
+# ===========================================
+# /api/users → /users のようにパスを変換してバックエンドに転送
+# Next.jsアプリケーションからのAPI呼び出しを正しく処理
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "next-nest-app.fullname" . }}-ingress-api
+  labels:
+    {{- include "next-nest-app.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    # $2で/api/以降のパスを取得してリライト
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: localhost
+      http:
+        paths:
+        - path: /api(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              name: {{ include "next-nest-app.fullname" . }}-backend
+              port:
+                number: {{ .Values.backend.service.port }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- toYaml .Values.ingress.tls | nindent 4 }}
+  {{- end }}
+{{- end }}

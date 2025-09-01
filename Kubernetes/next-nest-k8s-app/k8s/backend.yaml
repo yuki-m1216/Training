@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  labels:
+    app: backend
+data:
+  DATABASE_URL: "postgresql://nestjs_user:nestjs_password@postgres-service:5432/nestjs_app"
+  NODE_ENV: "production"
+  PORT: "3001"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: next-nest-k8s-app-backend:latest
+          # imagePullPolicy: Never は kind クラスター用の設定
+          # 本番環境では Always または IfNotPresent を使用
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          # ヘルスチェック: /health エンドポイントが存在しないため
+          # 既存の /users エンドポイントを使用
+          # 本番環境では専用の /health エンドポイントを実装推奨
+          livenessProbe:
+            httpGet:
+              path: /users
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /users
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  labels:
+    app: backend
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 3001
+      targetPort: 3001
+  type: ClusterIP

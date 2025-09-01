@@ -1,5 +1,7 @@
 {
   "cSpell.words": [
+    "addgroup",
+    "adduser",
     "aoss",
     "apac",
     "AWSV",
@@ -7,15 +9,19 @@
     "boto",
     "Fargate",
     "healthcheck",
+    "isready",
     "langchain",
     "manylinux",
     "mitsuyama",
     "newrelic",
+    "nextjs",
     "OPENSEARCH",
     "opensearchpy",
     "opensearchserverless",
     "pyenv",
     "pypdf",
+    "turbopack",
     "VECTORSEARCH"
-  ]
+  ],
+  "cSpell.ignoreWords": ["refetches"]
 }

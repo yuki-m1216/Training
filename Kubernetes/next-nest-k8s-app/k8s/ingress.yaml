@@ -1,0 +1,60 @@
+# Kubernetes Ingress設定
+# 
+# 重要: 2つの別々のIngressリソースを使用している理由
+# 1. app-ingress: フロントエンド用（rewriteなし）
+#    - 静的ファイル（/_next/static/*）を正しく配信
+#    - HTMLファイルをそのまま配信
+# 2. api-ingress: API用（rewriteあり）  
+#    - /api/* を /* にリライトしてバックエンドに転送
+#    - バックエンドは/api プレフィックスを期待しない
+#
+# 統合Ingressでrewrite-targetを使用すると、
+# 静的ファイルのパスも書き換えられて404エラーになる問題を回避
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  labels:
+    app: ingress  
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: localhost
+      http:
+        paths:
+          # フロントエンドルーティング（リライトなし）
+          # Next.jsの静的ファイル配信を妨げない
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  labels:
+    app: ingress
+  annotations:
+    # /api/users → /users にリライト
+    # $1 は正規表現 /api/(.*) のキャプチャグループ
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: localhost
+      http:
+        paths:
+          # APIルーティング（/apiプレフィックスを削除）
+          # Nest.jsは/users, /posts などのパスを期待
+          - path: /api/(.*)
+            pathType: ImplementationSpecific  
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 3001

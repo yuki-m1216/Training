@@ -1,0 +1,62 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "next-nest-app.fullname" . }}-backend
+  labels:
+    {{- include "next-nest-app.backend.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "next-nest-app.backend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "next-nest-app.backend.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.backend.service.targetPort }}
+          protocol: TCP
+        env:
+        # 基本的な環境変数
+        - name: NODE_ENV
+          value: {{ .Values.backend.env.NODE_ENV | quote }}
+        - name: PORT
+          value: {{ .Values.backend.env.PORT | quote }}
+        # PostgreSQL接続設定
+        # TypeORMはDATABASE_URL形式の接続文字列を使用
+        # 形式: postgresql://username:password@host:port/database
+        - name: DATABASE_URL
+          value: "postgresql://{{ .Values.postgresql.auth.username }}:{{ .Values.postgresql.auth.password }}@{{ include "next-nest-app.postgresql.servicename" . }}:{{ .Values.postgresql.service.port }}/{{ .Values.postgresql.auth.database }}"
+        # ヘルスチェック
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.backend.healthCheck.liveness.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.backend.healthCheck.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.backend.healthCheck.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.backend.healthCheck.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.backend.healthCheck.liveness.failureThreshold }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.backend.healthCheck.readiness.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.backend.healthCheck.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.backend.healthCheck.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.backend.healthCheck.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.backend.healthCheck.readiness.failureThreshold }}
+        # リソース制限
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+      # セキュリティ設定
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
