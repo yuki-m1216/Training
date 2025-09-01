@@ -42,6 +42,20 @@ next-nest-k8s-app/
 │   ├── frontend.yaml         # フロントエンドデプロイメント
 │   ├── ingress.yaml          # Ingress設定
 │   └── kind-config.yaml      # kind cluster設定
+├── helm/                 # Helmチャート
+│   └── next-nest-app/    # アプリケーションチャート
+│       ├── Chart.yaml    # チャートメタデータ
+│       ├── values.yaml   # デフォルト値
+│       └── templates/    # Kubernetesテンプレート
+│           ├── _helpers.tpl        # ヘルパー関数
+│           ├── backend-deployment.yaml
+│           ├── backend-service.yaml
+│           ├── frontend-deployment.yaml
+│           ├── frontend-service.yaml
+│           ├── ingress.yaml
+│           └── postgresql-secret.yaml
+├── nginx/                # nginx設定（Docker Compose用）
+│   └── nginx.conf        # リバースプロキシ設定
 └── docker-compose.yaml    # Docker Compose設定
 ```
 
@@ -52,6 +66,7 @@ next-nest-k8s-app/
 - Docker Desktop
 - kubectl
 - kind (Kubernetes in Docker)
+- Helm 3.x
 - Node.js 22+ (ローカル開発用)
 
 ### 1. Docker Compose環境
@@ -71,7 +86,7 @@ docker-compose -f docker-compose.dev.yaml up -d
 # 統合アクセス: http://localhost/
 ```
 
-### 2. Kubernetes環境（kind）
+### 2. Kubernetes環境（マニフェスト使用）
 
 ```bash
 # kindクラスターの作成（Ingress有効）
@@ -107,6 +122,54 @@ kubectl get pods
 # アクセス
 # アプリケーション: http://localhost/
 # API: http://localhost/api/users
+```
+
+### 3. Kubernetes環境（Helm使用） - 推奨
+
+```bash
+# kindクラスターの作成（まだ作成していない場合）
+kind create cluster --config k8s/kind-config.yaml
+
+# NGINX Ingress Controllerのインストール
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=90s
+
+# Dockerイメージのビルド
+docker build -t next-nest-k8s-app-backend:latest ./backend
+docker build -t next-nest-k8s-app-frontend:latest ./frontend
+
+# kindクラスターへイメージをロード
+kind load docker-image next-nest-k8s-app-backend:latest
+kind load docker-image next-nest-k8s-app-frontend:latest
+
+# PostgreSQLのデプロイ（Helmチャートは外部PostgreSQLを使用）
+kubectl apply -f k8s/postgres-config.yaml
+kubectl apply -f k8s/postgres.yaml
+
+# Helmでアプリケーションをインストール
+cd helm
+helm install my-app ./next-nest-app \
+  --set postgresql.enabled=false \
+  --set backend.image.pullPolicy=Never \
+  --set frontend.image.pullPolicy=Never
+
+# デプロイ状態の確認
+helm list
+kubectl get pods
+kubectl get ingress
+
+# アクセス
+# アプリケーション: http://localhost/
+# API: http://localhost/api/users
+
+# アップグレード（設定変更時）
+helm upgrade my-app ./next-nest-app --reuse-values
+
+# アンインストール
+helm uninstall my-app
 ```
 
 ## 環境変数設定
@@ -240,5 +303,10 @@ MIT
 ## 更新履歴
 
 - 2025-08-31: 初版作成
-- Kubernetes環境の構築とトラブルシューティング完了
-- Docker ComposeとKubernetes両環境での動作確認済み
+  - Kubernetes環境の構築とトラブルシューティング完了
+  - Docker ComposeとKubernetes両環境での動作確認済み
+- 2025-09-02: Helmチャート追加
+  - Helmチャートによるデプロイメント管理
+  - 2つのIngressリソースによる静的ファイルとAPIの適切なルーティング
+  - DATABASE_URL環境変数による接続設定の統一
+  - Playwrightによる完全動作確認済み

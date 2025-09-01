@@ -1,0 +1,19 @@
+apiVersion: v2
+name: next-nest-app
+description: A Helm chart for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - nextjs
+  - nestjs
+  - postgresql
+  - fullstack
+maintainers:
+  - name: Your Name
+    email: your.email@example.com
+dependencies:
+  - name: postgresql
+    version: "13.2.24"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
