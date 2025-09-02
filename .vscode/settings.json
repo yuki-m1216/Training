@@ -21,7 +21,8 @@
     "pyenv",
     "pypdf",
     "turbopack",
-    "VECTORSEARCH"
+    "VECTORSEARCH",
+    "yuki"
   ],
   "cSpell.ignoreWords": ["refetches"]
 }
