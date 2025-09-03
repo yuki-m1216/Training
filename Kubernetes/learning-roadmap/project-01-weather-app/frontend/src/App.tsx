@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import "./App.css";
 
 interface WeatherData {
@@ -15,11 +15,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
-  useEffect(() => {
-    fetchWeather();
-  }, []);
 
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`${API_URL}/api/weather`);
@@ -31,7 +28,11 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
+
+  useEffect(() => {
+    fetchWeather();
+  }, [fetchWeather]);
 
   if (loading) return <div className="loading">Loading weather data...</div>;
   if (error) return <div className="error">Error: {error}</div>;

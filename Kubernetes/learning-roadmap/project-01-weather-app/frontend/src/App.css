@@ -53,7 +53,9 @@ button {
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 button:hover {
@@ -61,7 +63,8 @@ button:hover {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
-.loading, .error {
+.loading,
+.error {
   padding: 2rem;
   font-size: 1.2rem;
 }
