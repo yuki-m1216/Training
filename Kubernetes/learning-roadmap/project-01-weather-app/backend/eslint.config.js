@@ -1,12 +1,13 @@
-const js = require('@eslint/js');
-const tseslint = require('@typescript-eslint/eslint-plugin');
-const tseslintParser = require('@typescript-eslint/parser');
-const prettier = require('eslint-config-prettier');
+import js from '@eslint/js';
+import tseslint from '@typescript-eslint/eslint-plugin';
+import tseslintParser from '@typescript-eslint/parser';
+import prettier from 'eslint-config-prettier';
 
-module.exports = [
+export default [
   {
     ignores: ['node_modules/**', 'dist/**', '*.js'],
   },
+  js.configs.recommended,
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: {
@@ -19,19 +20,13 @@ module.exports = [
         process: 'readonly',
         console: 'readonly',
         Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
         global: 'readonly',
-        module: 'readonly',
-        require: 'readonly',
-        exports: 'readonly',
       },
     },
     plugins: {
       '@typescript-eslint': tseslint,
     },
     rules: {
-      ...js.configs.recommended.rules,
       ...tseslint.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/explicit-function-return-type': 'off',
