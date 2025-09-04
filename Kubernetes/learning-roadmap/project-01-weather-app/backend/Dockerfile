@@ -14,7 +14,7 @@ RUN npm run build
 FROM node:20-alpine
 
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -u 1001 -S nodejs
+    adduser -S nodejs -u 1001 -G nodejs
 
 WORKDIR /app
 
