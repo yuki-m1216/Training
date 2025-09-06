@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service-loadbalancer
+  namespace: weather-app
+  annotations:
+    description: "LoadBalancer: Cloud provider LB (simulated with MetalLB in kind)"
+spec:
+  type: LoadBalancer
+  selector:
+    app: backend
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP

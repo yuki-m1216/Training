@@ -1,0 +1,43 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --exec tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json}\"",
+    "check": "npm run lint && npm run format:check"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.34.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.6.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0"
+  }
+}
