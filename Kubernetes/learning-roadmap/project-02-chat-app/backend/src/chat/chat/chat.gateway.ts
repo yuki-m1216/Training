@@ -31,7 +31,7 @@ export class ChatGateway
 
   constructor(private chatService: ChatService) {}
 
-  afterInit(server: Server) {
+  afterInit() {
     this.logger.log('WebSocket server initialized');
   }
 
@@ -55,6 +55,12 @@ export class ChatGateway
     await client.join(room);
     this.chatService.addUser(client.id, username, room);
 
+    // Send existing messages to the new user
+    const existingMessages = this.chatService.getMessagesForRoom(room);
+    for (const msg of existingMessages) {
+      client.emit('message', msg);
+    }
+
     const message: Message = {
       id: Date.now().toString(),
       username: 'System',
@@ -63,6 +69,8 @@ export class ChatGateway
       timestamp: new Date(),
     };
 
+    // Add the join message to history
+    this.chatService.addMessage(message);
     this.server.to(room).emit('message', message);
 
     const usersInRoom = this.chatService.getUsersInRoom(room);
@@ -72,7 +80,7 @@ export class ChatGateway
   }
 
   @SubscribeMessage('sendMessage')
-  async handleMessage(
+  handleMessage(
     @MessageBody() data: SendMessageDto,
     @ConnectedSocket() client: Socket,
   ) {
@@ -120,6 +128,8 @@ export class ChatGateway
       timestamp: new Date(),
     };
 
+    // Add the leave message to history
+    this.chatService.addMessage(message);
     this.server.to(room).emit('message', message);
 
     const usersInRoom = this.chatService.getUsersInRoom(room);
