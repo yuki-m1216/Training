@@ -76,7 +76,8 @@ export class ChatGateway
     const usersInRoom = this.chatService.getUsersInRoom(room);
     this.server.to(room).emit('roomUsers', usersInRoom);
 
-    return { event: 'joinedRoom', data: { room, username } };
+    this.logger.log(`User ${username} successfully joined room ${room}`);
+    return { success: true, room };
   }
 
   @SubscribeMessage('sendMessage')
