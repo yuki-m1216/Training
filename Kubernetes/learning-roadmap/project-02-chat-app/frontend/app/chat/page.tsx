@@ -153,18 +153,18 @@ export default function ChatPage() {
             <div
               key={message.id}
               className={`flex ${
-                message.userName === username ? "justify-end" : "justify-start"
+                message.username === username ? "justify-end" : "justify-start"
               }`}
             >
               <div
                 className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.userName === username
+                  message.username === username
                     ? "bg-blue-500 text-white"
                     : "bg-white text-gray-800"
                 }`}
               >
-                <p className="text-xs font-semibold mb-1">{message.userName}</p>
-                <p>{message.content}</p>
+                <p className="text-xs font-semibold mb-1">{message.username}</p>
+                <p>{message.text}</p>
                 <p className="text-xs mt-1 opacity-70">
                   {new Date(message.timestamp).toLocaleTimeString()}
                 </p>
