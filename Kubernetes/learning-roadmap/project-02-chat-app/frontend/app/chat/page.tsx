@@ -29,7 +29,7 @@ export default function ChatPage() {
       console.log(`${userName} left room ${room}`);
     });
 
-    socket.on("typing", ({ userId, userName, isTyping }) => {
+    socket.on("typing", ({ userId, isTyping }) => {
       setTypingUsers((prev) => {
         const newSet = new Set(prev);
         if (isTyping) {

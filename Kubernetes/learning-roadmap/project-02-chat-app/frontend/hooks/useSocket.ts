@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import type {
   ServerToClientEvents,
@@ -40,7 +40,7 @@ export const useSocket = () => {
       console.error("Connection error:", err.message);
       setIsConnected(false);
     });
-    
+
     // Debug info
     console.log("Socket.io connecting to:", `${socketUrl}/chat`);
     console.log("Socket instance created:", socketInstance);
