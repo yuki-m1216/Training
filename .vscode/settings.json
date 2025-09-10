@@ -17,6 +17,7 @@
     "isready",
     "kwargs",
     "langchain",
+    "libc",
     "manylinux",
     "metallb",
     "mitsuyama",
@@ -38,6 +39,7 @@
     "Streamlit",
     "turbopack",
     "VECTORSEARCH",
+    "Vercel",
     "yuki"
   ],
   "cSpell.ignoreWords": ["refetches"]
