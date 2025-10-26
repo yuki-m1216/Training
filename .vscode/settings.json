@@ -11,6 +11,7 @@
     "boto",
     "botocore",
     "changeme",
+    "configmap",
     "cpus",
     "Fargate",
     "healthcheck",
@@ -42,5 +43,5 @@
     "Vercel",
     "yuki"
   ],
-  "cSpell.ignoreWords": ["refetches"]
+  "cSpell.ignoreWords": ["nodenext", "refetches", "statefulset"]
 }

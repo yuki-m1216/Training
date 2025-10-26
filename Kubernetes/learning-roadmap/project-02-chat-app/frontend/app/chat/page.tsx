@@ -60,7 +60,6 @@ export default function ChatPage() {
       console.log("Join room response:", response);
       if (response?.success) {
         setIsJoined(true);
-        setMessages([]);
       } else {
         console.error("Failed to join room:", response);
       }
