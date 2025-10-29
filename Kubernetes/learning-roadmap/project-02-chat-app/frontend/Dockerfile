@@ -12,7 +12,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# ビルド時の環境変数を受け取る
+ARG NEXT_PUBLIC_SOCKET_URL
+ARG NEXT_PUBLIC_API_URL
+
+# 環境変数を設定
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_SOCKET_URL=${NEXT_PUBLIC_SOCKET_URL}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 RUN npm run build
 
 FROM base AS runner

@@ -9,6 +9,7 @@ resources:
   - redis-service.yaml
   - configmap.yaml
   - secret.yaml
+  - ingress.yaml
 
 labels:
   - pairs:
