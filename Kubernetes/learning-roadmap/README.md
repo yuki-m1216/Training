@@ -49,8 +49,8 @@ weather-app/
 ---
 
 ### 🎮 プロジェクト2: リアルタイムチャットアプリ (3-4日)
-**言語**: TypeScript  
-**学習ポイント**: WebSocket、SessionAffinity、水平スケーリング
+**言語**: TypeScript
+**学習ポイント**: WebSocket、SessionAffinity、水平スケーリング、Ingress
 
 ```
 chat-app/
@@ -64,7 +64,16 @@ chat-app/
 - NestJSで構造化されたWebSocketサーバー
 - TypeScriptの型定義でイベント管理
 - Redisアダプタでスケーリング対応
+- Ingressによる統合的なルーティング（WebSocket対応）
 - HPAで自動スケーリング実装
+
+**学習フェーズ**:
+1. Phase 1: ローカル環境でのアプリケーション開発
+2. Phase 2: Kubernetesマニフェスト作成とデプロイ
+3. Phase 3: Ingress設定とHPA実装
+4. Phase 4: プロジェクトまとめ
+
+**Note**: Prometheus/Grafanaなどの本格的なObservabilityツールはプロジェクト6で学習
 
 ---
 

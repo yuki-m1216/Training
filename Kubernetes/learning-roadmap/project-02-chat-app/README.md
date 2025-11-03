@@ -426,6 +426,195 @@ http://localhost
 
 ---
 
+### ✅ Phase 3-1: HPA (Horizontal Pod Autoscaler)
+
+#### 実施内容
+- Metrics Serverのインストールと設定
+- Backend/Frontend用のHPA作成
+- 負荷テストによる自動スケーリング検証
+- 複数ポッド間でのRedis Adapter動作確認
+
+#### Metrics Serverのインストール
+
+**Kind環境用の設定**
+```bash
+# Metrics Serverをインストール
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+# Kind環境ではTLS検証を無効化する必要がある
+kubectl patch deployment metrics-server -n kube-system --type='json' -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/args/-",
+    "value": "--kubelet-insecure-tls"
+  }
+]'
+
+# 準備完了を待機
+kubectl wait --for=condition=available --timeout=60s deployment/metrics-server -n kube-system
+
+# メトリクス確認
+kubectl top nodes
+kubectl top pods -n chat-app-dev
+```
+
+#### HPA設定
+
+**Backend HPA** ([k8s/base/backend-hpa.yaml](k8s/base/backend-hpa.yaml)):
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+```
+
+**Frontend HPA** ([k8s/base/frontend-hpa.yaml](k8s/base/frontend-hpa.yaml)):
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+```
+
+**設定のポイント**:
+- `minReplicas: 1`: 通常時は1ポッドで動作（コスト効率）
+- `maxReplicas: 5/3`: Backend最大5、Frontend最大3
+- `averageUtilization: 50`: CPU使用率50%を超えるとスケールアウト
+- `scaleUp behavior`: 即座にスケールアウト、最大100%または2ポッド増
+- `scaleDown behavior`: 60秒の安定化期間後、50%ずつスケールイン
+
+#### デプロイと確認
+
+```bash
+# kustomization.yamlにHPAを追加済み
+kubectl apply -k k8s/overlays/dev
+
+# HPA状態確認
+kubectl get hpa -n chat-app-dev
+kubectl describe hpa -n chat-app-dev
+```
+
+#### 負荷テストの実施
+
+**Podを使った負荷生成**:
+```bash
+# 監視用（別ターミナル）
+watch -n 2 'kubectl get hpa -n chat-app-dev && echo "---" && kubectl get pods -n chat-app-dev'
+
+# 負荷生成
+kubectl run load-generator \
+  --image=jordi/ab \
+  --rm -it --restart=Never \
+  -- -n 5000 -c 50 http://dev-backend.chat-app-dev:3000/health
+```
+
+**観察された動作**:
+1. 負荷開始 → CPU使用率が50%超過
+2. 約30秒後 → Backend Podが 1 → 3 にスケールアウト
+3. 負荷停止 → CPU使用率低下
+4. 60秒安定化期間後 → Backend Podが 3 → 1 にスケールイン
+
+#### Redis Adapterの動作確認
+
+**複数ポッド間でのWebSocket通信テスト**:
+
+```bash
+# テスト用にminReplicasを2に設定
+kubectl patch hpa dev-backend-hpa -n chat-app-dev --type='json' \
+  -p='[{"op": "replace", "path": "/spec/minReplicas", "value": 2}]'
+
+# 両ポッドでRedis Adapterが有効か確認
+kubectl logs -n chat-app-dev -l app=backend --tail=50 | grep -E "(Redis adapter|Failed to setup)"
+```
+
+**期待される結果**:
+```
+Redis adapter enabled for WebSocket scaling
+Redis adapter enabled for WebSocket scaling
+```
+
+**ブラウザテスト結果**:
+- User1がPod1に接続: `dev-backend-77b4996559-pd9l5`
+- User2がPod2に接続: `dev-backend-77b4996559-rwxh8`
+- User2がメッセージ送信 → Redis Pub/Sub経由でPod1に配信 → User1が受信
+- ✅ 複数ポッド間でのWebSocket通信が正常に動作
+
+**接続先の確認方法**:
+```bash
+# 各ポッドのログで接続履歴を確認
+kubectl logs -n chat-app-dev <pod-name> | grep -E "(Client connected|joined room)"
+```
+
+#### 遭遇した問題と解決
+
+**1. 古いポッドでRedis接続エラー**
+- **問題**: 4日前に起動した古いポッドでRedis接続タイムアウトが残っていた
+- **原因**: 以前のRedis設定ミス時のポッドがそのまま稼働
+- **解決**: 古いポッドを削除して再起動
+```bash
+kubectl delete pod <old-pod-name> -n chat-app-dev
+```
+
+**2. SessionAffinityの影響**
+- **発見**: Backend ServiceにはsessionAffinity: ClientIPが設定されている
+- **動作**: Playwrightで2つのタブを開くと、異なるWebSocketコネクションとして扱われ、異なるポッドに振り分けられた
+- **結果**: テストに影響なく、Redis Adapterの動作を確認できた
+
+#### クリーンアップ
+
+```bash
+# minReplicasを元に戻す
+kubectl patch hpa dev-backend-hpa -n chat-app-dev --type='json' \
+  -p='[{"op": "replace", "path": "/spec/minReplicas", "value": 1}]'
+```
+
+---
+
 ## 現在の状態
 
 ### デプロイ済みリソース
@@ -483,13 +672,26 @@ kubectl port-forward -n chat-app-dev service/dev-backend 3000:3000
 - Headless Serviceとの組み合わせ
 - Redisのデータ永続性確保
 
+### HPA (Horizontal Pod Autoscaler)
+- Metrics Serverによるリソースメトリクス収集
+- CPU使用率ベースの自動スケーリング
+- スケールアウト/スケールインのbehavior設定
+- 複数ポッド環境でのWebSocket接続管理
+
 ---
 
-## 次のステップ
+## プロジェクト完了状況
 
-- [ ] **Phase 3-1: HPA (Horizontal Pod Autoscaler)** - 負荷に応じた自動スケーリング
-- [ ] **Phase 4: Monitoring** - Prometheus/Grafana導入
-- [ ] **Phase 5: Logging** - EFK Stack導入
+このプロジェクトで完了した内容：
+- ✅ **Phase 1**: ローカル環境でのアプリケーション開発
+- ✅ **Phase 2-1**: Kubernetesマニフェスト作成
+- ✅ **Phase 2-2**: Kustomize環境別設定
+- ✅ **Phase 2-3**: Kustomize検証
+- ✅ **Phase 2-4**: Kubernetesへのデプロイ
+- ✅ **Phase 3-1**: HPA (Horizontal Pod Autoscaler)
+- ✅ **Phase 3-2**: Ingress設定
+
+**Note**: Prometheus/GrafanaなどのMonitoring、EFK StackなどのLoggingは、より高度な学習項目として **Project 6: データ分析ダッシュボード** で実施します。このプロジェクトでは、WebSocketアプリケーションの水平スケーリングとIngress設定に焦点を当てました。
 
 ---
 
@@ -528,6 +730,25 @@ kubectl exec -n chat-app-dev dev-redis-0 -- redis-cli ping
 
 # ConfigMapの確認
 kubectl get configmap -n chat-app-dev dev-chat-config -o yaml
+```
+
+### HPAが動作しない
+
+```bash
+# Metrics Serverが動作しているか確認
+kubectl get deployment -n kube-system metrics-server
+
+# メトリクスが取得できるか確認
+kubectl top nodes
+kubectl top pods -n chat-app-dev
+
+# HPAの状態確認
+kubectl describe hpa -n chat-app-dev
+
+# Kind環境の場合、TLS検証無効化が必要
+kubectl patch deployment metrics-server -n kube-system --type='json' -p='[
+  {"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}
+]'
 ```
 
 ---
