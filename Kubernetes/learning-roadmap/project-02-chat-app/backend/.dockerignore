@@ -1,0 +1,17 @@
+backend/.dockerignore:
+node_modules
+dist
+*.log
+*.md
+.git
+.gitignore
+.env*
+coverage
+.nyc_output
+.cache
+test
+.eslintrc.js
+.prettierrc
+tsconfig.spec.json
+*.spec.ts
+test-client.html

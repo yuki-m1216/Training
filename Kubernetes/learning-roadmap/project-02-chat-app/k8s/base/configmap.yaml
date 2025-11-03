@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chat-config
+data:
+  # Backend
+  NODE_ENV: "production"
+  PORT: "3000"
+  REDIS_URL: "redis://redis:6379"
+  USE_REDIS: "true"
+  FRONTEND_URL: "http://frontend:3001"
+  
+  # Frontend
+  NEXT_PUBLIC_SOCKET_URL: "http://backend:3000"
+  NEXT_PUBLIC_API_URL: "http://backend:3000/api"

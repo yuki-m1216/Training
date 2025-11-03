@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: chat-redis-prod
+    restart: always
+    volumes:
+      - redis-data-prod:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-changeme}
+    networks:
+      - chat-network-prod
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chat-backend-prod
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-changeme}@redis:6379
+      - USE_REDIS=true
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3001}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - chat-network-prod
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: '512M'
+        reservations:
+          cpus: '0.5'
+          memory: '256M'
+networks:
+  chat-network-prod:
+    driver: bridge
+
+volumes:
+  redis-data-prod:
+    driver: local
