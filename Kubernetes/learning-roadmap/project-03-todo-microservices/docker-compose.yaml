@@ -1,0 +1,127 @@
+services:
+ # MongoDB - Todo Service Database
+  mongodb:
+    image: mongo:8.0
+    container_name: todo-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: todo_db
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - microservices-network
+
+  # Redis - Celery Broker & Cache
+  redis:
+    image: redis:8.0-alpine
+    container_name: todo-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - microservices-network
+
+  # Auth Service - FastAPI
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile.dev
+    container_name: auth-service
+    ports:
+      - "8001:8000"
+    environment:
+      # JWT設定
+      SECRET_KEY: "your_secret_key"
+      ALGORITHM: "HS256"
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      # Redis接続
+      REDIS_URL: "redis://redis:6379/0"
+    volumes:
+      - ./auth-service:/app
+      - /app/__pycache__
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+    # Todo Service - NestJS
+  todo-service:
+    build:
+      context: ./todo-service
+      dockerfile: Dockerfile.dev
+    container_name: todo-service
+    ports:
+      - "3001:3000"
+    environment:
+      # MongoDB接続
+      MONGO_URL: "mongodb://admin:password@mongodb:27017/todo_db?authSource=admin"
+      # Auth Service URL
+      AUTH_SERVICE_URL: "http://auth-service:8000"
+      # ポート
+      PORT: "3000"
+    volumes:
+      - ./todo-service:/app
+      - /app/node_modules
+    depends_on:
+      - mongodb
+      - auth-service
+    networks:
+      - microservices-network
+    command: npm run start:dev
+
+  # API Gateway - NestJS
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile.dev
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      # サービスURL
+      AUTH_SERVICE_URL: "http://auth-service:8000"
+      TODO_SERVICE_URL: "http://todo-service:3000"
+      # ポート
+      PORT: "3000"
+    volumes:
+      - ./api-gateway:/app
+      - /app/node_modules
+    depends_on:
+      - auth-service
+      - todo-service
+    networks:
+      - microservices-network
+    command: npm run start:dev
+
+  # Notification Service - Celery Worker
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile.dev
+    container_name: notification-service
+    environment:
+      # CeleryブローカーURL
+      CELERY_BROKER_URL: "redis://redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://redis:6379/2"
+    volumes:
+      - ./notification-service:/app
+      - /app/__pycache__
+    depends_on:
+      - redis
+    networks:
+      - microservices-network
+    command: celery -A app.celery_app worker --loglevel=INFO
+
+networks:
+  microservices-network:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  redis_data:
