@@ -25,17 +25,25 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get all open Dependabot alerts (with pagination support)
-          raw_response=$(gh api repos/${{ github.repository }}/dependabot/alerts --paginate 2>/dev/null || echo "[]")
+          # Use jq -s to slurp paginated arrays into single array
+          raw_response=$(gh api repos/${{ github.repository }}/dependabot/alerts --paginate 2>&1) || true
 
-          # Check if response is an error (contains "message" field)
-          if echo "$raw_response" | jq -e '.[0].message' > /dev/null 2>&1; then
-            echo "API returned an error, treating as no alerts"
+          # Check if response is empty, error, or valid
+          if [ -z "$raw_response" ]; then
+            echo "Empty response from API"
+            alerts="[]"
+          elif echo "$raw_response" | jq -e 'type == "object" and has("message")' > /dev/null 2>&1; then
+            echo "API returned an error: $(echo "$raw_response" | jq -r '.message')"
+            alerts="[]"
+          elif ! echo "$raw_response" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "Unexpected response format, treating as no alerts"
             alerts="[]"
           else
-            alerts=$(echo "$raw_response" | jq '[.[] | select(.state == "open")]')
+            # Filter for open alerts only
+            alerts=$(echo "$raw_response" | jq -s 'add // [] | [.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
           fi
 
-          alert_count=$(echo "$alerts" | jq -r 'length' | head -1)
+          alert_count=$(echo "$alerts" | jq -r 'length')
           echo "Found $alert_count open security alerts"
 
           if [ "$alert_count" -gt 0 ]; then
