@@ -33,7 +33,7 @@ jobs:
 
       - name: Setup Python
         if: ${{ inputs.tf_dir == 'Terraform/AWS/Resources/RAG/be/infra' }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: "3.10"
 
