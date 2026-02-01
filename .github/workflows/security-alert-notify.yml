@@ -30,6 +30,8 @@ jobs:
 
           alert_count=$(echo "$alerts" | jq -r 'length' | head -1)
           echo "Found $alert_count open security alerts"
+          echo "DEBUG: alerts content:"
+          echo "$alerts" | jq '.'
 
           if [ "$alert_count" -gt 0 ]; then
             echo "has_alerts=true" >> $GITHUB_OUTPUT
