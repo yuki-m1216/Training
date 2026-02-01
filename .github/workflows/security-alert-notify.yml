@@ -11,6 +11,7 @@ on:
 permissions:
   contents: read
   issues: write
+  security-events: read
 
 jobs:
   check-and-notify:
@@ -24,14 +25,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get all open Dependabot alerts (with pagination support)
-          alerts=$(gh api repos/${{ github.repository }}/dependabot/alerts \
-            --paginate \
-            --jq '.[] | select(.state == "open")' 2>/dev/null | jq -s '.' || echo "[]")
+          raw_response=$(gh api repos/${{ github.repository }}/dependabot/alerts --paginate 2>/dev/null || echo "[]")
+
+          # Check if response is an error (contains "message" field)
+          if echo "$raw_response" | jq -e '.[0].message' > /dev/null 2>&1; then
+            echo "API returned an error, treating as no alerts"
+            alerts="[]"
+          else
+            alerts=$(echo "$raw_response" | jq '[.[] | select(.state == "open")]')
+          fi
 
           alert_count=$(echo "$alerts" | jq -r 'length' | head -1)
           echo "Found $alert_count open security alerts"
-          echo "DEBUG: alerts content:"
-          echo "$alerts" | jq '.'
 
           if [ "$alert_count" -gt 0 ]; then
             echo "has_alerts=true" >> $GITHUB_OUTPUT
