@@ -27,7 +27,7 @@ jobs:
           alerts=$(gh api repos/${{ github.repository }}/dependabot/alerts \
             --jq '[.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
 
-          alert_count=$(echo "$alerts" | jq 'length')
+          alert_count=$(echo "$alerts" | jq -r 'length')
           echo "Found $alert_count open security alerts"
 
           if [ "$alert_count" -gt 0 ]; then
@@ -84,7 +84,7 @@ jobs:
             echo ""
 
             # npm alerts
-            npm_count=$(echo "$npm_alerts" | jq 'length')
+            npm_count=$(echo "$npm_alerts" | jq -r 'length')
             if [ "$npm_count" -gt 0 ]; then
               echo "### npm (${npm_count}件)"
               echo ""
@@ -93,7 +93,7 @@ jobs:
             fi
 
             # pip alerts
-            pip_count=$(echo "$pip_alerts" | jq 'length')
+            pip_count=$(echo "$pip_alerts" | jq -r 'length')
             if [ "$pip_count" -gt 0 ]; then
               echo "### pip/Poetry (${pip_count}件)"
               echo ""
@@ -102,7 +102,7 @@ jobs:
             fi
 
             # GitHub Actions alerts
-            actions_count=$(echo "$actions_alerts" | jq 'length')
+            actions_count=$(echo "$actions_alerts" | jq -r 'length')
             if [ "$actions_count" -gt 0 ]; then
               echo "### GitHub Actions (${actions_count}件)"
               echo ""
