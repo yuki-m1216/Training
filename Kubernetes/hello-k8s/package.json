@@ -13,14 +13,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.2.1"
   },
   "overrides": {
     "body-parser": "^2.2.1",
     "qs": "^6.14.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.4",
