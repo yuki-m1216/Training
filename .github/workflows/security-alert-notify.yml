@@ -1,0 +1,140 @@
+name: Security Alert Notification
+
+on:
+  # Daily schedule (JST 10:00 = UTC 01:00)
+  schedule:
+    - cron: "0 1 * * *"
+
+  # Manual trigger
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-and-notify:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Tokyo
+    steps:
+      - name: Check for open security alerts
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get all open Dependabot alerts
+          alerts=$(gh api repos/${{ github.repository }}/dependabot/alerts \
+            --jq '[.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
+
+          alert_count=$(echo "$alerts" | jq 'length')
+          echo "Found $alert_count open security alerts"
+
+          if [ "$alert_count" -gt 0 ]; then
+            echo "has_alerts=true" >> $GITHUB_OUTPUT
+            echo "alert_count=$alert_count" >> $GITHUB_OUTPUT
+            echo "$alerts" > /tmp/alerts.json
+          else
+            echo "has_alerts=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for existing open issue
+        if: steps.check.outputs.has_alerts == 'true'
+        id: existing
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --label "security" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$existing" ]; then
+            echo "existing_issue=$existing" >> $GITHUB_OUTPUT
+            echo "Found existing security issue: #$existing"
+          else
+            echo "No existing security issue found"
+          fi
+
+      - name: Create security issue
+        if: steps.check.outputs.has_alerts == 'true' && steps.existing.outputs.existing_issue == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          alerts=$(cat /tmp/alerts.json)
+          current_date=$(date '+%Y-%m-%d %H:%M:%S %Z')
+
+          # Group alerts by ecosystem
+          npm_alerts=$(echo "$alerts" | jq '[.[] | select(.dependency.package.ecosystem == "npm")]')
+          pip_alerts=$(echo "$alerts" | jq '[.[] | select(.dependency.package.ecosystem == "pip")]')
+          actions_alerts=$(echo "$alerts" | jq '[.[] | select(.dependency.package.ecosystem == "github_actions")]')
+
+          # Build issue body
+          {
+            echo "## セキュリティアラート検出"
+            echo ""
+            echo "**検出日時**: ${current_date}"
+            echo "**アラート数**: ${{ steps.check.outputs.alert_count }}件"
+            echo ""
+            echo "---"
+            echo ""
+            echo "## アラート詳細"
+            echo ""
+
+            # npm alerts
+            npm_count=$(echo "$npm_alerts" | jq 'length')
+            if [ "$npm_count" -gt 0 ]; then
+              echo "### npm (${npm_count}件)"
+              echo ""
+              echo "$npm_alerts" | jq -r '.[] | "- **\(.security_advisory.cve_id // "N/A")** - \(.dependency.package.name) (\(.security_advisory.severity))\n  - 影響: \(.security_vulnerability.vulnerable_version_range)\n  - 修正版: \(.security_vulnerability.first_patched_version.identifier // "N/A")\n  - ファイル: \(.dependency.manifest_path)"'
+              echo ""
+            fi
+
+            # pip alerts
+            pip_count=$(echo "$pip_alerts" | jq 'length')
+            if [ "$pip_count" -gt 0 ]; then
+              echo "### pip/Poetry (${pip_count}件)"
+              echo ""
+              echo "$pip_alerts" | jq -r '.[] | "- **\(.security_advisory.cve_id // "N/A")** - \(.dependency.package.name) (\(.security_advisory.severity))\n  - 影響: \(.security_vulnerability.vulnerable_version_range)\n  - 修正版: \(.security_vulnerability.first_patched_version.identifier // "N/A")\n  - ファイル: \(.dependency.manifest_path)"'
+              echo ""
+            fi
+
+            # GitHub Actions alerts
+            actions_count=$(echo "$actions_alerts" | jq 'length')
+            if [ "$actions_count" -gt 0 ]; then
+              echo "### GitHub Actions (${actions_count}件)"
+              echo ""
+              echo "$actions_alerts" | jq -r '.[] | "- **\(.security_advisory.cve_id // "N/A")** - \(.dependency.package.name) (\(.security_advisory.severity))\n  - 影響: \(.security_vulnerability.vulnerable_version_range)\n  - 修正版: \(.security_vulnerability.first_patched_version.identifier // "N/A")\n  - ファイル: \(.dependency.manifest_path)"'
+              echo ""
+            fi
+
+            echo "---"
+            echo ""
+            echo "## 対応方法"
+            echo ""
+            echo "ローカルでClaude Codeを使って修正:"
+            echo ""
+            echo '```bash'
+            echo 'claude "このIssueのセキュリティアラートを修正してPR作成して"'
+            echo '```'
+          } > /tmp/issue_body.md
+
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "🔒 セキュリティアラート: ${{ steps.check.outputs.alert_count }}件の脆弱性を検出" \
+            --body-file /tmp/issue_body.md \
+            --label "security"
+
+      - name: Update existing issue
+        if: steps.check.outputs.has_alerts == 'true' && steps.existing.outputs.existing_issue != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current_date=$(date '+%Y-%m-%d %H:%M:%S %Z')
+          gh issue comment ${{ steps.existing.outputs.existing_issue }} \
+            --repo ${{ github.repository }} \
+            --body "⚠️ **定期チェック**: 現在 ${{ steps.check.outputs.alert_count }}件 のセキュリティアラートが未対応です。
+
+          最終確認: ${current_date}"
