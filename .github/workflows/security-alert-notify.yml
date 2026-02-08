@@ -11,7 +11,6 @@ on:
 permissions:
   contents: read
   issues: write
-  security-events: read
 
 jobs:
   check-and-notify:
@@ -22,26 +21,37 @@ jobs:
       - name: Check for open security alerts
         id: check
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN does not have access to Dependabot alerts API.
+          # A PAT with "Dependabot alerts:read" (fine-grained) or
+          # "security_events" (classic) scope is required.
+          GH_TOKEN: ${{ secrets.PAT_SECURITY }}
         run: |
-          # Get all open Dependabot alerts (with pagination support)
-          # Use jq -s to slurp paginated arrays into single array
-          raw_response=$(gh api repos/${{ github.repository }}/dependabot/alerts --paginate 2>&1) || true
+          # Get open Dependabot alerts only (with pagination support)
+          error_output=$(mktemp)
+          raw_response=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" \
+            --paginate 2>"$error_output") || true
+          api_error=$(cat "$error_output")
+          rm -f "$error_output"
+
+          # Log API error if any
+          if [ -n "$api_error" ]; then
+            echo "::warning::API stderr: $api_error"
+          fi
 
           # Check if response is empty, error, or valid
           if [ -z "$raw_response" ]; then
-            echo "Empty response from API"
-            alerts="[]"
+            echo "::error::Empty response from Dependabot alerts API. Check PAT_SECURITY secret."
+            exit 1
           elif echo "$raw_response" | jq -e 'type == "object" and has("message")' > /dev/null 2>&1; then
-            echo "API returned an error: $(echo "$raw_response" | jq -r '.message')"
-            alerts="[]"
-          elif ! echo "$raw_response" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            echo "Unexpected response format, treating as no alerts"
-            alerts="[]"
-          else
-            # Filter for open alerts only
-            alerts=$(echo "$raw_response" | jq -s 'add // [] | [.[] | select(.state == "open")]' 2>/dev/null || echo "[]")
+            echo "::error::API error: $(echo "$raw_response" | jq -r '.message')"
+            exit 1
           fi
+
+          # --paginate may return multiple JSON arrays concatenated; jq -s merges them
+          alerts=$(echo "$raw_response" | jq -s 'add // []' 2>/dev/null) || {
+            echo "::error::Failed to parse Dependabot alerts API response"
+            exit 1
+          }
 
           alert_count=$(echo "$alerts" | jq -r 'length')
           echo "Found $alert_count open security alerts"
@@ -151,6 +161,4 @@ jobs:
           current_date=$(date '+%Y-%m-%d %H:%M:%S %Z')
           gh issue comment ${{ steps.existing.outputs.existing_issue }} \
             --repo ${{ github.repository }} \
-            --body "⚠️ **定期チェック**: 現在 ${{ steps.check.outputs.alert_count }}件 のセキュリティアラートが未対応です。
-
-          最終確認: ${current_date}"
+            --body "⚠️ **定期チェック**: 現在 ${{ steps.check.outputs.alert_count }}件のセキュリティアラートが未対応です。（最終確認: ${current_date}）"
