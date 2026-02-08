@@ -33,9 +33,9 @@ jobs:
           api_error=$(cat "$error_output")
           rm -f "$error_output"
 
-          # Log API error if any
+          # Log API error if any (plain output to avoid workflow command injection)
           if [ -n "$api_error" ]; then
-            echo "::warning::API stderr: $api_error"
+            echo "API stderr: $api_error"
           fi
 
           # Check if response is empty, error, or valid
@@ -52,6 +52,12 @@ jobs:
             echo "::error::Failed to parse Dependabot alerts API response"
             exit 1
           }
+
+          # Ensure the merged result is an array before counting alerts
+          if ! echo "$alerts" | jq -e 'type == "array"' > /dev/null 2>&1; then
+            echo "::error::Unexpected Dependabot alerts API response format (expected JSON array)"
+            exit 1
+          fi
 
           alert_count=$(echo "$alerts" | jq -r 'length')
           echo "Found $alert_count open security alerts"
