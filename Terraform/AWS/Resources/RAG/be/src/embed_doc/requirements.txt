@@ -1,6 +1,7 @@
-langchain >= 0.3.21
-langchain-core >= 0.3.81
-langchain-community >= 0.3.27
+langchain >= 1.2.10
+langchain-core >= 1.2.11
+langchain-community >= 0.4.1
+langchain-text-splitters >= 1.1.0
 pypdf >= 6.6.2
 aiohttp >= 3.13.3
 orjson >= 3.11.5

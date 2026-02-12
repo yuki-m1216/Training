@@ -2,7 +2,7 @@ import boto3
 import json
 import os
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_text_splitters import CharacterTextSplitter
 
 S3BUCKET = os.environ['S3BUCKET']
 S3BUCKET_KEY = os.environ['S3BUCKET_KEY']
