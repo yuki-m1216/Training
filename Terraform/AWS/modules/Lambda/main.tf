@@ -26,7 +26,7 @@ resource "aws_lambda_permission" "main" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.main.function_name
   principal     = var.principal
-  source_arn    = "${var.source_arn}/*"
+  source_arn    = var.source_arn
 }
 
 # CloudWatch Logs
