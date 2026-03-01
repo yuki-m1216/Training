@@ -36,7 +36,7 @@ module "lambda" {
   }
 
   lambda_function_name = "Synthetics-Test-Lambda"
-  runtime              = "nodejs20.x"
+  runtime              = "nodejs24.x"
   handler              = "index.handler"
   lambda_filename      = data.archive_file.function.output_path
   lambda_role          = module.iam_for_lambda.role_arn
@@ -44,7 +44,7 @@ module "lambda" {
   create_lambda_permission = true
   statement_id             = "AllowExecutionFromAPIGateway"
   principal                = "apigateway.amazonaws.com"
-  source_arn               = module.apigateway.apigateway_execution_arn
+  source_arn               = "${module.apigateway.apigateway_execution_arn}/*"
 }
 
 module "iam_for_lambda" {

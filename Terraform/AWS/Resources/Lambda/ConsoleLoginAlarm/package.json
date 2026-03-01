@@ -1,8 +1,12 @@
 {
-  "dependencies": {
-    "@types/aws-lambda": "^8.10.145"
+  "name": "console-login-alarm",
+  "private": true,
+  "scripts": {
+    "build": "tsc"
   },
   "devDependencies": {
-    "@types/node": "^22.5.5"
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.5.5",
+    "typescript": "^5.9.3"
   }
 }
