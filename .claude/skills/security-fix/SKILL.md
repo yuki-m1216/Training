@@ -12,14 +12,14 @@ security ラベル付きのオープン Issue を修正して PR を作成して
    - 0件の場合は「オープンなセキュリティ Issue はありません」と報告して終了
 2. 各 Issue の詳細を `gh issue view <number>` で確認
 3. Issue 本文に記載されたファイルパスから対象プロジェクトを特定
-4. `git pull origin main` で最新の状態にする
-5. ブランチを作成してチェックアウト
+4. `git checkout main` で main ブランチに切り替え、`git pull origin main` で最新の状態にする
+5. ブランチを作成してチェックアウト（複数 Issue の場合は Issue ごとに手順4〜8を繰り返す）
 6. 各プロジェクトで修正を実施:
    - **npm**:
      - 直接依存の場合: package.json のバージョンを直接更新 → `npm install`
      - 間接依存の場合: package.json の overrides に修正バージョンを追加 → `npm install`
      - overrides 追加後も古いバージョンが残る場合は `package-lock.json` を削除して `npm install` で再生成
-   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → requirements.txt 再生成
+   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --output requirements.txt --without-hashes` で requirements.txt 再生成
    - **GitHub Actions**: アクションバージョンを更新
 7. 修正の検証:
    - `npm ls <package>` でバージョンが更新されていることを確認
