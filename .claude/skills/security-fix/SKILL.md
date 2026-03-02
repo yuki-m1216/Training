@@ -8,7 +8,7 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 
 ## 手順
 
-1. `gh issue list --label security --state open` でセキュリティ Issue を取得
+1. `gh issue list --label security --state open --limit 100` でセキュリティ Issue を取得
    - 0件の場合は「オープンなセキュリティ Issue はありません」と報告して終了
 2. 各 Issue の詳細を `gh issue view <number>` で確認
 3. Issue 本文に記載されたファイルパスから対象プロジェクトを特定
