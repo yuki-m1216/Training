@@ -60,6 +60,7 @@
     "tar": "^7.5.4",
     "webpack": "^5.104.1",
     "minimatch": ">=10.2.1",
-    "serialize-javascript": ">=7.0.3"
+    "serialize-javascript": ">=7.0.3",
+    "multer": ">=2.1.0"
   }
 }
