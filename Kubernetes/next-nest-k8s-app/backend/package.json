@@ -61,6 +61,7 @@
     "webpack": "^5.104.1",
     "minimatch": ">=10.2.1",
     "serialize-javascript": ">=7.0.3",
-    "multer": ">=2.1.0"
+    "multer": ">=2.1.0",
+    "@tootallnate/once": ">=3.0.1"
   }
 }
