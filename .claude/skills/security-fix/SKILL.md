@@ -10,8 +10,8 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 
 1. `gh issue list --label security --state open --limit 100` でセキュリティ Issue を取得
    - 0件の場合は「オープンなセキュリティ Issue はありません」と報告して終了
-2. 各 Issue の詳細を `gh issue view <number>` で確認
-3. Issue 本文に記載されたファイルパスから対象プロジェクトを特定
+2. 各 Issue の詳細を `gh issue view <number> --comments` で確認（本文だけでなくコメントにも追加アラート情報がある場合がある）
+3. Issue 本文およびコメントに記載されたファイルパスから対象プロジェクトを特定
 4. `git checkout main` で main ブランチに切り替え、`git pull origin main` で最新の状態にする
 5. ブランチを作成してチェックアウト（複数 Issue の場合は Issue ごとに手順4〜8を繰り返す）
 6. 各プロジェクトで修正を実施:
