@@ -72,8 +72,9 @@ jobs:
           # Check if response is empty, error, or valid
           if [ "$api_success" = false ] || [ -z "$raw_response" ]; then
             if [ -n "$api_error" ]; then
+              sanitized_last_error=$(printf '%s' "$api_error" | tr -d '\r' | tr '\n' ' ')
               echo "::error::Dependabot alerts API request failed after ${max_retries} attempts."
-              printf 'Last error: %s\n' "$api_error"
+              printf 'Last error: %s\n' "$sanitized_last_error"
             else
               echo "::error::Empty response from Dependabot alerts API after ${max_retries} attempts. Check PAT_SECURITY secret."
             fi
