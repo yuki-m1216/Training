@@ -10,3 +10,4 @@
 ## Security Fix Workflow
 
 セキュリティ修正は `/security-fix` スキルを使用してください。
+Git Workflowのルール（ブランチ作成・PR経由マージ）はセキュリティ修正にも適用されます。
