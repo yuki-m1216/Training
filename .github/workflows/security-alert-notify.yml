@@ -40,14 +40,25 @@ jobs:
             api_error=$(cat "$error_output")
             rm -f "$error_output"
 
-            # Log API error if any (plain output to avoid workflow command injection)
+            # Log API error if any (sanitize to avoid workflow command injection)
             if [ -n "$api_error" ]; then
-              echo "API stderr (attempt ${attempt}/${max_retries}): $api_error"
+              sanitized_api_error=${api_error//$'\r'/}
+              sanitized_api_error=${sanitized_api_error//$'\n'/\\n}
+              echo "API stderr (attempt ${attempt}/${max_retries}): $sanitized_api_error"
             fi
 
             # If the API call succeeded and response is valid JSON, break out of retry loop
             if [ "$api_success" = true ] && [ -n "$raw_response" ] && echo "$raw_response" | jq -e '.' > /dev/null 2>&1; then
               break
+            fi
+
+            # Fail fast on non-transient errors (4xx) - only retry on 5xx or network errors
+            if [ "$api_success" = false ] && echo "$api_error" | grep -qE 'HTTP [45][0-9]{2}'; then
+              http_status=$(echo "$api_error" | grep -oE 'HTTP [0-9]{3}' | head -1 | grep -oE '[0-9]{3}')
+              if [ -n "$http_status" ] && [ "$http_status" -lt 500 ]; then
+                echo "::error::Non-transient API error (HTTP ${http_status}). Check PAT_SECURITY secret and permissions."
+                exit 1
+              fi
             fi
 
             # On last attempt, don't sleep
