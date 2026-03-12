@@ -27,20 +27,40 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_SECURITY }}
         run: |
           # Get open Dependabot alerts only (with pagination support)
-          error_output=$(mktemp)
-          raw_response=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" \
-            --paginate 2>"$error_output") || true
-          api_error=$(cat "$error_output")
-          rm -f "$error_output"
+          # Retry up to 3 times for transient errors (502, 503, etc.)
+          max_retries=3
+          retry_delay=10
+          raw_response=""
+          api_error=""
 
-          # Log API error if any (plain output to avoid workflow command injection)
-          if [ -n "$api_error" ]; then
-            echo "API stderr: $api_error"
-          fi
+          for attempt in $(seq 1 $max_retries); do
+            error_output=$(mktemp)
+            raw_response=$(gh api "repos/${{ github.repository }}/dependabot/alerts?state=open" \
+              --paginate 2>"$error_output") && api_success=true || api_success=false
+            api_error=$(cat "$error_output")
+            rm -f "$error_output"
+
+            # Log API error if any (plain output to avoid workflow command injection)
+            if [ -n "$api_error" ]; then
+              echo "API stderr (attempt ${attempt}/${max_retries}): $api_error"
+            fi
+
+            # If the API call succeeded and response is valid JSON, break out of retry loop
+            if [ "$api_success" = true ] && [ -n "$raw_response" ] && echo "$raw_response" | jq -e '.' > /dev/null 2>&1; then
+              break
+            fi
+
+            # On last attempt, don't sleep
+            if [ "$attempt" -lt "$max_retries" ]; then
+              echo "Retrying in ${retry_delay}s..."
+              sleep "$retry_delay"
+              retry_delay=$((retry_delay * 2))
+            fi
+          done
 
           # Check if response is empty, error, or valid
           if [ -z "$raw_response" ]; then
-            echo "::error::Empty response from Dependabot alerts API. Check PAT_SECURITY secret."
+            echo "::error::Empty response from Dependabot alerts API after ${max_retries} attempts. Check PAT_SECURITY secret."
             exit 1
           elif echo "$raw_response" | jq -e 'type == "object" and has("message")' > /dev/null 2>&1; then
             echo "::error::API error: $(echo "$raw_response" | jq -r '.message')"
@@ -49,7 +69,7 @@ jobs:
 
           # --paginate may return multiple JSON arrays concatenated; jq -s merges them
           alerts=$(echo "$raw_response" | jq -s 'add // []' 2>/dev/null) || {
-            echo "::error::Failed to parse Dependabot alerts API response"
+            echo "::error::Failed to parse Dependabot alerts API response after ${max_retries} attempts"
             exit 1
           }
 
