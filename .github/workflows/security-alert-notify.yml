@@ -27,7 +27,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_SECURITY }}
         run: |
           # Get open Dependabot alerts only (with pagination support)
-          # Retry up to 3 times for transient errors (502, 503, etc.)
+          # Retry up to 3 attempts for transient errors (502, 503, etc.)
           max_retries=3
           retry_delay=10
           raw_response=""
@@ -47,8 +47,8 @@ jobs:
               echo "API stderr (attempt ${attempt}/${max_retries}): $sanitized_api_error"
             fi
 
-            # If the API call succeeded and response is valid JSON, break out of retry loop
-            if [ "$api_success" = true ] && [ -n "$raw_response" ] && echo "$raw_response" | jq -e '.' > /dev/null 2>&1; then
+            # If the API call succeeded and response is valid JSON (single or multiple documents), break out of retry loop
+            if [ "$api_success" = true ] && [ -n "$raw_response" ] && echo "$raw_response" | jq -s '.' > /dev/null 2>&1; then
               break
             fi
 
@@ -70,8 +70,12 @@ jobs:
           done
 
           # Check if response is empty, error, or valid
-          if [ -z "$raw_response" ]; then
-            echo "::error::Empty response from Dependabot alerts API after ${max_retries} attempts. Check PAT_SECURITY secret."
+          if [ "$api_success" = false ] || [ -z "$raw_response" ]; then
+            if [ -n "$api_error" ]; then
+              echo "::error::Dependabot alerts API request failed after ${max_retries} attempts. Last error: $api_error"
+            else
+              echo "::error::Empty response from Dependabot alerts API after ${max_retries} attempts. Check PAT_SECURITY secret."
+            fi
             exit 1
           elif echo "$raw_response" | jq -e 'type == "object" and has("message")' > /dev/null 2>&1; then
             echo "::error::API error: $(echo "$raw_response" | jq -r '.message')"
