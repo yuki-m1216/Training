@@ -19,7 +19,7 @@ PR のレビューコメントを振り返り、作業プロセスやスキル�
 
 ### 2. レビューコメントの収集
 
-- `gh api repos/{owner}/{repo}/pulls/{number}/comments` でファイル単位のレビューコメントを取得
+- `gh api /repos/:owner/:repo/pulls/{number}/comments` でファイル単位のレビューコメントを取得
 - `gh pr view {number} --comments` で PR 全体へのコメントも確認
 - レビューコメントが0件の場合は「レビューコメントはありませんでした」と報告して終了
 
