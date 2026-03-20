@@ -14,13 +14,13 @@ PR のレビューコメントを振り返り、作業プロセスやスキル�
 
 ### 1. 対象 PR の特定
 
-- 引数ありの場合: `gh pr view <番号> --json number,title,state,mergedAt`
+- 引数ありの場合: `gh pr view <number> --json number,title,state,mergedAt`
 - 引数なしの場合: `gh pr list --state merged --limit 5 --json number,title,mergedAt` で直近の PR を一覧表示し、ユーザーにどの PR を振り返るか確認する
 
 ### 2. レビューコメントの収集
 
-- `gh api /repos/:owner/:repo/pulls/{number}/comments` でファイル単位のレビューコメントを取得
-- `gh pr view {number} --comments` で PR 全体へのコメントも確認
+- `gh api --paginate /repos/:owner/:repo/pulls/<number>/comments` でファイル単位のレビューコメントを取得（ページネーション対応で全件取得）
+- `gh pr view <number> --comments` で PR 全体へのコメントも確認
 - レビューコメントが0件の場合は「レビューコメントはありませんでした」と報告して終了
 
 ### 3. コメントの分類と分析
