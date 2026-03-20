@@ -18,12 +18,14 @@ security ラベル付きのオープン Issue を修正して PR を作成して
    - **npm**:
      - 直接依存の場合: package.json のバージョンを直接更新 → `npm install`
      - 間接依存の場合: package.json の overrides に修正バージョンを追加 → `npm install`
+     - overrides のバージョンはメジャーバージョンアップを防ぐため、固定バージョン（例: `"4.2.6"`）またはパッチ範囲（例: `"~4.2.6"`）で指定する。`>=` のようなオープンレンジは使わない
      - overrides 追加後も古いバージョンが残る場合は `package-lock.json` を削除して `npm install` で再生成
    - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --output requirements.txt --without-hashes` で requirements.txt 再生成
    - **GitHub Actions**: アクションバージョンを更新
 7. 修正の検証:
    - `npm ls <package>` でバージョンが更新されていることを確認
    - `npm audit` で対象の CVE が解消されていることを確認（他の脆弱性は対象外）
+   - 生成ファイル（requirements.txt, package-lock.json 等）の内容を確認し、特定環境に依存するマーカーや不要な情報が混入していないことを検証する
    - `git diff` で意図しない変更がないことを確認
 8. コミット・push・PR作成
 
