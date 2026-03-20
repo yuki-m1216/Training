@@ -2,7 +2,7 @@
 name: retro
 description: PR のレビューコメントを振り返り、スキルやルールの改善案を提案する
 disable-model-invocation: true
-args: "[PR番号]"
+argument-hint: "[PR番号]"
 ---
 
 PR のレビューコメントを振り返り、作業プロセスやスキル・ルールの改善案を検討します。
