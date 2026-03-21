@@ -16,10 +16,13 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 5. ブランチを作成してチェックアウト（複数 Issue の場合は Issue ごとに手順4〜8を繰り返す）
 6. 各プロジェクトで修正を実施:
    - **npm**:
-     - 直接依存の場合: package.json のバージョンを直接更新 → `npm install`
-     - 間接依存の場合: package.json の overrides に修正バージョンを追加 → `npm install`
+     - 直接依存の場合: package.json のバージョンを直接更新
+     - 間接依存の場合: package.json の overrides に修正バージョンを追加
      - overrides のバージョンはメジャーバージョンアップを防ぐため、固定バージョン（例: `"4.2.6"`）またはパッチ範囲（例: `"~4.2.6"`）で指定する。`>=` のようなオープンレンジは使わない
-     - overrides 追加後も古いバージョンが残る場合は `package-lock.json` を削除して `npm install` で再生成
+     - 修正手順（段階的に実施すること）:
+       1. 既存の `package-lock.json` を保持したまま `npm install` を実行
+       2. `npm ls <package>` で対象パッケージが修正バージョンに更新されたか確認
+       3. 古いバージョンが残っている場合**のみ** `package-lock.json` を削除して `npm install` で再生成
    - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --output requirements.txt --without-hashes` で requirements.txt 再生成
    - **GitHub Actions**: アクションバージョンを更新
 7. 修正の検証:
