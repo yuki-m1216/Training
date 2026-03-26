@@ -225,7 +225,8 @@ jobs:
           # Extract fingerprint from the last bot comment's HTML marker
           last_fingerprint=$(gh api "repos/${{ github.repository }}/issues/${issue_number}/comments" \
             --paginate \
-            --jq '[.[] | select(.user.login == "github-actions[bot]") | .body] | last // ""' \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | .body' \
+            | tail -n 1 \
             | grep -oP '<!-- fingerprint:\K[a-f0-9]+' || echo "")
 
           if [ "$last_fingerprint" = "$current_fingerprint" ]; then
