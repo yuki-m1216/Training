@@ -18,6 +18,7 @@ security ラベル付きのオープン Issue を修正して PR を作成して
    - **npm**:
      - 直接依存の場合: package.json のバージョンを直接更新
      - 間接依存の場合: package.json の overrides に修正バージョンを追加
+     - overrides のキーは常にメジャーバージョンスコープで指定する（例: `"picomatch@2": "~2.3.2"`）。スコープなしの `"picomatch"` は将来別メジャーバージョンが追加された場合に意図しない影響を与えるため使わない
      - overrides のバージョンはメジャーバージョンアップを防ぐため、固定バージョン（例: `"4.2.6"`）またはパッチ範囲（例: `"~4.2.6"`）で指定する。`>=` のようなオープンレンジは使わない
      - 修正手順（段階的に実施すること）:
        1. 既存の `package-lock.json` を保持したまま `npm install` を実行
@@ -40,4 +41,6 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 
 - ブランチ: `fix-sec/security-fix-YYYYMMDD`（同日に複数の場合は末尾に連番）
 - コミットメッセージ: `fix(security): <CVE-ID> の脆弱性を修正`
-- PR body に `Fixes #<issue-number>` を含める
+- PR body に Issue へのリンクを含める
+  - PR が Issue の全アラートを修正する場合: `Fixes #<issue-number>`（マージ時に Issue が自動クローズされる）
+  - 一部のアラートのみ修正する場合: `Related #<issue-number>`（Issue はオープンのまま残す）
