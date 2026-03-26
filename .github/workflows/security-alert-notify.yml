@@ -85,26 +85,39 @@ jobs:
           fi
 
           # --paginate may return multiple JSON arrays concatenated; jq -s merges them
-          alerts=$(echo "$raw_response" | jq -s 'add // []' 2>/dev/null) || {
+          all_alerts=$(echo "$raw_response" | jq -s 'add // []' 2>/dev/null) || {
             echo "::error::Failed to parse Dependabot alerts API response after ${max_retries} attempts"
             exit 1
           }
 
           # Ensure the merged result is an array before counting alerts
-          if ! echo "$alerts" | jq -e 'type == "array"' > /dev/null 2>&1; then
+          if ! echo "$all_alerts" | jq -e 'type == "array"' > /dev/null 2>&1; then
             echo "::error::Unexpected Dependabot alerts API response format (expected JSON array)"
             exit 1
           fi
 
-          alert_count=$(echo "$alerts" | jq -r 'length')
-          echo "Found $alert_count open security alerts"
+          # Filter: only include alerts that have a patched version available
+          alerts=$(echo "$all_alerts" | jq '[.[] | select(.security_vulnerability.first_patched_version != null)]')
+          no_fix_count=$(echo "$all_alerts" | jq '[.[] | select(.security_vulnerability.first_patched_version == null)] | length')
 
-          if [ "$alert_count" -gt 0 ]; then
+          actionable_count=$(echo "$alerts" | jq -r 'length')
+          total_count=$(echo "$all_alerts" | jq -r 'length')
+          echo "Found $actionable_count actionable alerts out of $total_count total (${no_fix_count} have no fix available)"
+
+          # Build fingerprint from alert numbers for content-based dedup
+          fingerprint=$(echo "$alerts" | jq -r '[.[].number] | sort | join(",")' | sha256sum | cut -d' ' -f1)
+
+          if [ "$actionable_count" -gt 0 ]; then
             echo "has_alerts=true" >> $GITHUB_OUTPUT
-            echo "alert_count=$alert_count" >> $GITHUB_OUTPUT
+            echo "actionable_count=$actionable_count" >> $GITHUB_OUTPUT
+            echo "no_fix_count=$no_fix_count" >> $GITHUB_OUTPUT
+            echo "fingerprint=$fingerprint" >> $GITHUB_OUTPUT
             echo "$alerts" > /tmp/alerts.json
           else
             echo "has_alerts=false" >> $GITHUB_OUTPUT
+            if [ "$no_fix_count" -gt 0 ]; then
+              echo "::notice::${no_fix_count} alerts have no fix available and were excluded"
+            fi
           fi
 
       - name: Check for existing open issue
@@ -145,7 +158,11 @@ jobs:
             echo "## セキュリティアラート検出"
             echo ""
             echo "**検出日時**: ${current_date}"
-            echo "**アラート数**: ${{ steps.check.outputs.alert_count }}件"
+            echo "**アラート数**: ${{ steps.check.outputs.actionable_count }}件（修正可能）"
+            no_fix=${{ steps.check.outputs.no_fix_count }}
+            if [ "$no_fix" -gt 0 ]; then
+              echo "**修正版なし**: ${no_fix}件（修正版リリース待ち）"
+            fi
             echo ""
             echo "---"
             echo ""
@@ -192,7 +209,7 @@ jobs:
 
           gh issue create \
             --repo ${{ github.repository }} \
-            --title "🔒 セキュリティアラート: ${{ steps.check.outputs.alert_count }}件の脆弱性を検出" \
+            --title "🔒 セキュリティアラート: ${{ steps.check.outputs.actionable_count }}件の脆弱性を検出" \
             --body-file /tmp/issue_body.md \
             --label "security"
 
@@ -201,7 +218,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          issue_number=${{ steps.existing.outputs.existing_issue }}
+          current_fingerprint=${{ steps.check.outputs.fingerprint }}
+          actionable_count=${{ steps.check.outputs.actionable_count }}
+
+          # Extract fingerprint from the last bot comment's HTML marker
+          last_fingerprint=$(gh api "repos/${{ github.repository }}/issues/${issue_number}/comments" \
+            --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]") | .body' \
+            | tail -n 1 \
+            | grep -oP '<!-- fingerprint:\K[a-f0-9]+' || echo "")
+
+          if [ "$last_fingerprint" = "$current_fingerprint" ]; then
+            echo "Alert fingerprint unchanged. Skipping comment."
+            exit 0
+          fi
+
           current_date=$(date '+%Y-%m-%d %H:%M:%S %Z')
-          gh issue comment ${{ steps.existing.outputs.existing_issue }} \
+          no_fix=${{ steps.check.outputs.no_fix_count }}
+          no_fix_note=""
+          if [ "$no_fix" -gt 0 ]; then
+            no_fix_note="（他 ${no_fix}件は修正版なし）"
+          fi
+
+          comment_body="⚠️ **定期チェック**: 現在 ${actionable_count}件の修正可能なセキュリティアラートが未対応です。${no_fix_note}（最終確認: ${current_date}）
+          <!-- fingerprint:${current_fingerprint} -->"
+
+          gh issue comment "${issue_number}" \
             --repo ${{ github.repository }} \
-            --body "⚠️ **定期チェック**: 現在 ${{ steps.check.outputs.alert_count }}件のセキュリティアラートが未対応です。（最終確認: ${current_date}）"
+            --body "$comment_body"
