@@ -38,7 +38,7 @@ pycparser==2.22 ; python_full_version == "3.10.5" and platform_python_implementa
 pydantic-core==2.33.2 ; python_full_version == "3.10.5"
 pydantic-settings==2.10.1 ; python_full_version == "3.10.5"
 pydantic==2.11.7 ; python_full_version == "3.10.5"
-pypdf==6.9.1 ; python_full_version == "3.10.5"
+pypdf==6.9.2 ; python_full_version == "3.10.5"
 python-dateutil==2.9.0.post0 ; python_full_version == "3.10.5"
 python-dotenv==1.1.1 ; python_full_version == "3.10.5"
 pyyaml==6.0.2 ; python_full_version == "3.10.5"
