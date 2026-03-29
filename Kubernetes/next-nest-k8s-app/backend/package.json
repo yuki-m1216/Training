@@ -66,6 +66,7 @@
     "@tootallnate/once": ">=3.0.1",
     "flatted": "~3.4.2",
     "picomatch@2": "~2.3.2",
-    "picomatch@4": "~4.0.4"
+    "picomatch@4": "~4.0.4",
+    "path-to-regexp@8": "~8.4.0"
   }
 }
