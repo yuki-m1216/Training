@@ -24,7 +24,17 @@ security ラベル付きのオープン Issue を修正して PR を作成して
        1. 既存の `package-lock.json` を保持したまま `npm install` を実行
        2. `npm ls <package>` で対象パッケージが修正バージョンに更新されたか確認
        3. 古いバージョンが残っている場合**のみ** `package-lock.json` を削除して `npm install` で再生成
-   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --output requirements.txt --without-hashes` で requirements.txt 再生成
+       4. `git diff -- package-lock.json` で差分が対象パッケージの更新のみであることを確認する。npm バージョン差等により無関係な変更（`"dev": true` の追加等）が混入した場合は、以下のフォールバック手順で churn を最小化する:
+          1. `git checkout main -- package-lock.json` でロックファイルを復元
+          2. 対象パッケージのエントリ（version, resolved, integrity）を手動で更新
+          3. `npm ci` でロックファイルの整合性を検証
+   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --without-hashes` で requirements.txt を生成。`requires-python` が特定バージョン固定（例: `"3.10.5"`）の場合、出力に `python_full_version == "3.10.5"` マーカーが全行に付与されるため、以下の後処理でマーカーを除去してからファイルに書き出す:
+     ```bash
+     poetry export -f requirements.txt --without-hashes | \
+       sed 's/ ; python_full_version == "[^"]*" and /; /g' | \
+       sed 's/ ; python_full_version == "[^"]*"//g' > requirements.txt
+     ```
+     後処理後、`diff <(git show main:<path>/requirements.txt) <path>/requirements.txt` で main と比較し、意図した変更（バージョン更新）のみであることを確認する
    - **GitHub Actions**: アクションバージョンを更新
 7. 修正の検証:
    - `npm ls <package>` でバージョンが更新されていることを確認
