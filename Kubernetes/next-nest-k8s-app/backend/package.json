@@ -61,7 +61,7 @@
     "file-type": ">=21.3.2 <22",
     "webpack": "^5.104.1",
     "minimatch": ">=10.2.1",
-    "serialize-javascript": ">=7.0.3",
+    "serialize-javascript": "~7.0.5",
     "multer": ">=2.1.1",
     "@tootallnate/once": ">=3.0.1",
     "flatted": "~3.4.2",
