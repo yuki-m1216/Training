@@ -39,7 +39,9 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 7. 修正の検証:
    - `npm ls <package>` でバージョンが更新されていることを確認
    - `npm audit` で対象の CVE が解消されていることを確認（他の脆弱性は対象外）
-   - 生成ファイル（requirements.txt, package-lock.json 等）の内容を確認し、特定環境に依存するマーカーや不要な情報が混入していないことを検証する
+   - 生成ファイルの内容を検証する:
+     - requirements.txt: sed で除去対象とした `python_full_version` マーカーが残っていないことを確認する（`platform_python_implementation` 等の通常のプラットフォームマーカーは正常であり、除去不要）
+     - package-lock.json: 対象パッケージの更新以外に意図しない変更が混入していないことを確認する
    - `git diff` で意図しない変更がないことを確認
 8. コミット・push・PR作成
 
