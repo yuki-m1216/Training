@@ -11,7 +11,9 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 1. `gh issue list --label security --state open --limit 100` でセキュリティ Issue を取得
    - 0件の場合は「オープンなセキュリティ Issue はありません」と報告して終了
 2. 各 Issue の詳細を `gh issue view <number> --comments` で確認（本文だけでなくコメントにも追加アラート情報がある場合がある）
-3. `gh api repos/<owner>/<repo>/dependabot/alerts --paginate -q '.[] | select(.state=="open")'` で open アラート全件を取得し、Issue のタイトル・本文・コメント記載の件数と突き合わせる。差分があればその分も修正対象に含める
+3. Dependabot open アラートと Issue 記載件数の突き合わせ
+   - `gh api repos/<owner>/<repo>/dependabot/alerts --paginate -q 'map(select(.state=="open")) | length'` で open アラート件数を確認し、Issue のタイトル・本文・コメント記載の件数と突き合わせる
+   - 差分がある場合は `gh api repos/<owner>/<repo>/dependabot/alerts --paginate -q 'map(select(.state=="open") | {number, package: .dependency.package.name, manifest: .dependency.manifest_path, cve: .security_advisory.cve_id})'` で一覧を確認し、追加アラートも修正対象に含める
 4. Issue 本文およびコメントに記載されたファイルパス、および手順3で検出した追加アラートのファイルパスから対象プロジェクトを特定
 5. `git checkout main` で main ブランチに切り替え、`git pull origin main` で最新の状態にする
 6. ブランチを作成してチェックアウト（複数 Issue の場合は Issue ごとに手順5〜9を繰り返す）
@@ -22,9 +24,9 @@ security ラベル付きのオープン Issue を修正して PR を作成して
      - overrides のキーは常にメジャーバージョンスコープで指定する（例: `"picomatch@2": "~2.3.2"`）。スコープなしの `"picomatch"` は将来別メジャーバージョンが追加された場合に意図しない影響を与えるため使わない
      - overrides のバージョンはメジャーバージョンアップを防ぐため、固定バージョン（例: `"4.2.6"`）またはパッチ範囲（例: `"~4.2.6"`）で指定する。`>=` のようなオープンレンジは使わない
      - 修正手順（段階的に実施すること）:
-       1. 既存の `package-lock.json` を保持したまま `npm install` を実行
-       2. `npm ls <package>` で対象パッケージが修正バージョンに更新されたか確認
-       3. `npm view <package>@<version> dist` で `attestations.provenance`（SLSA provenance）が付与されていることを確認する。provenance がない場合はサプライチェーン攻撃リスクを検討し、広く使われる直接依存の場合は直近の compromise 情報を確認する
+       1. **`npm install` 実行前に**更新予定バージョンの安全性を確認: `npm view <package>@<version> dist` で `attestations.provenance`（SLSA provenance）が付与されていることを確認する。provenance がない場合はサプライチェーン攻撃リスクを検討し、広く使われる直接依存の場合は直近の compromise 情報を確認する（post-install スクリプトで悪意コードが実行される前にチェックする必要があるため、この確認は install 前に行う）
+       2. 既存の `package-lock.json` を保持したまま `npm install` を実行
+       3. `npm ls <package>` で対象パッケージが修正バージョンに更新されたか確認
        4. 古いバージョンが残っている場合**のみ** `package-lock.json` を削除して `npm install` で再生成
        5. `git diff -- package-lock.json` で差分が対象パッケージの更新のみであることを確認する。npm バージョン差等により無関係な変更（`"dev": true` の追加等）が混入した場合は、以下のフォールバック手順で churn を最小化する:
           1. `git checkout main -- package-lock.json` でロックファイルを復元
