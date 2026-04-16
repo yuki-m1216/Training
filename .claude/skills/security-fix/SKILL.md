@@ -32,7 +32,9 @@ security ラベル付きのオープン Issue を修正して PR を作成して
           1. `git checkout main -- package-lock.json` でロックファイルを復元
           2. 対象パッケージの全エントリ（version, resolved, integrity, dependencies, funding 等のメタデータを含む）を手動で更新する。同一パッケージが複数箇所に出現する場合はすべて更新すること
           3. `npm ci` でロックファイルの整合性を検証
-   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --without-hashes` で requirements.txt を生成。`requires-python` が特定バージョン固定（例: `"3.10.5"`）の場合、出力に `python_full_version == "3.10.5"` マーカーが全行に付与されるため、以下の後処理でマーカーを除去してからファイルに書き出す:
+   - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --without-hashes` で requirements.txt を生成。
+     - pyproject.toml の下限バージョンはまず Dependabot の `first_patched_version` 以上に設定する。`poetry lock` 実行後、解決された実バージョンが下限より新しい場合は、下限を実バージョンに揃えて再度 `poetry lock` を実行する（pyproject.toml と lock ファイルの一貫性を保つため）。解決された実バージョンと下限が一致していれば再 lock は不要
+     - `requires-python` が特定バージョン固定（例: `"3.10.5"`）の場合、出力に `python_full_version == "3.10.5"` マーカーが全行に付与されるため、以下の後処理でマーカーを除去してからファイルに書き出す:
      ```bash
      poetry export -f requirements.txt --without-hashes | \
        sed 's/[[:space:]]*;[[:space:]]*python_full_version == "[^"]*" and /; /g' | \
