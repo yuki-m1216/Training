@@ -59,7 +59,7 @@ security ラベル付きのオープン Issue を修正して PR を作成して
 - コミットメッセージ: `fix(security): <CVE-ID> の脆弱性を修正`
 - PR body には以下を含める（Issue 本文の記載有無に関わらず PR body は自己完結させる）:
   - 本 PR で対応する CVE / Dependabot アラート ID の明示リスト
-  - Issue へのリンク:
-    - PR が Issue の全アラートを修正する場合: `Fixes #<issue-number>`（マージ時に Issue が自動クローズされる）
-    - 一部のアラートのみ修正する場合: `Related #<issue-number>`（Issue はオープンのまま残す）
-    - Issue 本文に記載がないが Dependabot で検出されたアラートを修正する場合: `Related #<issue-number>` とした上で、該当アラートが Issue 本文未記載である旨を PR body に明記する
+  - Issue へのリンク（判定基準は「PR マージ後に Dependabot の修正可能な open アラート（jq 条件: `.state=="open"` かつ `.security_vulnerability.first_patched_version != null`）が 0 件になるか」の 1 点のみ。security-alert-notify ワークフローが Issue 化対象としているのが修正可能アラートのみのため基準を揃える。Issue 本文の記載件数は判定に使わない）:
+    - マージ後に修正可能な open アラートが 0 件になる場合: `Fixes #<issue-number>`（マージ時に Issue が自動クローズされる）
+    - マージ後も修正可能な open アラートが残る場合: `Related #<issue-number>`（Issue はオープンのまま残す）
+    - いずれの場合も、Issue 本文（security-alert-notify が初回作成時に出力するアラート一覧）に未記載の Dependabot アラートを追加で修正している場合は、該当アラートが Issue 未記載である旨を PR body に明記する（定期チェックコメントは件数のみでアラート詳細を持たないため判定材料にはしない）
