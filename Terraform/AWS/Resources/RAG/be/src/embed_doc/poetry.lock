@@ -906,14 +906,14 @@ tenacity = ">=8.1.0,<8.4.0 || >8.4.0,<10.0.0"
 
 [[package]]
 name = "langchain-core"
-version = "1.2.28"
+version = "1.2.31"
 description = "Building applications with LLMs through composability"
 optional = false
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
 files = [
-    {file = "langchain_core-1.2.28-py3-none-any.whl", hash = "sha256:80764232581eaf8057bcefa71dbf8adc1f6a28d257ebd8b95ba9b8b452e8c6ac"},
-    {file = "langchain_core-1.2.28.tar.gz", hash = "sha256:271a3d8bd618f795fdeba112b0753980457fc90537c46a0c11998516a74dc2cb"},
+    {file = "langchain_core-1.2.31-py3-none-any.whl", hash = "sha256:c407193edb99311cc36ec3e4d3667a065bbc4d7d72fbb6e368538b9b134d4033"},
+    {file = "langchain_core-1.2.31.tar.gz", hash = "sha256:aad3ecc9e4dce2dd2bb79526c81b92e5322fd81db7834a031cb80359f2e3ebaa"},
 ]
 
 [package.dependencies]
@@ -928,18 +928,18 @@ uuid-utils = ">=0.12.0,<1.0"
 
 [[package]]
 name = "langchain-text-splitters"
-version = "1.1.0"
+version = "1.1.2"
 description = "LangChain text splitting utilities"
 optional = false
 python-versions = "<4.0.0,>=3.10.0"
 groups = ["main"]
 files = [
-    {file = "langchain_text_splitters-1.1.0-py3-none-any.whl", hash = "sha256:f00341fe883358786104a5f881375ac830a4dd40253ecd42b4c10536c6e4693f"},
-    {file = "langchain_text_splitters-1.1.0.tar.gz", hash = "sha256:75e58acb7585dc9508f3cd9d9809cb14751283226c2d6e21fb3a9ae57582ca22"},
+    {file = "langchain_text_splitters-1.1.2-py3-none-any.whl", hash = "sha256:a2de0d799ff31886429fd6e2e0032df275b60ec817c19059a7b46181cc1c2f10"},
+    {file = "langchain_text_splitters-1.1.2.tar.gz", hash = "sha256:782a723db0a4746ac91e251c7c1d57fd23636e4f38ed733074e28d7a86f41627"},
 ]
 
 [package.dependencies]
-langchain-core = ">=1.2.0,<2.0.0"
+langchain-core = ">=1.2.31,<2.0.0"
 
 [[package]]
 name = "langsmith"
@@ -2452,4 +2452,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.10.5"
-content-hash = "6d4b017c8052698084a2c7e874274140316c5a37370bcff1002e07ec65f4bbaa"
+content-hash = "412e4dbecf3749026572eccf766d28a0a11f9a30a23f1a5e56ee4e4f7cfd91a3"
