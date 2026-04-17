@@ -34,7 +34,7 @@ security ラベル付きのオープン Issue を修正して PR を作成して
           3. `npm ci` でロックファイルの整合性を検証
    - **Python/Poetry**: pyproject.toml を更新 → `poetry lock` → `poetry export -f requirements.txt --without-hashes` で requirements.txt を生成。
      - pyproject.toml の下限バージョンはまず Dependabot の `first_patched_version` 以上に設定する。`poetry lock` 実行後、`poetry show --lock <package>` または `poetry.lock` の該当エントリで解決された実バージョンを確認する。実バージョンが下限より新しい場合は、下限を実バージョンに揃えて再度 `poetry lock` を実行する（Poetry は既に lock 済みのパッケージを再解決しないため、2 回目は content-hash のみ更新され他の依存は影響を受けない）。実バージョンと下限が一致していれば再 lock は不要
-     - この下限整列操作は、CVE 対象パッケージに限らず、`poetry lock` で解決済みバージョンが pyproject.toml の下限を超えて更新された `[project].dependencies` 内の**すべての直接依存**に適用する（例: 対象パッケージの新バージョンが別の直接依存の下位互換性制約を引き上げ、連鎖的に resolve されるケース）。`git diff main -- <path>/poetry.lock` で version 行が変わったパッケージを洗い出し、pyproject.toml 記載のものは下限を実バージョンへ揃えて再 lock する。新 lockfile と pyproject.toml の下限が乖離すると実効最低バージョンが不明瞭になり、再現ビルドや再デプロイ時に意図しないダウングレードを招くリスクがあるため
+     - この下限整列操作は、CVE 対象パッケージに限らず、`poetry lock` で解決済みバージョンが pyproject.toml の下限を超えて更新された `[project].dependencies` に記載の**ランタイム直接依存すべて**に適用する（例: 対象パッケージの新バージョンが別のランタイム直接依存の下位互換性制約を引き上げ、連鎖的に resolve されるケース）。`git diff main -- <path>/poetry.lock` で version 行が変わったパッケージを洗い出し、pyproject.toml の `[project].dependencies` に記載のものは下限を実バージョンへ揃えて再 lock する。なお、この手順は `[tool.poetry.group.*.dependencies]` や optional dependencies には適用しない。新 lockfile と pyproject.toml の下限が乖離すると実効最低バージョンが不明瞭になり、再現ビルドや再デプロイ時に意図しないダウングレードを招くリスクがあるため
      - `requires-python` が特定バージョン固定（例: `"3.10.5"`）の場合、出力に `python_full_version == "3.10.5"` マーカーが全行に付与されるため、以下の後処理でマーカーを除去してからファイルに書き出す:
      ```bash
      poetry export -f requirements.txt --without-hashes | \
