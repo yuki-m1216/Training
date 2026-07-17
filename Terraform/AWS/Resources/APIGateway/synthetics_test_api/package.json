@@ -29,6 +29,7 @@
     "picomatch@2": "~2.3.2",
     "node-forge@1": "~1.4.0",
     "follow-redirects@1": "~1.16.0",
-    "uuid@8": "~14.0.0"
+    "uuid@8": "~14.0.0",
+    "websocket-driver@0": "~0.7.5"
   }
 }
