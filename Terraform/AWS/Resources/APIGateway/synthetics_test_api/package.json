@@ -30,6 +30,7 @@
     "node-forge@1": "~1.4.0",
     "follow-redirects@1": "~1.16.0",
     "uuid@8": "~14.0.0",
-    "websocket-driver@0": "~0.7.5"
+    "websocket-driver@0": "~0.7.5",
+    "ws@8": "~8.21.0"
   }
 }
