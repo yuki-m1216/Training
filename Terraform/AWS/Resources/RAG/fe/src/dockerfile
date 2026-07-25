@@ -1,5 +1,5 @@
 # 1. ベースイメージを指定（軽量な公式 Node.js イメージ）
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # 2. 作業ディレクトリを設定
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY . .
 RUN npm run build
 
 # 5. 実行環境を設定
-FROM node:18-alpine AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # 6. 依存関係とビルド済みファイルをコピー
