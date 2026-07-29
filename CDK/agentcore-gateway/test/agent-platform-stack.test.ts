@@ -32,7 +32,9 @@ describe('AgentPlatformStack', () => {
       AuthorizerType: 'CUSTOM_JWT',
       ProtocolType: 'MCP',
       AuthorizerConfiguration: Match.objectLike({
-        CustomJwtAuthorizer: Match.objectLike({
+        // CFn 仕様上のキーは 'CustomJWTAuthorizer'(JWTが大文字)。キャメルケースの推測で
+        // 'CustomJwtAuthorizer' と書いて一度失敗した箇所(仕様の意図は不変・表記の事実誤認を訂正)
+        CustomJWTAuthorizer: Match.objectLike({
           // 値は Foundation からの ImportValue を含むトークンのため形だけ検証。
           // 「クライアントがちょうど1つ許可されている」ことが仕様
           DiscoveryUrl: Match.anyValue(),
