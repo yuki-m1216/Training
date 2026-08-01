@@ -81,7 +81,14 @@ def handler(event, context):
     });
 
     // MCP クライアントの接続先。gatewayUrl の型が optional なのは
-    // 既存 Gateway の import 構文と型を共有しているためで、新規作成では必ず値が入る
-    new cdk.CfnOutput(this, 'GatewayUrl', { value: gateway.gatewayUrl ?? '' });
+    // 既存 Gateway の import 構文と型を共有しているため。新規作成では必ず値が入るが、
+    // 万一 undefined の場合に空文字で握りつぶすと問題の発見が deploy 後まで遅れるため、
+    // synth 時点で失敗させる(フェイルファスト)
+    if (!gateway.gatewayUrl) {
+      throw new Error(
+        'gateway.gatewayUrl が未定義です。新規作成した Gateway では取得できるはずのため構成を確認してください',
+      );
+    }
+    new cdk.CfnOutput(this, 'GatewayUrl', { value: gateway.gatewayUrl });
   }
 }

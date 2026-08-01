@@ -13,6 +13,20 @@ export class ObservabilityStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
+    // 本スタックは下記の理由で ARN のパーティションを 'arn:aws:' に直書きしている。
+    // 非標準パーティション(aws-cn / aws-us-gov / iso系)のリージョンで synth すると
+    // 誤った ARN のポリシーが作られるため、その場合は synth 時点で失敗させる
+    if (cdk.Token.isUnresolved(this.region)) {
+      throw new Error(
+        'ObservabilityStack は env.region の明示が必要です(ARN パーティション判定のため)',
+      );
+    }
+    if (/^(cn-|us-gov-|us-iso|eu-isoe-)/.test(this.region)) {
+      throw new Error(
+        `ObservabilityStack は標準 AWS パーティションのみ対応です(region: ${this.region})`,
+      );
+    }
+
     // 【受ける側の許可】X-Ray サービスが自アカウントの CloudWatch Logs へ
     // スパンを書き込むことを許すリソースベースポリシー。文面は公式の
     // 有効化手順(Enable-TransactionSearch)が示すポリシーに合わせている。

@@ -64,4 +64,14 @@ describe('ObservabilityStack', () => {
       DependsOn: [Match.stringLikeRegexp('XRayAccessPolicy')],
     }));
   });
+
+  test('非標準パーティションのリージョンでは synth を早期に失敗させる (ARN直書きのガード)', () => {
+    const app = new cdk.App();
+    expect(
+      () =>
+        new ObservabilityStack(app, 'CnStack', {
+          env: { account: '111111111111', region: 'cn-north-1' },
+        }),
+    ).toThrow(/標準 AWS パーティションのみ対応/);
+  });
 });
