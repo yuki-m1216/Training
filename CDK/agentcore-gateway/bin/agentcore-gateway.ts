@@ -2,6 +2,7 @@
 import * as cdk from 'aws-cdk-lib';
 import { AgentPlatformStack } from '../lib/agent-platform-stack';
 import { FoundationStack } from '../lib/foundation-stack';
+import { ObservabilityStack } from '../lib/observability-stack';
 
 const app = new cdk.App();
 
@@ -20,3 +21,6 @@ new AgentPlatformStack(app, 'AgentPlatformStack', {
   userPool: foundation.userPool,
   userPoolClient: foundation.userPoolClient,
 });
+
+// アカウント×リージョンレベルの設定のため、他スタックへの依存なし(単独デプロイ可)
+new ObservabilityStack(app, 'ObservabilityStack', { env });
