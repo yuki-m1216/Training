@@ -6,3 +6,6 @@ node_modules
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# AgentCore Runtime 用の生成物(build.sh の出力。再生成可能なので管理しない)
+runtime-code/build/
