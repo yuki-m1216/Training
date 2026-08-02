@@ -1,3 +1,5 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import { Match, Template } from 'aws-cdk-lib/assertions';
 import { FoundationStack } from '../lib/foundation-stack';
@@ -14,7 +16,22 @@ import { AgentPlatformStack } from '../lib/agent-platform-stack';
 describe('AgentPlatformStack', () => {
   let template: Template;
 
+  // fromCodeAsset が参照する build/ は build.sh の生成物のため、CI や初回 checkout の
+  // クリーン環境には存在しない。synth に必要なのはディレクトリと agent.py だけなので、
+  // 無ければ最小ダミーを作って npm test を単体で再現可能にする
+  const buildDir = path.join(__dirname, '..', 'runtime-code', 'build');
+  let buildDirCreatedByTest = false;
+
   beforeAll(() => {
+    if (!fs.existsSync(path.join(buildDir, 'agent.py'))) {
+      fs.mkdirSync(buildDir, { recursive: true });
+      fs.copyFileSync(
+        path.join(buildDir, '..', 'agent.py'),
+        path.join(buildDir, 'agent.py'),
+      );
+      buildDirCreatedByTest = true;
+    }
+
     const app = new cdk.App();
     const env = { account: '111111111111', region: 'ap-northeast-1' };
     const foundation = new FoundationStack(app, 'TestFoundationStack', { env });
@@ -24,6 +41,14 @@ describe('AgentPlatformStack', () => {
       userPoolClient: foundation.userPoolClient,
     });
     template = Template.fromStack(stack);
+  });
+
+  afterAll(() => {
+    // テストが作ったダミー build/ は残さない。依存を含まない偽バンドルが
+    // そのまま cdk deploy に使われる事故を防ぐ(開発者が build.sh で作った本物は触らない)
+    if (buildDirCreatedByTest) {
+      fs.rmSync(buildDir, { recursive: true, force: true });
+    }
   });
 
   test('Gateway は1つ。インバウンド認可は CUSTOM_JWT(usingCognito の変換結果) (要件2)', () => {
@@ -124,7 +149,9 @@ describe('AgentPlatformStack', () => {
 
   test('Runtime 実行ロールに Bedrock モデル呼び出し権限がある (要件8)', () => {
     // strands が Bedrock Converse API (InvokeModel系)で Haiku を呼ぶために必要。
-    // Runtime コンストラクトの自動生成ロールには含まれないので明示付与が仕様
+    // Runtime コンストラクトの自動生成ロールには含まれないので明示付与が仕様。
+    // Action だけでなく Resource も検証し、誤って '*' に広がったら検知する
+    // (jp. 推論プロファイル + ルーティング先の Haiku 4.5 基盤モデルに限定するのが仕様)
     template.hasResourceProperties('AWS::IAM::Policy', Match.objectLike({
       PolicyDocument: Match.objectLike({
         Statement: Match.arrayWith([
@@ -132,6 +159,10 @@ describe('AgentPlatformStack', () => {
             Action: Match.arrayWith([
               'bedrock:InvokeModel',
               'bedrock:InvokeModelWithResponseStream',
+            ]),
+            Resource: Match.arrayWith([
+              'arn:aws:bedrock:ap-northeast-1:111111111111:inference-profile/jp.anthropic.claude-haiku-4-5-*',
+              'arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-*',
             ]),
           }),
         ]),

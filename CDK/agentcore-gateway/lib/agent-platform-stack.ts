@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as agentcore from 'aws-cdk-lib/aws-bedrockagentcore';
@@ -98,8 +99,16 @@ def handler(event, context):
     // 直接コードデプロイ: Docker/ECR を使わず、build.sh の出力(arm64 依存 + agent.py)を
     // zip 化して CDK 管理の S3 バケットへアップロードする方式。
     // build/ は生成物のため、synth 前に runtime-code/build.sh の実行が前提
+    const runtimeCodePath = path.join(__dirname, '..', 'runtime-code', 'build');
+    // build.sh の実行漏れをライブラリ内部の一般的な ENOENT ではなく、
+    // 復旧手順が分かるメッセージで synth 時点に fail-fast させる
+    if (!fs.existsSync(path.join(runtimeCodePath, 'agent.py'))) {
+      throw new Error(
+        'runtime-code/build/ が未生成です。先に CDK/agentcore-gateway/runtime-code/build.sh を実行してください(依存を arm64 向けにバンドルして build/ を生成します)',
+      );
+    }
     const artifact = agentcore.AgentRuntimeArtifact.fromCodeAsset({
-      path: path.join(__dirname, '..', 'runtime-code', 'build'),
+      path: runtimeCodePath,
       // AWS がマネージドで用意する実行環境のバージョン。build.sh の
       // --python-version 3.13 とペアで、ズレると import エラーになる
       runtime: agentcore.AgentCoreRuntime.PYTHON_3_13,
