@@ -1,6 +1,8 @@
+import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as agentcore from 'aws-cdk-lib/aws-bedrockagentcore';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 
@@ -90,5 +92,48 @@ def handler(event, context):
       );
     }
     new cdk.CfnOutput(this, 'GatewayUrl', { value: gateway.gatewayUrl });
+
+    // ---- AgentCore Runtime (strands エージェント本体) ----
+
+    // 直接コードデプロイ: Docker/ECR を使わず、build.sh の出力(arm64 依存 + agent.py)を
+    // zip 化して CDK 管理の S3 バケットへアップロードする方式。
+    // build/ は生成物のため、synth 前に runtime-code/build.sh の実行が前提
+    const artifact = agentcore.AgentRuntimeArtifact.fromCodeAsset({
+      path: path.join(__dirname, '..', 'runtime-code', 'build'),
+      // AWS がマネージドで用意する実行環境のバージョン。build.sh の
+      // --python-version 3.13 とペアで、ズレると import エラーになる
+      runtime: agentcore.AgentCoreRuntime.PYTHON_3_13,
+      // zip ルートの agent.py を起動する(Dockerfile の CMD 相当)
+      entrypoint: ['agent.py'],
+    });
+
+    const runtime = new agentcore.Runtime(this, 'AgentRuntime', {
+      // Runtime 名はハイフン不可(^[a-zA-Z][a-zA-Z0-9_]{0,47}$)のためスネークケース
+      runtimeName: 'training_agent',
+      agentRuntimeArtifact: artifact,
+      // Gateway と同じ Foundation の Cognito を信頼元にする。
+      // Gateway の usingCognito({...}) と違い Runtime 側は位置引数 + クライアント配列。
+      // JWT を設定すると SigV4(IAM) では呼べなくなる(併用不可)点に注意
+      authorizerConfiguration: agentcore.RuntimeAuthorizerConfiguration.usingCognito(
+        props.userPool,
+        [props.userPoolClient],
+      ),
+    });
+
+    // 自動生成される実行ロールには ECR/CloudWatch 系しか無いため、strands が
+    // Bedrock のモデルを呼ぶための権限を明示付与する。宛先は jp. 推論プロファイルと、
+    // そこからルーティングされ得る国内リージョンの Haiku 4.5 基盤モデルに限定
+    runtime.role.addToPrincipalPolicy(new iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+      resources: [
+        `arn:aws:bedrock:${this.region}:${this.account}:inference-profile/jp.anthropic.claude-haiku-4-5-*`,
+        // 基盤モデル ARN はアカウント ID を持たず、ルーティング先リージョンが
+        // プロファイル側の都合で変わり得るためリージョンはワイルドカード
+        'arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-*',
+      ],
+    }));
+
+    // invoke 検証(Bearer トークンで直接 HTTPS)の URL 組み立てに ARN が必要になる
+    new cdk.CfnOutput(this, 'RuntimeArn', { value: runtime.agentRuntimeArn });
   }
 }
