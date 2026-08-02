@@ -85,4 +85,57 @@ describe('AgentPlatformStack', () => {
   test('MCP エンドポイント URL が出力されている (要件5)', () => {
     template.hasOutput('GatewayUrl', {});
   });
+
+  /**
+   * AgentCore Runtime の期待仕様(直接コードデプロイ + Cognito JWT 認可)
+   *
+   * 注意: fromCodeAsset は synth 時に runtime-code/build/ (build.sh の出力)を
+   * S3 アセットとしてステージングするため、テスト実行前に build.sh の実行が必要。
+   */
+  test('Runtime は1つ。直接コードデプロイ(S3 + PYTHON_3_13 + agent.py) (要件6)', () => {
+    template.resourceCountIs('AWS::BedrockAgentCore::Runtime', 1);
+    template.hasResourceProperties('AWS::BedrockAgentCore::Runtime', Match.objectLike({
+      AgentRuntimeArtifact: Match.objectLike({
+        // コンテナ方式なら ContainerConfiguration になる。CodeConfiguration である
+        // こと自体が「Docker/ECR 不要の直接コードデプロイ」という仕様の表明
+        CodeConfiguration: Match.objectLike({
+          // バケット名/プレフィックスは CDK が採番するアセットハッシュのため形だけ検証
+          Code: Match.objectLike({ S3: Match.anyValue() }),
+          Runtime: 'PYTHON_3_13',
+          // zip ルートの agent.py が起動される(Dockerfile の CMD に相当)
+          EntryPoint: ['agent.py'],
+        }),
+      }),
+    }));
+  });
+
+  test('Runtime のインバウンド認可は Gateway と同じ Cognito(CUSTOM_JWT) (要件7)', () => {
+    template.hasResourceProperties('AWS::BedrockAgentCore::Runtime', Match.objectLike({
+      AuthorizerConfiguration: Match.objectLike({
+        // Gateway と同様、usingCognito は CustomJWTAuthorizer に変換される。
+        // 同じ Foundation のプール/クライアントを信頼元にするのが仕様
+        CustomJWTAuthorizer: Match.objectLike({
+          DiscoveryUrl: Match.anyValue(),
+          AllowedClients: [Match.anyValue()],
+        }),
+      }),
+    }));
+  });
+
+  test('Runtime 実行ロールに Bedrock モデル呼び出し権限がある (要件8)', () => {
+    // strands が Bedrock Converse API (InvokeModel系)で Haiku を呼ぶために必要。
+    // Runtime コンストラクトの自動生成ロールには含まれないので明示付与が仕様
+    template.hasResourceProperties('AWS::IAM::Policy', Match.objectLike({
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Action: Match.arrayWith([
+              'bedrock:InvokeModel',
+              'bedrock:InvokeModelWithResponseStream',
+            ]),
+          }),
+        ]),
+      }),
+    }));
+  });
 });
