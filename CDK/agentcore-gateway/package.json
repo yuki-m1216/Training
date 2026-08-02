@@ -1,6 +1,9 @@
 {
   "name": "agentcore-gateway",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
