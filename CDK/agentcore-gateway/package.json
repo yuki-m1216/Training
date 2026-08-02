@@ -1,6 +1,9 @@
 {
   "name": "agentcore-gateway",
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
@@ -18,7 +21,10 @@
     "typescript": "~7.0.2"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.262.0",
+    "aws-cdk-lib": "^2.263.0",
     "constructs": "^10.5.0"
+  },
+  "overrides": {
+    "brace-expansion@1": "~1.1.17"
   }
 }
