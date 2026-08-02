@@ -1,0 +1,4 @@
+# AgentCore Runtime のサービスコントラクト(/invocations, /ping)を提供する SDK
+bedrock-agentcore==1.19.0
+# エージェントフレームワーク本体(Bedrock Converse API 経由で LLM を呼ぶ)
+strands-agents==1.50.2
