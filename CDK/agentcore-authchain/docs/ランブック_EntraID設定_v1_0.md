@@ -91,7 +91,8 @@ Entra 管理センター > **Entra ID > エンタープライズ アプリケー
 
 - 本検証は **Namespace 空＝短名**を採用（Cognito 側の属性マッピング `custom:company_raw ← companyname` が読みやすい。URI 形との違いも V1b の実物で見える）
 - 保存後、「**追加の要求（Additional claims）**」の一覧に表示される**クレーム名の文字列をそのまま控える**（これが Cognito 属性マッピングのキー。表示が `companyname` なら短名、URI 付きなら URI 全体を Cognito 側に書く）
-- **推定（V1b で実測）**：Namespace 空のとき、SAMLResponse の `<Attribute Name="companyname">` で出るはず。違えば `decode_saml.py` の Attributes 現物に合わせて Cognito 側マッピングを直す（V1b は「マッピングを合わせ直して再ログイン」の学習ループとして許容）
+- **実測済み（V1b、2026-08-16）**：Namespace 空のとき SAMLResponse に `<Attribute Name="companyname">`／`<Attribute Name="department">` の**短名**で出た。既定クレームは URI 形（`http://schemas.microsoft.com/identity/claims/...`、`http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name`）
+- **実測済みの落とし穴**：クレームを追加し忘れた（または値が空の）場合、Entra は**そのクレームを SAML に含めない**（エラーにならない）。Cognito 側も必須属性が無ければログインを成功させるので、「トークンは出るが `custom:*_raw` が無い」状態になる。切り分けは トークン → `admin-get-user` → SAMLResponse の順（§8／§10）
 
 ## 6. ユーザーの割り当て
 
@@ -148,4 +149,5 @@ Cognito 公式（属性マッピング／SAML の注意点）から：
 - 本ランブック中の「推定」箇所（Namespace 空→短名で出る、Entra 画面の日本語表記）は V1b の実物と画面で確定させ、変更履歴に反映する
 
 ## 変更履歴
+- v1.0 追記（2026-08-16）V1b 実測：Namespace 空→短名で出ることを確定。クレーム未設定／空値は SAML に含まれない落とし穴を §5 に追記
 - v1.0（2026-08-16）初版。2 段階手順・テストユーザー 2 名（表記ゆれ）・非ギャラリーアプリ・Basic SAML Configuration・クレーム（Namespace 空＝短名）・メタデータ URL・DevTools 捕捉手順・Cognito 側前提・トラブルシュートを記載

@@ -1,20 +1,33 @@
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib/core';
-import { AuthchainStack } from '../lib/authchain-stack';
+import * as cdk from 'aws-cdk-lib';
+import { AuthChainIdentityStack } from '../lib/identity-stack';
 
 const app = new cdk.App();
-new AuthchainStack(app, 'AuthchainStack', {
-  /* If you don't specify 'env', this stack will be environment-agnostic.
-   * Account/Region-dependent features and context lookups will not work,
-   * but a single synthesized template can be deployed anywhere. */
 
-  /* Uncomment the next line to specialize this stack for the AWS Account
-   * and Region that are implied by the current CLI configuration. */
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+const env = {
+  // アカウント ID はリポジトリにコミットせず、実行時の認証情報(プロファイル)から解決する
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  // 仮決め #9: ap-northeast-1 で確定(検証ログ V0 TODO 2)。環境非依存にしない意図の表明
+  region: 'ap-northeast-1',
+};
 
-  /* Uncomment the next line if you know exactly what Account and Region you
-   * want to deploy the stack to. */
-  // env: { account: '123456789012', region: 'us-east-1' },
+// Entra ID のメタデータ URL(テナント ID・アプリ ID を含む)は §6 によりリポジトリに置かない。
+// 実値は out/saml-metadata-url.txt(gitignore)に保存し、毎回 context で渡す:
+//   npx cdk deploy -c samlMetadataUrl="$(cat ../out/saml-metadata-url.txt)"
+// 未指定のまま synth/deploy すると IdP が「削除」される差分になるため、ここで止める。
+const samlMetadataUrl = app.node.tryGetContext('samlMetadataUrl') ?? process.env.SAML_METADATA_URL;
+if (!samlMetadataUrl) {
+  throw new Error(
+    'samlMetadataUrl が未指定です。-c samlMetadataUrl="$(cat ../out/saml-metadata-url.txt)" ' +
+      'または環境変数 SAML_METADATA_URL で Entra のフェデレーション メタデータ URL を渡してください。',
+  );
+}
 
-  /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
+// V1: Cognito(SP)+ 認可マスタ + 正規化 Lambda。V2(Runtime)/V3(Gateway)/V4(Policy)は別スタックとして順次追加する
+new AuthChainIdentityStack(app, 'AuthChainIdentityStack', {
+  env,
+  samlMetadataUrl,
+  // Entra 側「属性とクレーム」の Attribute Name(ランブック §5。Namespace 空 → 短名)。実物と違えば -c で上書きできる
+  samlCompanyClaim: app.node.tryGetContext('samlCompanyClaim') ?? 'companyname',
+  samlDepartmentClaim: app.node.tryGetContext('samlDepartmentClaim') ?? 'department',
 });

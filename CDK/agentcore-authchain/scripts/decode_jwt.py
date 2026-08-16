@@ -18,6 +18,7 @@ import base64
 import binascii
 import copy
 import json
+import re
 import sys
 import time
 from datetime import datetime, timedelta, timezone
@@ -126,6 +127,16 @@ def mask_claims(payload: dict[str, Any]) -> dict[str, Any]:
         value = masked.get(claim)
         if isinstance(value, str) and value:
             masked[claim] = _mask_value(value)
+    # フェデレーションユーザーの identities(userId = NameID / issuer にテナント ID)も §6 の対象
+    identities = masked.get("identities")
+    if isinstance(identities, list):
+        for ident in identities:
+            if not isinstance(ident, dict):
+                continue
+            if isinstance(ident.get("userId"), str):
+                ident["userId"] = _mask_value(ident["userId"])
+            if isinstance(ident.get("issuer"), str):
+                ident["issuer"] = re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "<tenant>", ident["issuer"])
     return masked
 
 
