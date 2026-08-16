@@ -1,0 +1,11 @@
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+# CDK コンテキストキャッシュ(§6: 秘匿値を含み得るため管理しない)
+cdk.context.json
