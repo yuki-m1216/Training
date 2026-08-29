@@ -12,7 +12,8 @@
 見えない区間(Cognito ↔ Entra の SAMLRequest / SAMLResponse)はブラウザ DevTools で捕まえて decode_saml.py へ(ランブック §8)。
 
 使い方:
-  python3 scripts/get_token.py --user userA --idp EntraID      # Entra 経由(hosted UI を飛ばして直接 Entra へ)
+  python3 scripts/get_token.py --user userA --idp EntraID      # Entra 経由(hosted UI を飛ばして直接 Entra へ。SAML)
+  python3 scripts/get_token.py --user userA --idp EntraOIDC    # 同、OIDC(V1')
   python3 scripts/get_token.py --user userA                    # hosted UI の選択画面(EntraID ボタン / ローカルのユーザー名+パスワード)
   python3 scripts/get_token.py --user local-a                  # ローカルユーザー(切り分けレイヤ)
   python3 scripts/get_token.py --user userA --idp EntraID --manual   # callback を受けられない環境: リダイレクト先 URL を貼り付け
@@ -114,7 +115,7 @@ def parse_pasted_callback(text: str) -> dict[str, list[str]]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Cognito hosted UI から PKCE でトークンを取得する(教育モード)")
     parser.add_argument("--user", required=True, help="保存ファイル名に使うラベル(例: userA / userB / local-a)")
-    parser.add_argument("--idp", help="identity_provider パラメータ(例: EntraID)。指定すると hosted UI の選択画面を飛ばして IdP へ直行")
+    parser.add_argument("--idp", help="identity_provider パラメータ(例: EntraID / EntraOIDC)。指定すると hosted UI の選択画面を飛ばして IdP へ直行")
     parser.add_argument("--outputs", default=DEFAULT_OUTPUTS, help="cdk deploy --outputs-file の JSON")
     parser.add_argument("--stack", default="AuthChainIdentityStack")
     parser.add_argument("--port", type=int, default=8400)
@@ -165,9 +166,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  {authorize_url}")
     print()
     print("  観測ポイント(DevTools):")
-    print("    - /oauth2/authorize → 302 → login.microsoftonline.com/<tenant>/saml2?SAMLRequest=...  (Cognito→Entra, Redirect binding)")
-    print("    - Entra ログイン後 → POST <hosted-ui>/saml2/idpresponse (Form Data: SAMLResponse)      (Entra→Cognito, POST binding)")
-    print("    - → 302 → http://localhost:8400/callback?code=...&state=...")
+    if args.idp and "oidc" in args.idp.lower():
+        # OIDC(V1'): Cognito は RP。Entra へは認可コードフローで、code 交換は Cognito↔Entra のバックチャネル(ブラウザには見えない)
+        print("    - /oauth2/authorize → 302 → login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize?client_id=...&redirect_uri=<hosted-ui>/oauth2/idpresponse&scope=openid profile email  (Cognito→Entra)")
+        print("    - Entra ログイン後 → 302 → <hosted-ui>/oauth2/idpresponse?code=...&state=...   (Entra→Cognito。Entra の認可コード)")
+        print("    - (見えない) Cognito が Entra の /oauth2/v2.0/token へ code + client_secret を POST → ID トークン → 属性マッピング")
+        print("      ※ SAML と違い Entra の ID トークンは DevTools に出ない。切り分けは admin-get-user → ランブック v2.0 §8(jwt.ms)")
+    else:
+        print("    - /oauth2/authorize → 302 → login.microsoftonline.com/<tenant>/saml2?SAMLRequest=...  (Cognito→Entra, Redirect binding)")
+        print("    - Entra ログイン後 → POST <hosted-ui>/saml2/idpresponse (Form Data: SAMLResponse)      (Entra→Cognito, POST binding)")
+    print("    - → 302 → http://localhost:8400/callback?code=...&state=...   (Cognito の認可コード)")
     if not args.idp:
         print("    - identity_provider 未指定なので、hosted UI にローカル(ユーザー名+パスワード)と EntraID ボタンの両方が出るはず")
 

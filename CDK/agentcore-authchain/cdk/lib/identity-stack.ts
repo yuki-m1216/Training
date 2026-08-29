@@ -18,6 +18,22 @@ export interface AuthChainIdentityStackProps extends cdk.StackProps {
   readonly samlCompanyClaim: string;
   /** 同、部門クレームの Attribute Name */
   readonly samlDepartmentClaim: string;
+  /**
+   * Entra ID の「ディレクトリ (テナント) ID」(ランブック v2.0 §2)。GUID のためリポジトリに置かず out/entra-oidc.json → context で渡す。
+   * OIDC の issuer は https://login.microsoftonline.com/<tenantId>/v2.0(common / organizations は issuer がプレースホルダのため不可)
+   */
+  readonly entraTenantId: string;
+  /** Entra ID App registration の「アプリケーション (クライアント) ID」(ランブック v2.0 §2) */
+  readonly entraClientId: string;
+  /**
+   * クライアントシークレットを保存した Secrets Manager のシークレット名(ランブック v2.0 §3。平文文字列で保存)。
+   * CDK の clientSecret は string 型しか無いため、動的参照 {{resolve:secretsmanager:...}} を埋め込む(テンプレートに平文を残さない)
+   */
+  readonly entraClientSecretName: string;
+  /** Entra が OIDC の ID トークンで送る会社名クレーム名(ランブック v2.0 §4。Namespace 空 → 短名) */
+  readonly oidcCompanyClaim: string;
+  /** 同、部門クレーム名 */
+  readonly oidcDepartmentClaim: string;
 }
 
 /**
@@ -27,6 +43,7 @@ export interface AuthChainIdentityStackProps extends cdk.StackProps {
  * - V1a: Pool / ドメイン / PKCE クライアント / 認可マスタ+シード / 正規化 Lambda(未接続)/ ローカルユーザー
  * - V1b: SAML IdP(EntraID)+ 属性マッピング + クライアントの supportedIdentityProviders 更新
  * - V1c: Pre Token Generation(V2_0)トリガー接続(addTrigger の 1 点差分)
+ * - V1': OIDC IdP(EntraOIDC)を追加し SAML と併存 → OIDC で同じ連鎖(custom:*_raw → company_code)を実測後、SAML IdP を削除(計画_追加要件 §1)
  */
 export class AuthChainIdentityStack extends cdk.Stack {
   /** V2/V3 の Runtime / Gateway が JWT オーソライザの discoveryUrl として参照する */
@@ -91,6 +108,40 @@ export class AuthChainIdentityStack extends cdk.Stack {
       // 署名付きリクエストや暗号化は Cognito 側証明書を Entra に登録する追加手順が要るため本検証では使わない
     });
 
+    // ---------------------------------------------------------------- OIDC IdP(Entra ID)+ 属性マッピング(V1')
+    // Cognito は OIDC の RP。Entra 側には Web リダイレクト URI(<domain>/oauth2/idpresponse)を登録済み(ランブック v2.0 §2)。
+    // Cognito は ID トークンと userInfo の両方を属性マッピングに使う(ID トークン優先)が、Entra の userInfo は固定 6 クレームのみのため
+    // companyname / department は Entra 側「属性とクレーム」で ID トークンに載せる(+ manifest acceptMappedClaims)
+    const entraOidc = new cognito.UserPoolIdentityProviderOidc(this, 'EntraOidcIdp', {
+      userPool: this.userPool,
+      // 表示名 兼 フェデレーションユーザーのユーザー名プレフィックス(EntraOIDC_<sub>。Entra の sub はアプリごとの pairwise 値)。3〜32 文字
+      name: 'EntraOIDC',
+      clientId: props.entraClientId,
+      // Secrets Manager の動的参照。デプロイ時に CFN が解決するので cdk.out にも平文は出ない
+      // (DescribeIdentityProvider では平文で返る = Cognito 内部保持は不可避)。値のローテーション後は自動で再取得されないため、
+      // IdP リソースのプロパティ(scopes 等)を変えて再デプロイする
+      clientSecret: cdk.SecretValue.secretsManager(props.entraClientSecretName).unsafeUnwrap(),
+      // 末尾スラッシュ不可。Cognito は <issuer>/.well-known/openid-configuration から 4 エンドポイントを自動検出する(endpoints は省略)
+      issuerUrl: `https://login.microsoftonline.com/${props.entraTenantId}/v2.0`,
+      // openid 必須。Entra は name/oid に profile、email に email スコープが要る。カスタムクレームのスコープ依存は V1' で実測
+      scopes: ['openid', 'profile', 'email'],
+      // userInfo(https://graph.microsoft.com/oidc/userinfo)は GET/POST 両対応
+      attributeRequestMethod: cognito.OidcAttributeRequestMethod.GET,
+      // SAML と同じ受け皿にマッピングする(V1 の下流 = Pre Token Gen 以降を変えずに IdP だけ差し替える)
+      attributeMapping: {
+        // 人が読める識別子(V1'-b Q&A、A 案)。ユーザー名は EntraOIDC_<sub>(不変)のまま、Entra の可変な表示用クレームを
+        // 標準属性に写す。Entra v2.0: preferred_username(通常 UPN)/name は profile スコープ、email は email スコープで来る。
+        // 標準属性は CDK 既定で mutable、クライアントの writeAttributes は既定で全属性。アクセストークンには載らない
+        preferredUsername: cognito.ProviderAttribute.other('preferred_username'),
+        email: cognito.ProviderAttribute.other('email'),
+        fullname: cognito.ProviderAttribute.other('name'),
+        custom: {
+          'custom:company_raw': cognito.ProviderAttribute.other(props.oidcCompanyClaim),
+          'custom:department_raw': cognito.ProviderAttribute.other(props.oidcDepartmentClaim),
+        },
+      },
+    });
+
     // ---------------------------------------------------------------- パブリッククライアント(PKCE / 認可コードグラント)
     this.userPoolClient = this.userPool.addClient('PkceClient', {
       // 公開クライアント(get_token.py はシークレットを持たず PKCE で交換する)
@@ -101,10 +152,11 @@ export class AuthChainIdentityStack extends cdk.Stack {
         callbackUrls: ['http://localhost:8400/callback'],
         logoutUrls: ['http://localhost:8400/logout'],
       },
-      // V1a はローカル(COGNITO)のみだった。V1b で EntraID を追加(diff はこの 1 点 + IdP の追加)
+      // V1a はローカル(COGNITO)のみだった。V1b で EntraID(SAML)を追加。V1' で EntraOIDC を併記(SAML 削除時にこの行と IdP を消す)
       supportedIdentityProviders: [
         cognito.UserPoolClientIdentityProvider.COGNITO,
         cognito.UserPoolClientIdentityProvider.custom(entraIdp.providerName),
+        cognito.UserPoolClientIdentityProvider.custom(entraOidc.providerName),
       ],
       // ユーザー存在の有無をエラー文言で漏らさない
       preventUserExistenceErrors: true,
@@ -114,6 +166,7 @@ export class AuthChainIdentityStack extends cdk.Stack {
     });
     // IdP が先に存在しないとクライアント更新が "provider does not exist" で失敗するため順序を明示
     this.userPoolClient.node.addDependency(entraIdp);
+    this.userPoolClient.node.addDependency(entraOidc);
 
     // ---------------------------------------------------------------- 認可マスタ(DynamoDB)+ シード
     this.authzTable = new dynamodb.TableV2(this, 'AuthzMaster', {
@@ -202,6 +255,8 @@ export class AuthChainIdentityStack extends cdk.Stack {
     // ランブック §4「識別子 (エンティティ ID)」と「応答 URL (ACS URL)」に入れる値そのもの
     new cdk.CfnOutput(this, 'SamlSpEntityId', { value: `urn:amazon:cognito:sp:${this.userPool.userPoolId}` });
     new cdk.CfnOutput(this, 'SamlAcsUrl', { value: `${baseUrl}/saml2/idpresponse` });
+    // ランブック v2.0 §2「リダイレクト URI」に入れる値そのもの(OIDC は SAML の ACS とは別パス)
+    new cdk.CfnOutput(this, 'OidcRedirectUri', { value: `${baseUrl}/oauth2/idpresponse` });
     new cdk.CfnOutput(this, 'AuthzTableName', { value: this.authzTable.tableName });
     new cdk.CfnOutput(this, 'PreTokenGenFunctionName', { value: this.preTokenGenFn.functionName });
   }

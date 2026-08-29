@@ -1,2 +1,5 @@
 # トークン等の一時出力(§6)。ルート .gitignore の `out` ルールにも該当するが、意図を明示するためここでも除外する
 out/
+
+# AgentCore Runtime 直接コードデプロイ用のバンドル生成物(build.sh の出力)
+runtime-code/build/
