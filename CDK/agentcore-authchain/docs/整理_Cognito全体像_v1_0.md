@@ -1,30 +1,31 @@
 # 整理：Cognito ユーザープールの全体像（本検証の構成を例に、CDK の行 ⇄ コンソールの場所 ⇄ 実測を対応づける） v1.0
 
-作成日：2026-08-29。対象：`cdk/lib/identity-stack.ts`（V1'-b 時点）。行番号は同ファイル。コンソールのメニュー名は公式手順書（2026-08 時点の新コンソール）から採り、公式に記載が見つからなかったものは **［推定］** を付けた。値の実物は `out/identity-outputs.json`（gitignore）にあり、本書では `<PoolId>`／`<ClientId>`／`<ACCOUNT>` にマスクする。
+作成日：2026-08-29、行番号は 2026-08-30（V2-1 時点、SAML 撤去後）に更新。対象：`cdk/lib/identity-stack.ts`。行番号は同ファイル（目印：UserPool L62／OIDC IdP L94／クライアント L125／AgentEntitlement L194／トリガー L244）。コンソールのメニュー名は公式手順書（2026-08 時点の新コンソール）から採り、公式に記載が見つからなかったものは **［推定］** を付けた。値の実物は `out/identity-outputs.json`（gitignore）にあり、本書では `<PoolId>`／`<ClientId>`／`<ACCOUNT>` にマスクする。
 
 ## 0. まず 1 枚で：何が何を持っているか
 
 ```mermaid
 flowchart TB
-    subgraph UP["ユーザープール（1 つのユーザーディレクトリ）  CDK L64〜81  ／  コンソール: User pools > authchain のプール"]
+    subgraph UP["ユーザープール（1 つのユーザーディレクトリ）  CDK L62〜  ／  コンソール: User pools > authchain のプール"]
         direction TB
-        SCHEMA["属性スキーマ（プール作成時に確定）<br/>標準属性 18 種（sub 以外は任意。必須は作成時のみ）<br/>カスタム属性 custom:company_raw / custom:department_raw（追加のみ可・削除不可）<br/>CDK L72〜77 ／ Sign-up メニュー"]
-        USERS["ユーザー<br/>local-user-a（ローカル）<br/>EntraID_&lt;NameID&gt;（SAML 由来）<br/>EntraOIDC_&lt;sub&gt;（OIDC 由来）<br/>CDK L236（ローカルのみ）／ Users メニュー"]
-        GROUPS["グループ<br/>&lt;PoolId&gt;_EntraID ／ &lt;PoolId&gt;_EntraOIDC（IdP ごとに自動作成）<br/>→ トークンの cognito:groups<br/>Groups メニュー"]
-        IDPS["外部プロバイダー（IdP）<br/>EntraID（SAML, L93〜）／ EntraOIDC（OIDC, L115〜）<br/>各 IdP に「属性マッピング」（IdP のクレーム → プール属性）<br/>Social and external providers メニュー"]
-        CLIENT["アプリクライアント PkceClient  CDK L146〜166<br/>公開クライアント／認可コード+PKCE／scopes openid profile email<br/>callback http://localhost:8400/callback<br/>使える IdP: COGNITO, EntraID, EntraOIDC<br/>属性の読み書き権限（既定＝全属性）<br/>App clients メニュー"]
-        DOMAIN["ドメイン（hosted UI / OAuth2 エンドポイントの土台）  CDK L84〜88<br/>https://authchain-&lt;ACCOUNT&gt;.auth.ap-northeast-1.amazoncognito.com<br/>Branding &gt; Domain［推定］"]
-        TRIG["Lambda トリガー  CDK L231<br/>Pre token generation V2_0 → PreTokenGenFn<br/>Extensions メニュー > Lambda triggers"]
-        PLAN["Feature plan: Essentials  CDK L66<br/>（V2_0 でアクセストークンを書き換える前提）"]
+        SCHEMA["属性スキーマ（プール作成時に確定）<br/>標準属性 18 種（sub 以外は任意。必須は作成時のみ）<br/>カスタム属性 custom:company_raw / custom:department_raw（追加のみ可・削除不可）<br/>CDK L74〜 ／ Sign-up メニュー"]
+        USERS["ユーザー<br/>local-user-a（ローカル）<br/>EntraOIDC_&lt;sub&gt;（OIDC 由来）<br/>（EntraID_&lt;NameID&gt; は V1'-c で削除）<br/>CDK L251（ローカルのみ）／ Users メニュー"]
+        GROUPS["グループ<br/>&lt;PoolId&gt;_EntraOIDC（IdP ごとに自動作成。EntraID 分は IdP 削除で消えた）<br/>→ トークンの cognito:groups<br/>Groups メニュー"]
+        IDPS["外部プロバイダー（IdP）<br/>EntraOIDC（OIDC, L94〜）。EntraID（SAML）は V1'-c で撤去<br/>各 IdP に「属性マッピング」（IdP のクレーム → プール属性）<br/>Social and external providers メニュー"]
+        CLIENT["アプリクライアント PkceClient  CDK L125〜<br/>公開クライアント／認可コード+PKCE／scopes openid profile email<br/>callback http://localhost:8400/callback<br/>使える IdP: COGNITO, EntraOIDC<br/>属性の読み書き権限（既定＝全属性）<br/>App clients メニュー"]
+        DOMAIN["ドメイン（hosted UI / OAuth2 エンドポイントの土台）  CDK L82〜<br/>https://authchain-&lt;ACCOUNT&gt;.auth.ap-northeast-1.amazoncognito.com<br/>Branding &gt; Domain［推定］"]
+        TRIG["Lambda トリガー  CDK L244<br/>Pre token generation V2_0 → PreTokenGenFn<br/>Extensions メニュー > Lambda triggers"]
+        PLAN["Feature plan: Essentials  CDK L64<br/>（V2_0 でアクセストークンを書き換える前提）"]
     end
-    ENTRA["Entra ID（IdP）<br/>App registration（OIDC）／ Enterprise app（SAML）"] -->|"ID トークン / SAML アサーション"| IDPS
+    ENTRA["Entra ID（IdP）<br/>App registration（OIDC）"] -->|"ID トークン（code 交換はバックチャネル）"| IDPS
     IDPS -->|"属性マッピング"| USERS
     APP["アプリ = get_token.py（ブラウザ）"] -->|"/oauth2/authorize?client_id=…&identity_provider=EntraOIDC"| DOMAIN
     DOMAIN -->|"client_id で特定"| CLIENT
     CLIENT -->|"supportedIdentityProviders"| IDPS
     USERS --> TRIG
-    TRIG -->|"company_code / department_code を注入"| TOKENS["トークン（ID / アクセス / リフレッシュ）<br/>iss = https://cognito-idp.ap-northeast-1.amazonaws.com/&lt;PoolId&gt;"]
+    TRIG -->|"company_code / department_code / agents / upn を注入"| TOKENS["トークン（ID / アクセス / リフレッシュ）<br/>iss = https://cognito-idp.ap-northeast-1.amazonaws.com/&lt;PoolId&gt;"]
     DDB[("DynamoDB 正規化マップ")] --> TRIG
+    ENT[("DynamoDB AgentEntitlement（V2-1, L194）<br/>Query のみ許可 L242")] --> TRIG
 ```
 
 読み方：**プール**が器で、その中に**スキーマ・ユーザー・グループ・IdP・アプリクライアント・ドメイン・トリガー**がぶら下がる。アプリは「**ドメイン**のエンドポイント」を「**アプリクライアント**の ID」で叩き、クライアントに許可された **IdP** へ飛び、IdP から戻った属性が**マッピング**で**ユーザー**に書かれ、**トリガー**を通って**トークン**になる。
@@ -80,18 +81,18 @@ flowchart TB
 用語の注意：本検証は classic hosted UI（L88）だが、コンソールのタブ名は世代に関係なく **Login pages／Managed login** のまま（公式：`/passkeys/add` 以外のパスは両版共通）。本書の「hosted UI」はこの Login pages で開くログイン画面のこと。
 
 ### 1-5 外部プロバイダー（IdP）と属性マッピング
-| 項目 | EntraID（SAML） | EntraOIDC（OIDC） | コンソール |
+| 項目 | EntraID（SAML、**V1'-c で撤去済＝履歴**） | EntraOIDC（OIDC、現行） | コンソール |
 |---|---|---|---|
-| CDK | `UserPoolIdentityProviderSaml` L93〜 | `UserPoolIdentityProviderOidc` L115〜 | Social and external providers > 各 IdP |
+| CDK | `UserPoolIdentityProviderSaml`（削除済。検証ログ V1 参照） | `UserPoolIdentityProviderOidc` L94〜 | Social and external providers > 各 IdP |
 | Entra 側の登録物 | エンタープライズアプリ（非ギャラリー、SAML SSO） | App registration（Web, client secret） | — |
-| Cognito が Entra に教える値 | Entity ID `urn:amazon:cognito:sp:<PoolId>`、ACS `/saml2/idpresponse` | Redirect URI `/oauth2/idpresponse` | 出力 L256〜259 |
-| Entra が Cognito に教える値 | メタデータ URL（L98） | テナント ID→issuer（L125）、client_id（L119）、client_secret（L123、Secrets Manager 動的参照）、scopes（L127） | 各 IdP の Provider details |
+| Cognito が Entra に教える値 | Entity ID `urn:amazon:cognito:sp:<PoolId>`、ACS `/saml2/idpresponse`（出力は削除済） | Redirect URI `/oauth2/idpresponse` | 出力 L271 |
+| Entra が Cognito に教える値 | メタデータ URL | テナント ID→issuer、client_id、client_secret（Secrets Manager 動的参照）、scopes（L94〜） | 各 IdP の Provider details |
 | ユーザー名の元（自動） | `EntraID_<NameID>` | `EntraOIDC_<sub>`（`username ← sub` は Cognito が自動でマッピング。公式＋実測） | Attribute mapping（`username` 行） |
-| **属性マッピング（手動）** | `custom:company_raw ← companyname` 等 L101〜105 | `preferred_username ← preferred_username`、`email ← email`、`name ← name`、`custom:*_raw ← companyname/department` L131〜141 | Social and external providers > IdP > **Attribute mapping** > Edit |
+| **属性マッピング（手動）** | `custom:company_raw ← companyname` 等（削除済） | `preferred_username ← preferred_username`、`email ← email`、`name ← name`、`custom:*_raw ← companyname/department` L114〜 | Social and external providers > IdP > **Attribute mapping** > Edit |
 | 自動グループ | `<PoolId>_EntraID` | `<PoolId>_EntraOIDC` | Groups |
 
 マッピングの性質（公式＋実測）：
-- **標準クレームでも、マッピングしなければプロファイルに書かれない**（実測：初回 OIDC ログインで `name`/`preferred_username` は入らず、L135〜137 を追加した再ログインで入った）
+- **標準クレームでも、マッピングしなければプロファイルに書かれない**（実測：初回 OIDC ログインで `name`/`preferred_username` は入らず、マッピングを追加した再ログインで入った）
 - 1:1 のコピーのみ。変換・結合・参照はできない（→ Lambda）。多値は `[a,b]` 文字列に平坦化
 - 値が変わったときだけ更新。IdP が送らなくなっても消えない（IdP が**空値**を送った場合は消える。公式）。**IdP 側に値が無いクレームは省略され、エラーにならない**（実測：`email`）
 - マッピング先は mutable 必須（immutable に値が来るとサインイン失敗）、かつクライアントが writable（でないと黙って未設定）
@@ -146,7 +147,8 @@ flowchart TB
 ## 4. 実測から得た落とし穴（本検証）
 - クレーム欠落は**静かに失敗**する：Entra に値が無い／クレーム未設定／マッピング漏れ／writable でない、のどれでもログインは成功し属性だけ無い。切り分けはトークン → `admin-get-user` → IdP 側の現物（SAML は SAMLResponse、OIDC は jwt.ms）の順
 - **作成時にしか決められないもの**：サインイン識別子（エイリアス）、必須属性、標準属性のプロパティ、大文字小文字の区別、クライアントシークレットの有無。**追加はできるが消せないもの**：カスタム属性
-- IdP を差し替えるとユーザーは別人になる（`<IdP名>_<識別子>`）。移行するなら旧ユーザーの棚卸しか `AdminLinkProviderForUser`（初回サインイン前）
+- IdP を差し替えるとユーザーは別人になる（`<IdP名>_<識別子>`）。移行するなら旧ユーザーの棚卸しか `AdminLinkProviderForUser`（初回サインイン前）。**IdP を削除してもそのユーザーは消えない**（V1'-c 実測：`EXTERNAL_PROVIDER` のまま残り、`admin-delete-user` が要る）
+- **hosted UI のセッション Cookie**：同じブラウザで再度 `/oauth2/authorize` を開くと、未期限の既存セッションを再利用してフォームを出さずに前のユーザーとして通す（公式：managed login は unexpired session を再利用。実測：`identity_provider` 無しで「Continue with EntraOIDC」画面、または画面なしで callback）。別ユーザーの検証はシークレットウィンドウか `/logout`（`ツール使い方_観測手順` §1-3）
 - アクセストークンには属性が載らない。AgentCore／Cedar に属性を渡すなら Pre Token Gen で注入する（本検証の中核）
 - `cdk diff` が「Omitted N changes … non-ASCII」と出すことがある（日本語を含むテンプレート）。`--strict` で表示できる
 
@@ -160,3 +162,4 @@ flowchart TB
 ## 変更履歴
 - v1.0（2026-08-29）起票。V1'-b（OIDC 化＋標準属性マッピング）時点の構成で作成
 - v1.0 追記（2026-08-29）セルフレビュー（別エージェント）の指摘を反映：行番号 4 箇所、`cognito:groups` の上書き可否、Feature plans／Extensions のコンソール位置、CDK `maxLen` と Cognito 上限の書き分け、readable×スコープ、空値の扱い、図のエッジラベル
+- v1.0 追記（2026-08-30）V1'-c／V2-1 を反映：SAML IdP を撤去済（履歴）に、AgentEntitlement と `agents`/`upn` 注入を図に追加、CDK 行番号を更新、§4 に IdP 削除時のユーザー残留と hosted UI セッション Cookie を追加
