@@ -41,6 +41,9 @@ if (!entraOidc.tenantId || !entraOidc.clientId || !entraOidc.clientSecretName) {
   );
 }
 
+// V2: エージェント識別子。AgentEntitlement の sk / Pre Token Gen が注入する agents クレーム / Runtime の customClaims 一致値を同じ定数で結ぶ
+const AGENT_KEY = 'inspect-headers';
+
 // V1: Cognito(OIDC RP。SAML SP は V1'-c で撤去)+ 認可マスタ + 正規化 Lambda。V2(Runtime)/V3(Gateway)/V4(Policy)は別スタックとして順次追加する
 const identity = new AuthChainIdentityStack(app, 'AuthChainIdentityStack', {
   env,
@@ -50,13 +53,13 @@ const identity = new AuthChainIdentityStack(app, 'AuthChainIdentityStack', {
   // OIDC 側のクレーム名も既定は短名(ランブック v2.0 §4)
   oidcCompanyClaim: entraOidc.companyClaim ?? 'companyname',
   oidcDepartmentClaim: entraOidc.departmentClaim ?? 'department',
+  agentKey: AGENT_KEY,
 });
 
 // V2: Runtime(最小エージェント inspect_headers)。Identity の Pool/Client を JWT オーソライザの信頼元にする(クロススタック参照)。
 //   V2a: -c forwardAuth=false(既定) → Authorization はエージェントに届かない
 //   V2b: -c forwardAuth=true         → requestHeaderAllowlist: ["Authorization"] の 1 点差分
 //   V3 : -c gatewayUrl=<Gateway スタックの出力> を追加
-const AGENT_KEY = 'inspect-headers'; // AgentEntitlement の sk / agents クレーム / customClaims 一致値と同じ定数
 new AuthChainRuntimeStack(app, 'AuthChainRuntimeStack', {
   env,
   userPool: identity.userPool,

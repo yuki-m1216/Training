@@ -25,6 +25,11 @@ export interface AuthChainIdentityStackProps extends cdk.StackProps {
   readonly oidcCompanyClaim: string;
   /** 同、部門クレーム名 */
   readonly oidcDepartmentClaim: string;
+  /**
+   * V2: 検証用エージェントの識別子(bin で定義する定数)。AgentEntitlement のシード行 sk(AGENT#<key>)、Pre Token Gen が注入する
+   * agents クレームの要素、Runtime の customClaims 一致値を同じ値で結ぶ(計画_追加要件 §2-2)
+   */
+  readonly agentKey: string;
 }
 
 /**
@@ -43,8 +48,10 @@ export class AuthChainIdentityStack extends cdk.Stack {
   public readonly userPoolClient: cognito.UserPoolClient;
   /** hosted UI / OAuth2 エンドポイントの土台。OIDC の idpresponse(リダイレクト URI)もこのドメイン配下 */
   public readonly userPoolDomain: cognito.UserPoolDomain;
-  /** 会社名・部門名(表記ゆれあり)→ 正規化コードの認可マスタ */
+  /** 会社名・部門名(表記ゆれあり)→ 正規化コードの認可マスタ(正規化マップ) */
   public readonly authzTable: dynamodb.TableV2;
+  /** V2: 会社コード × エージェント → 利用可否(部門制限任意)のエンタイトルメント(仮決め #14。正規化マップとは別テーブル) */
+  public readonly entitlementTable: dynamodb.TableV2;
   /** 正規化クレームを注入する Pre Token Generation Lambda(V1a では未接続) */
   public readonly preTokenGenFn: lambda.Function;
 
@@ -180,6 +187,42 @@ export class AuthChainIdentityStack extends cdk.Stack {
       }),
     });
 
+    // ---------------------------------------------------------------- エージェント認可マスタ(AgentEntitlement)+ シード(V2)
+    // 正規化マップとは運用境界(所有者・更新頻度・バックアップ方針・IAM)が異なるため別テーブル(計画_追加要件 §2-1、仮決め #14)。
+    // アクセスパターンはログイン時の Query pk=COMPANY#<company_code> の 1 回だけ。
+    // 本番向け: pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true }, deletionProtection: true, RemovalPolicy.RETAIN
+    this.entitlementTable = new dynamodb.TableV2(this, 'AgentEntitlement', {
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'sk', type: dynamodb.AttributeType.STRING },
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+    // シード(計画 §2-2): TESTCO は inspect-headers を全部門に、admin-only を ADMIN1 のみに許可。OTHERCO は行なし(= agents 非注入の fail-closed)
+    const entitlementItems: Record<string, unknown>[] = [
+      { pk: { S: 'COMPANY#TESTCO' }, sk: { S: `AGENT#${props.agentKey}` }, note: { S: '全部門に許可(User-A: SALES1 が通る)' } },
+      { pk: { S: 'COMPANY#TESTCO' }, sk: { S: 'AGENT#admin-only' }, departments: { SS: ['ADMIN1'] }, note: { S: '管理部のみ(User-A は通らない)' } },
+    ];
+    const entitlementSeedHash = crypto.createHash('sha256').update(JSON.stringify(entitlementItems)).digest('hex').slice(0, 16);
+    const entitlementSeedCall: cr.AwsSdkCall = {
+      service: 'DynamoDB',
+      action: 'batchWriteItem',
+      parameters: {
+        RequestItems: {
+          [this.entitlementTable.tableName]: entitlementItems.map((item) => ({ PutRequest: { Item: item } })),
+        },
+      },
+      physicalResourceId: cr.PhysicalResourceId.of(`agent-entitlement-seed-${entitlementSeedHash}`),
+    };
+    new cr.AwsCustomResource(this, 'AgentEntitlementSeed', {
+      onCreate: entitlementSeedCall,
+      onUpdate: entitlementSeedCall,
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [this.entitlementTable.tableArn] }),
+      installLatestAwsSdk: false,
+      logGroup: new logs.LogGroup(this, 'AgentEntitlementSeedLogs', {
+        retention: logs.RetentionDays.ONE_WEEK,
+        removalPolicy: cdk.RemovalPolicy.DESTROY,
+      }),
+    });
+
     // ---------------------------------------------------------------- 正規化 Lambda(Pre Token Generation V2_0)。V1a では未接続
     const preTokenGenLogs = new logs.LogGroup(this, 'PreTokenGenLogs', {
       // 明示的に作って DESTROY にしておくと cdk destroy で消える(消し忘れ防止)
@@ -190,11 +233,13 @@ export class AuthChainIdentityStack extends cdk.Stack {
       runtime: lambda.Runtime.PYTHON_3_13,
       handler: 'handler.lambda_handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda/pre_token_gen')),
-      environment: { TABLE_NAME: this.authzTable.tableName },
+      environment: { TABLE_NAME: this.authzTable.tableName, ENTITLEMENT_TABLE_NAME: this.entitlementTable.tableName },
       timeout: cdk.Duration.seconds(5),
       logGroup: preTokenGenLogs,
     });
     this.authzTable.grantReadData(this.preTokenGenFn);
+    // V2: エンタイトルメントは Query の 1 アクションだけ(grantReadData の 8 アクション(Scan 含む)は使わない。計画 §2-2)
+    this.entitlementTable.grant(this.preTokenGenFn, 'dynamodb:Query');
     // V1c: Pre Token Generation を V2_0(ID + アクセストークンの両方を改変)で接続。
     // V2_0 は PRE_TOKEN_GENERATION_CONFIG 側でのみ指定可(CFN: LambdaConfig.PreTokenGenerationConfig{LambdaArn, LambdaVersion})。
     // 併せて cognito-idp.amazonaws.com からの Invoke を許可する Lambda::Permission が生成される
@@ -225,6 +270,7 @@ export class AuthChainIdentityStack extends cdk.Stack {
     // ランブック v2.0 §2「リダイレクト URI」に入れる値そのもの(SAML の ACS URL 出力は V1'-c で撤去)
     new cdk.CfnOutput(this, 'OidcRedirectUri', { value: `${baseUrl}/oauth2/idpresponse` });
     new cdk.CfnOutput(this, 'AuthzTableName', { value: this.authzTable.tableName });
+    new cdk.CfnOutput(this, 'EntitlementTableName', { value: this.entitlementTable.tableName });
     new cdk.CfnOutput(this, 'PreTokenGenFunctionName', { value: this.preTokenGenFn.functionName });
   }
 }
