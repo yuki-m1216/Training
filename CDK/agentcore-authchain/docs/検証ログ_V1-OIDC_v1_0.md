@@ -8,8 +8,8 @@
 | 1 | OIDC IdP `EntraOIDC` 経由のログインで `custom:company_raw` / `custom:department_raw` が保存される（`admin-get-user`） | **完了** | V1'-b |
 | 2 | 同じ Pre Token Gen で `company_code` / `department_code` が両トークンに注入される（IdP 差し替えで下流不変） | **完了** | V1'-b |
 | 3 | `acceptMappedClaims` 未設定時の `AADSTS50146` を実測（壊す実験）または理由を記録 | 省略（ユーザーが事前に true 設定済み） | V1'-b |
-| 4 | SAML IdP 削除後も OIDC ログイン可、旧ユーザーの棚卸し完了 | 未 | V1'-c |
-| 5 | シーケンス図（OIDC 版）、仮決め #2/#4 の実測列、コスト表 §3 の更新 | 未 | 完了時 |
+| 4 | SAML IdP 削除後も OIDC ログイン可、旧ユーザーの棚卸し完了 | **完了** | V1'-c |
+| 5 | シーケンス図（OIDC 版）、仮決め #2/#4 の実測列、コスト表 §3 の更新 | **完了** | V1' 完了サマリ |
 
 ---
 
@@ -136,8 +136,120 @@ CDK 差分は `EntraOidcIdp.AttributeMapping` に `preferred_username`／`email`
 
 ---
 
+## V1'-c：SAML IdP の撤去（2026-08-30）
+
+### 目的
+V1'-b で OIDC 経由の連鎖が成立したので、V1b で作った SAML IdP `EntraID` を CDK から削除し、孤児になる旧ユーザー 2 名を棚卸しする。削除後も OIDC ログインが変わらず成立することを確認して V1' を閉じる（計画書 §8-2 #6、仮決め #2）。
+
+### CDK 差分（コード）
+- `cdk/lib/identity-stack.ts`：props `samlMetadataUrl`／`samlCompanyClaim`／`samlDepartmentClaim` を削除、`UserPoolIdentityProviderSaml`（`EntraIdp`）ブロックを削除、クライアントの `custom(entraIdp.providerName)`／`addDependency(entraIdp)` を削除、出力 `SamlSpEntityId`／`SamlAcsUrl` を削除（−57／+13 行）
+- `cdk/bin/authchain.ts`：`samlMetadataUrl` の必須チェック（未指定で synth 停止）と 3 つの props を撤去（−18／+1 行）。以後 `-c samlMetadataUrl=…` は不要
+- `scripts/get_token.py` の `--idp EntraID` 用ヒント分岐と `decode_saml.py` は V1 の履歴として残置
+
+### 予想（Claude が代行）→ 実測
+| # | 予想 | 実測 |
+|---|---|---|
+| 1 | `cdk diff` は 4 点のみ：`[-] UserPoolIdentityProvider EntraIdp`（destroy）、`[~] PkceClient`（`SupportedIdentityProviders` から `Ref` 1 つ削除、`DependsOn` 1 つ削除）、`[-] Output SamlSpEntityId`／`SamlAcsUrl`。UserPool・ドメイン・`EntraOidcIdp`・テーブル・Lambda は差分なし | **一致**（変更セット方式、置換なし）。認証情報なしの `synth` では Lambda の `S3Bucket` やドメイン名が `<ACCOUNT>` → `${AWS::AccountId}` に変わる差が見えたが、プロファイル付き `cdk diff` では出ない（見かけ上の差） |
+| 2 | CFN はクライアント更新（参照除去）を先に、IdP 削除はクリーンアップ段階で最後に行う → 「IdP が使用中」エラーは出ない | **一致**：`PkceClient UPDATE_COMPLETE`（17:09:28）→ `UPDATE_COMPLETE_CLEANUP` → `EntraIdp DELETE_IN_PROGRESS`（17:09:30）→ `DELETE_COMPLETE`（17:09:32）。デプロイ 11 秒 |
+| 3 | IdP 削除でユーザーは連鎖削除されない → `EntraID_<User-A>`／`EntraID_<管理者>#EXT#…` は `EXTERNAL_PROVIDER` のまま残り、サインイン不能な孤児になる（`list-users --filter 'username ^= "EntraID_"'` で 2 名） | **一致**：deploy 直後の `list-users` は 4 名のまま、`EntraID_` 2 名（`identities` は `providerName: EntraID, providerType: SAML`）。`admin-delete-user` ×2（rc=0）で **2 名**（`local-user-a`／`EntraOIDC_<sub>`）に |
+| 4 | 削除後の `get_token.py --user userA-oidc --idp EntraOIDC` は成功。トークンの `cognito:groups=[<PoolId>_EntraOIDC]`、`company_code=TESTCO`／`department_code=SALES1`、`preferred_username`／`name` は V1'-b と同じ。ユーザー数は 2 名のまま（既存 `EntraOIDC_<sub>` に再ログイン） | **一致**（17:15）：トークン交換 HTTP 200。両トークンに `company_code=TESTCO`／`department_code=SALES1`／`cognito:groups=[<PoolId>_EntraOIDC]`、ID トークンに `preferred_username`／`name`（`email` は引き続き無し）。プールは 2 名のまま（`EntraOIDC_<sub>` の `UserLastModifiedDate` が 17:15:46 に更新）。Lambda ログ：`triggerSource=TokenGeneration_HostedAuth`、`userAttributeKeys` 7 つ（V1'-b と同じ）、`injectedClaims={TESTCO, SALES1}` |
+| 5 | `/login`（`identity_provider` 未指定）の hosted UI は EntraID ボタンが消え、EntraOIDC ボタン＋ローカルフォームだけになる | **一部一致**：IdP ボタンは「Continue with EntraOIDC」の **1 つだけ**（EntraID は消えた）。ただし**ローカルフォームは出ず**、代わりに「Sign in as a different user?」リンク。直前のログインで hosted UI のセッション Cookie が残っていたため、Cognito が「同じ IdP で続行」の画面を出した（フォームはリンクの先） |
+
+### 出力（現物）：`cdk diff`（2026-08-30）
+```
+[-] AWS::Cognito::UserPoolIdentityProvider EntraIdp EntraIdp89067AD1 destroy
+[~] AWS::Cognito::UserPoolClient UserPool/PkceClient UserPoolPkceClient7E180382
+ ├─ [~] SupportedIdentityProviders: ["COGNITO", {Ref EntraIdp}, {Ref EntraOidcIdp}] -> ["COGNITO", {Ref EntraOidcIdp}]
+ └─ [~] DependsOn: ["EntraIdp…", "EntraOidcIdp…"] -> ["EntraOidcIdp…"]
+Outputs
+[-] Output SamlSpEntityId
+[-] Output SamlAcsUrl
+```
+
+### 出力（現物）：削除後（2026-08-30）
+```
+list-identity-providers        : EntraOIDC (OIDC) のみ
+client SupportedIdentityProviders: ["COGNITO", "EntraOIDC"]
+list-users                     : local-user-a (CONFIRMED) / EntraOIDC_<sub> (EXTERNAL_PROVIDER)   ← 2 名
+out/identity-outputs.json      : SamlSpEntityId / SamlAcsUrl が消え 10 キー（get_token.py が使う ClientId / HostedUiBaseUrl / UserPoolId は健在）
+```
+
+### 実測と解釈
+- **［実測］IdP を消してもユーザーは残る**：Cognito の IdP 削除はユーザーを連鎖削除しない。残ったユーザーは `identities` に存在しない `providerName` を指す孤児で、hosted UI からは到達不能。本番で IdP を差し替える場合は「旧 IdP のユーザーの棚卸し（削除 or リンク）」が手順として要る
+- **［実測］CFN の順序は参照グラフが決める**：`SupportedIdentityProviders` が `Ref` で IdP を参照していたため、更新（参照除去）→ クリーンアップ削除の順になった。`addDependency` が無くても同じ順序になるはず（`Ref` があるため）
+- **［実測］hosted UI はセッション Cookie を持つ**：`/login` は「誰でも初期画面」ではなく、直前に認証したブラウザには「Continue with <IdP>」を返す。SSO 的な使い勝手の裏返しで、**共有端末ではログアウト（`/logout`）が要る**ことの実証。ローカルフォームの有無を見たければシークレットウィンドウか「Sign in as a different user?」
+- **［実測］削除の後始末は AWS 側のみ**：Entra 側の SAML エンタープライズアプリ、`out/saml-metadata-url.txt`、`out/saml_*`／`tokens_userA*.json`（SAML 時代）は AWS の撤去と独立。撤収チェックリスト（コスト表 §4-3）に載せて残置
+
+---
+
+## V1' 完了サマリ
+
+### 合格条件
+チェックリスト 5 項目すべて完了（V1'-a：IdP 追加、V1'-b：OIDC ログインと注入、V1'-c：SAML 撤去と再ログイン）。壊す実験 `AADSTS50146` は省略（ユーザーが事前に `acceptMappedClaims: true` を設定済み）。
+
+### 口頭試問
+- **IdP を SAML から OIDC に替えて、下流で変えたものは？** → 何も無い。受け皿 `custom:company_raw`／`department_raw` が同じなので Pre Token Gen・認可マスタ・トークン形は不変（V1'-b の `userAttributeKeys` が SAML 時と一致）
+- **OIDC で観測面が薄くなった箇所は？** → Entra → Cognito のバックチャネル（code → ID トークン）。SAML は SAMLResponse がブラウザを通るが、OIDC は `/oauth2/idpresponse?code=` しか見えない。切り分けは `admin-get-user`（マッピング結果）と jwt.ms（Entra の ID トークン）
+- **ユーザー名が `EntraOIDC_<sub>` で人に読めない問題は？** → Entra の `sub` は pairwise（アプリごと）かつ不変なので識別子としては正しい。可読名は `preferred_username`（UPN）／`name` を標準属性に写して ID トークンで運ぶ（アクセストークンには載らない → 必要なら Pre Token Gen で注入。V2 で検討）
+- **IdP を消したらユーザーはどうなる？** → 残る（孤児）。IdP 差し替えは「ユーザーの棚卸し」までが手順
+
+### シーケンス図（V1' 完成形。V1'-b/V1'-c の実測に基づき Claude が作図、2026-08-30）
+V1（SAML 版）との差分は Cognito ↔ Entra の区間だけ（認可コードフロー、バックチャネルでの code 交換、ID トークンからの属性マッピング）。Cognito → Pre Token Gen → DynamoDB → トークン発行は V1 と同一。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as User-A（ブラウザ）
+    participant S as get_token.py（公開クライアント／localhost:8400/callback）
+    participant C as Cognito User Pool（Hosted UI／OIDC RP）
+    participant E as Entra ID（OIDC OP：App registration）
+    participant L as Pre Token Gen Lambda（V2_0）
+    participant D as DynamoDB 認可マスタ
+
+    Note over S: [2/6] PKCE：code_verifier → code_challenge=BASE64URL(SHA256(verifier))、state を生成
+    S->>U: [3/6] /oauth2/authorize?response_type=code&code_challenge&state&identity_provider=EntraOIDC を開く
+    U->>C: GET /oauth2/authorize（identity_provider=EntraOIDC で選択画面をスキップ）
+    C-->>U: 302 → login.microsoftonline.com/<tenant>/oauth2/v2.0/authorize?client_id=<Entra AppId>&redirect_uri=<hosted-ui>/oauth2/idpresponse&scope=openid profile email
+    U->>E: GET /oauth2/v2.0/authorize
+    E-->>U: Entra ログイン（既存セッションなら即時）
+    Note over E: 「属性とクレーム」で companyname／department を ID トークンに載せる（acceptMappedClaims=true）<br/>値が空のクレーム（email）は省略される
+    E-->>U: 302 → <hosted-ui>/oauth2/idpresponse?code=<Entra の認可コード>&state=…
+    U->>C: GET /oauth2/idpresponse（code）
+    C->>E: （バックチャネル）POST /oauth2/v2.0/token（code + client_id + client_secret ← Secrets Manager 動的参照）
+    E-->>C: id_token（sub／preferred_username／name／companyname／department）＋ access_token
+    C->>E: （バックチャネル）GET userinfo（attributes_request_method=GET。Entra の userInfo は固定 6 クレーム）
+    E-->>C: sub／name／… （ID トークン優先で統合）
+    Note over C: JWKS で署名検証 → 属性マッピング<br/>companyname→custom:company_raw／department→custom:department_raw／preferred_username／name（プロファイルに保存）<br/>ユーザー名 EntraOIDC_<sub>（pairwise）、自動グループ <PoolId>_EntraOIDC
+    C->>L: TokenGeneration_HostedAuth（request.userAttributes に custom:*_raw／identities／name／preferred_username／cognito:user_status／sub）
+    L->>D: GetItem COMPANY#<company_raw>
+    L->>D: GetItem DEPT#<department_raw>
+    alt 両方ヒット
+        D-->>L: company_code=TESTCO／department_code=SALES1
+        L-->>C: claimsAndScopeOverrideDetails.{idTokenGeneration,accessTokenGeneration}.claimsToAddOrOverride
+    else 未ヒット（fail-closed）
+        D-->>L: Item なし
+        L-->>C: 該当クレームのみ非注入＋WARNING（認証自体は成功させる）
+    end
+    Note over C: 認可コードを発行（トークンはまだ出さない）＋ hosted UI のセッション Cookie を発行
+    C-->>U: 302 → http://localhost:8400/callback?code=…&state=…
+    U->>S: [4/6] callback 受信（state 照合）
+    S->>C: [5/6] POST /oauth2/token（grant_type=authorization_code, code, code_verifier, redirect_uri。Basic 認証なし）
+    C-->>S: id_token／access_token／refresh_token
+    Note over S: [6/6] 保存＋デコード<br/>ID：custom:company_raw（生値）＋preferred_username／name＋company_code／department_code＋cognito:groups<br/>アクセス：company_code／department_code＋cognito:groups（custom:*／標準属性は載らない）
+```
+
+### 仮決め事項表への反映
+#2（フェデレーション方式＝OIDC、SAML 撤去完了）、#4（OIDC マッピングも同じ受け皿で成立、標準属性の追加マッピング）を実測列に記入。
+
+### 稼働リソース／コスト（V1' 終了時）
+コスト表 §3 の V1' 行を参照。SAML IdP 削除で AWS 側の課金要素は変わらず（フェデレーション 1 MAU・ローカル 1 MAU、≈ $0）。Entra 側に SAML エンタープライズアプリが残置（撤収時に削除）。
+
+---
+
 ## 変更履歴
 - v1.0（2026-08-29）起票。V1'-a：OIDC IdP の CDK 差分と synth を記録（デプロイは Entra 側の値待ち）
 - v1.0 追記（2026-08-29）V1'-a：diff／deploy の実測、describe-identity-provider の現物を記録
 - v1.0 追記（2026-08-29）V1'-b：OIDC ログインの観測（予想 (b)〜(e) 全一致、トークン・Lambda ログの現物、ユーザー名／UPN の Q&A）を記録
 - v1.0 追記（2026-08-29）V1'-b 追加観測：標準属性マッピング（preferred_username/name は反映、email は Entra 側に値が無く未反映）
+- v1.0 追記（2026-08-30）V1'-c：SAML IdP 撤去の CDK 差分・deploy 順序・旧ユーザー 2 名の削除を記録（OIDC 再ログインは実測待ち）
+- v1.0 追記（2026-08-30）V1'-c：OIDC 再ログイン（予想 4 一致）、hosted UI のセッション Cookie（予想 5 一部一致）を記録。V1' 完了サマリ（口頭試問・OIDC 版シーケンス図）を追加
