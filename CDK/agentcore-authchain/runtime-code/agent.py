@@ -35,7 +35,7 @@ GATEWAY_URL = os.environ.get("GATEWAY_URL", "")
 # 表示するクレーム(存在するものだけ)。トークン全体を返さないのは、ログ・応答に不要なものを載せないため
 SHOW_CLAIMS = [
     "sub", "iss", "token_use", "client_id", "aud", "username", "cognito:groups", "scope",
-    "company_code", "department_code", "agents", "iat", "exp", "auth_time", "origin_jti",
+    "company_code", "department_code", "agents", "upn", "iat", "exp", "auth_time", "origin_jti",
 ]
 
 

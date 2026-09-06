@@ -13,7 +13,7 @@ JWT 設定の Runtime は AWS SDK の invoke_agent_runtime では呼べない(Si
 例:
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json                 # inspect(既定)
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --use id        # ID トークンを送ってみる(client_id/aud の違い)
-  python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --tamper        # 署名を 1 文字壊す(改ざん実験)
+  python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --tamper        # 署名バイトを 1 ビット反転(改ざん実験)
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --action gateway --tool VerifyTarget___echo_profile --args '{"note":"hi"}'
 """
 from __future__ import annotations
@@ -48,10 +48,16 @@ def decode_jwt_noverify(token: str) -> tuple[dict[str, Any], dict[str, Any]]:
 
 
 def tamper(token: str) -> str:
-    """署名部の末尾 1 文字を別の文字に置き換える(ヘッダ・ペイロードはそのまま = 中身は正しく見えるが署名不一致)。"""
+    """署名バイト列の先頭 1 ビットを反転して base64url し直す(ヘッダ・ペイロードはそのまま = 中身は正しく見えるが署名不一致)。
+
+    注意(V2b で実測): base64url の末尾 1 文字を書き換えるだけでは改ざんにならない。RS256 の署名 256 バイトは 342 文字になり、
+    末尾の文字は上位 2 ビットしか署名に寄与せず、残りはパディングとして捨てられる(base64 の可鍛性)。
+    例えば 'A'(000000) → 'B'(000001) はデコード後のバイト列が同一で、Runtime は正しく「有効な署名」として通す(HTTP 200)。
+    """
     h, p, s = token.split(".")
-    last = "A" if s[-1] != "A" else "B"
-    return f"{h}.{p}.{s[:-1]}{last}"
+    sig = bytearray(b64url_decode(s))
+    sig[0] ^= 0x80
+    return f"{h}.{p}.{base64.urlsafe_b64encode(bytes(sig)).rstrip(b'=').decode('ascii')}"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -64,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--action", choices=["inspect", "gateway"], default="inspect")
     parser.add_argument("--tool", help="action=gateway のとき tools/call するツール名(例 VerifyTarget___echo_profile)")
     parser.add_argument("--args", default="{}", help="tools/call の arguments(JSON)")
-    parser.add_argument("--tamper", action="store_true", help="署名を壊して送る(改ざん実験)")
+    parser.add_argument("--tamper", action="store_true", help="署名バイトを 1 ビット反転して送る(改ざん実験)")
     parser.add_argument("--session-id", help="X-Amzn-Bedrock-AgentCore-Runtime-Session-Id(既定: 自動生成 64 文字)")
     parser.add_argument("--save", help="応答 JSON の保存先(例 out/runtime_v2b_userA.json)")
     args = parser.parse_args(argv)
@@ -98,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  exp          : {claims.get('exp')} (あと {claims.get('exp', 0) - now} 秒)")
     if args.tamper:
         token = tamper(token)
-        print("  ※ --tamper: 署名部の末尾 1 文字を書き換えた(中身は上のまま、署名だけ不一致)")
+        print("  ※ --tamper: 署名バイト列の先頭 1 ビットを反転した(中身は上のまま、署名だけ不一致)")
 
     # ------------------------------------------------------------ [3/4]
     banner("3/4", "HTTPS リクエストの組み立て")
