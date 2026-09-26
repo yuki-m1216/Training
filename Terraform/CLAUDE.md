@@ -5,13 +5,13 @@
 ## 開発コマンド
 
 ### Python環境セットアップ（RAGバックエンド）
-RAG実装のPython Lambda関数の場合：
+RAG実装のPython Lambda関数の場合、`pyproject.toml` があるディレクトリ
+（`Terraform/AWS/Resources/RAG/be/src/<function>/`）で実行する：
 ```bash
 # Pythonバージョンを設定
 pyenv local 3.10.5
 
-# Poetry環境を初期化
-poetry init
+# Poetry環境を構築（pyproject.toml は既存のものを使う。poetry init は実行しない）
 poetry install --no-root
 
 # 仮想環境をアクティブ化（PowerShell）
@@ -34,7 +34,7 @@ export TF_VAR_NEW_RELIC_ACCOUNT_ID="<your-account-id>"
 ```bash
 BUCKET_NAME=s3-terraform-state-y-mitsuyama
 REGION=ap-northeast-1
-aws s3api create-bucket --create-bucket-configuration LocationConstraint=$REGION --bucket $BUCKET_NAME
+aws --region $REGION s3api create-bucket --create-bucket-configuration LocationConstraint=$REGION --bucket $BUCKET_NAME
 aws s3api put-bucket-versioning --bucket $BUCKET_NAME --versioning-configuration Status=Enabled
 ```
 
