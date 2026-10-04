@@ -2,6 +2,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
+import { AuthChainGatewayStack } from '../lib/gateway-stack';
 import { AuthChainIdentityStack } from '../lib/identity-stack';
 import { AuthChainRuntimeStack } from '../lib/runtime-stack';
 
@@ -56,10 +57,18 @@ const identity = new AuthChainIdentityStack(app, 'AuthChainIdentityStack', {
   agentKey: AGENT_KEY,
 });
 
+// V3: Gateway(JWT は Runtime と同じ Pool/Client = 透過トークンをそのまま受ける)+ Lambda ターゲット VerifyTarget___echo_profile。
+//   Policy は V4 でこのスタックに追加する。出力 GatewayUrl を Runtime へ -c gatewayUrl=... で渡す(スタック間は疎結合のまま)
+new AuthChainGatewayStack(app, 'AuthChainGatewayStack', {
+  env,
+  userPool: identity.userPool,
+  userPoolClient: identity.userPoolClient,
+});
+
 // V2: Runtime(最小エージェント inspect_headers)。Identity の Pool/Client を JWT オーソライザの信頼元にする(クロススタック参照)。
 //   V2a: -c forwardAuth=false(既定) → Authorization はエージェントに届かない
 //   V2b: -c forwardAuth=true         → requestHeaderAllowlist: ["Authorization"] の 1 点差分
-//   V3 : -c gatewayUrl=<Gateway スタックの出力> を追加
+//   V3 : -c gatewayUrl=<AuthChainGatewayStack の GatewayUrl> を追加(forwardAuth=true も付け続けること。外すと V2a に戻る)
 new AuthChainRuntimeStack(app, 'AuthChainRuntimeStack', {
   env,
   userPool: identity.userPool,
