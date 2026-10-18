@@ -43,5 +43,18 @@
     "Vercel",
     "yuki"
   ],
-  "cSpell.ignoreWords": ["nodenext", "refetches", "statefulset"]
+  "cSpell.ignoreWords": ["nodenext", "refetches", "statefulset"],
+  "files.watcherExclude": {
+    "**/.terraform/**": true,
+    "**/cdk.out/**": true,
+    "**/layer/**": true,
+    "**/layer_old/**": true,
+    "**/runtime-code/build/**": true
+  },
+  "python.analysis.exclude": [
+    "**/cdk.out",
+    "**/layer",
+    "**/layer_old",
+    "**/runtime-code/build"
+  ]
 }
