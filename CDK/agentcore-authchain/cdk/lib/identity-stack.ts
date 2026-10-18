@@ -259,6 +259,27 @@ export class AuthChainIdentityStack extends cdk.Stack {
         { name: 'custom:department_raw', value: '第一営業部' },
       ],
     });
+    // V4: Cedar の拒否側の主体。UserAttributes は CFN の createOnly(変更 = ユーザーの置き換え)なので local-user-a は触らず追加する。
+    //   local-user-b: OTHERCO/ADMIN1 → AgentEntitlement に行なし = agents 非注入 → Runtime 入口で 401。Gateway 直接呼び出しで P1 のデフォルト拒否を見る
+    //   local-user-c: TESTCO/ADMIN1 → agents=[inspect-headers, admin-only]。P1 permit と P2 forbid(note に "delete")が両方当たる = forbid 優先を見る
+    new cognito.CfnUserPoolUser(this, 'LocalUserB', {
+      userPoolId: this.userPool.userPoolId,
+      username: 'local-user-b',
+      messageAction: 'SUPPRESS',
+      userAttributes: [
+        { name: 'custom:company_raw', value: '株式会社アザー' },
+        { name: 'custom:department_raw', value: '管理部' },
+      ],
+    });
+    new cognito.CfnUserPoolUser(this, 'LocalUserC', {
+      userPoolId: this.userPool.userPoolId,
+      username: 'local-user-c',
+      messageAction: 'SUPPRESS',
+      userAttributes: [
+        { name: 'custom:company_raw', value: '株式会社テスト商事' },
+        { name: 'custom:department_raw', value: '管理部' },
+      ],
+    });
 
     // ---------------------------------------------------------------- 出力(Entra 側に入れる値と、スクリプトが使う値)
     const baseUrl = this.userPoolDomain.baseUrl();
