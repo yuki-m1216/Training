@@ -145,3 +145,5 @@ secrets.yaml
 # lib/ は Python 用ルール(上記 "lib/")で除外されるが、CDK プロジェクトでは
 # TypeScript のソース置き場なので CDK/ 配下に限り追跡対象に戻す(否定は後勝ちのため末尾に配置)
 !CDK/**/lib/
+# Playwright MCP サーバーの作業ファイル(ページスナップショット・コンソールログ・トレース)
+.playwright-mcp/
