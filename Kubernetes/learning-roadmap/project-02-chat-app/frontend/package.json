@@ -44,6 +44,7 @@
     "postcss@8": "~8.5.18",
     "sharp@0": "~0.35.4",
     "@humanfs/node@0": "~0.16.8",
-    "baseline-browser-mapping@2": "~2.11.0"
+    "baseline-browser-mapping@2": "~2.11.0",
+    "source-map-js@1": "~1.2.2"
   }
 }
