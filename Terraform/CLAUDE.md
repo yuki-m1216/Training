@@ -14,8 +14,8 @@ pyenv local 3.10.5
 # Poetry環境を構築（pyproject.toml は既存のものを使う。poetry init は実行しない）
 poetry install --no-root
 
-# 仮想環境をアクティブ化（PowerShell）
-Invoke-Expression (poetry env activate)
+# 仮想環境をアクティブ化（bash。PowerShell では Invoke-Expression (poetry env activate)）
+eval "$(poetry env activate)"
 
 # Lambdaレイヤーをビルド
 poetry run pip install --upgrade -r requirements.txt -t ./layer/python
