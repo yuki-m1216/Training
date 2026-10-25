@@ -14,6 +14,8 @@ mkdir build
 # --python-platform/--python-version: Runtime(linux/arm64, Python 3.13)向けの wheel を指定
 # --only-binary=:all:  : arm64 wheel が無いパッケージはソースビルドせずエラーにする
 #                        (黙って x86 バイナリが混入するのが最悪パターンのため)
+# -r requirements.txt  : requirements.in から生成したロック(推移的依存まで固定)。直接依存だけだと
+#                        ビルドのたびに推移的依存が最新に解決され、同じコードでも中身が変わる(V5a で実測)
 uv pip install \
   --python-platform aarch64-manylinux2014 \
   --python-version 3.13 \

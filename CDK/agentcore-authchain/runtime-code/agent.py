@@ -19,11 +19,13 @@ import os
 import time
 from typing import Any
 
+import httpx
 import jwt  # PyJWT
 from bedrock_agentcore import BedrockAgentCoreApp
 from bedrock_agentcore.runtime.context import RequestContext
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.shared.exceptions import McpError
 
 app = BedrockAgentCoreApp()
 
@@ -31,6 +33,8 @@ app = BedrockAgentCoreApp()
 AGENT_KEY = os.environ.get("AGENT_KEY", "<unset>")
 # V3 以降で CDK から渡す(V2 では未設定 → action=gateway はエラーを返す)
 GATEWAY_URL = os.environ.get("GATEWAY_URL", "")
+# Gateway の Policy 拒否の JSON-RPC エラーコード(V4b 実測)。Gateway 入口の 403 の本文も同じコードなので、HTTP ステータスと併せて区別する
+POLICY_DENIED_CODE = -32002
 
 # 表示するクレーム(存在するものだけ)。トークン全体を返さないのは、ログ・応答に不要なものを載せないため
 SHOW_CLAIMS = [
@@ -80,15 +84,32 @@ async def _call_gateway(auth_header: str, tool: str | None, arguments: dict[str,
             # ツール名の実物(<Target>___<tool> の区切りを確認する。仮決め #6)
             result["tools"] = [t.name for t in listed.tools]
             if tool:
-                call = await session.call_tool(tool, arguments or {})
-                result["call"] = {
-                    "tool": tool,
-                    "arguments": arguments or {},
-                    "isError": call.isError,
-                    # Policy で拒否されると isError=true + "AuthorizeActionException - Tool Execution Denied ..." が text に入る
-                    "content": [getattr(c, "text", None) or c.model_dump() for c in call.content],
-                }
+                result["call"] = {"tool": tool, "arguments": arguments or {}}
+                try:
+                    call = await session.call_tool(tool, arguments or {})
+                except McpError as exc:
+                    # Policy の拒否は HTTP 200 の JSON-RPC error -32002 で返り、call_tool が McpError を投げる(V4b で実測。
+                    # 公式の isError=true ではない)。async with の内側で捕まえないと TaskGroup の ExceptionGroup に包まれる
+                    result["call"]["error"] = {
+                        "kind": "policy_denied" if exc.error.code == POLICY_DENIED_CODE else "mcp_error",
+                        "code": exc.error.code,
+                        "message": exc.error.message,
+                    }
+                else:
+                    result["call"]["isError"] = call.isError
+                    result["call"]["content"] = [getattr(c, "text", None) or c.model_dump() for c in call.content]
     return result
+
+
+def _http_error(exc: httpx.HTTPStatusError) -> dict[str, Any]:
+    """Gateway 入口の拒否(401: Bearer 無し・非 JWT／403: 検証失敗。V3 で実測)を、呼び出し元が次に何をすべきかと一緒に返す。"""
+    status = exc.response.status_code
+    error: dict[str, Any] = {"kind": "gateway_http_error", "http_status": status}
+    if status in (401, 403):
+        # 本文(JSON-RPC -32001/-32002)と WWW-Authenticate に理由が入る。トークンの取り直しで直る可能性がある
+        error["www_authenticate"] = exc.response.headers.get("WWW-Authenticate")
+        error["hint"] = "トークンを取り直して再試行する(期限切れ・クライアント不一致など)"
+    return error
 
 
 @app.entrypoint
@@ -115,8 +136,12 @@ async def invoke(payload: dict[str, Any] | None, context: RequestContext) -> dic
         else:
             try:
                 observed["gateway"] = await _call_gateway(auth_header, payload.get("tool"), payload.get("arguments"))
-            except Exception as exc:  # 401/403 等は例外で上がる。中身をそのまま観測結果として返す
-                observed["gateway"] = {"error": f"{type(exc).__name__}: {exc}"}
+            except* httpx.HTTPStatusError as eg:
+                # HTTP の失敗は streamablehttp_client の裏タスクで起きるので、TaskGroup の ExceptionGroup に包まれて上がる
+                observed["gateway"] = {"error": _http_error(eg.exceptions[0])}
+            except* Exception as eg:  # 想定外(接続失敗など)。中身をそのまま観測結果として返す
+                exc = eg.exceptions[0]
+                observed["gateway"] = {"error": {"kind": "unexpected", "detail": f"{type(exc).__name__}: {exc}"}}
     return observed
 
 
