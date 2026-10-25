@@ -3,7 +3,17 @@ import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as agentcore from 'aws-cdk-lib/aws-bedrockagentcore';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import { Construct } from 'constructs';
+
+/**
+ * V5b でエージェント(Strands)が呼ぶモデル。jp の推論プロファイル = 東京・大阪のどちらかで推論する(データを国内に留める)。
+ * 2026-10-25 ユーザー決定(Haiku 5.5、jp)
+ */
+const MODEL_INFERENCE_PROFILE_ID = 'jp.anthropic.claude-haiku-5-5';
+const MODEL_FOUNDATION_ID = 'anthropic.claude-haiku-5-5';
+/** jp プロファイルの送り先(2026-10-25 get-inference-profile で確認)。プロファイルを許可するときは送り先すべての foundation-model も要る */
+const MODEL_DESTINATION_REGIONS = ['ap-northeast-1', 'ap-northeast-3'];
 
 export interface AuthChainRuntimeStackProps extends cdk.StackProps {
   /** JWT オーソライザの discoveryUrl の元(AuthChainIdentityStack のプール) */
@@ -76,8 +86,34 @@ export class AuthChainRuntimeStack extends cdk.Stack {
       // 既定は転送なし。Authorization は customJWTAuthorizer 設定時のみ allowlist に入れられる(仮決め #16)
       requestHeaderConfiguration: props.forwardAuthorizationHeader ? { allowlistedHeaders: ['Authorization'] } : undefined,
       environmentVariables,
-      // 仮決め #8: PUBLIC(既定)。LLM を呼ばないので実行ロールに Bedrock 権限は不要
+      // 仮決め #8: PUBLIC(既定)
     });
+
+    // V5b: モデル呼び出しの権限。公式(inference-profiles-prereq)の「プロファイル経由でのみ呼べる」形:
+    // プロファイルの ARN と、送り先リージョンの foundation-model を bedrock:InferenceProfileArn 条件付きで許可する。
+    // InvokeModel* = InvokeModel と InvokeModelWithResponseStream(Converse／ConverseStream もこの 2 つで認可される)
+    const inferenceProfileArn = cdk.Stack.of(this).formatArn({
+      service: 'bedrock',
+      resource: 'inference-profile',
+      resourceName: MODEL_INFERENCE_PROFILE_ID,
+    });
+    this.runtime.role.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'InvokeViaInferenceProfile',
+        actions: ['bedrock:InvokeModel*'],
+        resources: [inferenceProfileArn],
+      }),
+    );
+    this.runtime.role.addToPrincipalPolicy(
+      new iam.PolicyStatement({
+        sid: 'InvokeFoundationModelOnlyViaProfile',
+        actions: ['bedrock:InvokeModel*'],
+        resources: MODEL_DESTINATION_REGIONS.map(
+          (region) => `arn:${cdk.Aws.PARTITION}:bedrock:${region}::foundation-model/${MODEL_FOUNDATION_ID}`,
+        ),
+        conditions: { StringLike: { 'bedrock:InferenceProfileArn': inferenceProfileArn } },
+      }),
+    );
 
     new cdk.CfnOutput(this, 'RuntimeArn', { value: this.runtime.agentRuntimeArn });
     new cdk.CfnOutput(this, 'RuntimeId', { value: this.runtime.agentRuntimeId });
