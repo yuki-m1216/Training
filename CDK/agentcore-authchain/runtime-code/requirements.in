@@ -14,3 +14,7 @@ mcp==1.30.0
 # mcp の HTTP 層。agent.py は Gateway 入口の拒否(401/403)を httpx.HTTPStatusError で受けるため直接 import する。
 # mcp 1.30.0 が解決する版と同じものに固定(V5a)
 httpx==0.28.1
+# V5b: エージェントのフレームワーク(BedrockModel = Converse API、MCPClient で Gateway を同じ Bearer で呼ぶ)。
+# 2026-10-25 ユーザー決定で公開から 1 週間超の 1.61.1(PyPI provenance: strands-agents/harness-sdk の release-python.yml、OSV 該当なし)。
+# mcp<2.2,>=1.23 を要求するので mcp 1.30.0 のまま入る
+strands-agents==1.61.1

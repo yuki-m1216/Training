@@ -8,10 +8,11 @@ import { Construct } from 'constructs';
 
 /**
  * V5b でエージェント(Strands)が呼ぶモデル。jp の推論プロファイル = 東京・大阪のどちらかで推論する(データを国内に留める)。
- * 2026-10-25 ユーザー決定(Haiku 5.5、jp)
+ * 2026-10-25 ユーザー決定: Haiku 4.5(jp)。Haiku 5.5 は契約(agreement)を AVAILABLE にしてもこのアカウントでは
+ * AccessDeniedException(アカウント単位の追加アクセスが必要なモデル)だったため切り替え(検証ログ_V5 V5b-2)
  */
-const MODEL_INFERENCE_PROFILE_ID = 'jp.anthropic.claude-haiku-5-5';
-const MODEL_FOUNDATION_ID = 'anthropic.claude-haiku-5-5';
+const MODEL_INFERENCE_PROFILE_ID = 'jp.anthropic.claude-haiku-4-5-20251001-v1:0';
+const MODEL_FOUNDATION_ID = 'anthropic.claude-haiku-4-5-20251001-v1:0';
 /** jp プロファイルの送り先(2026-10-25 get-inference-profile で確認)。プロファイルを許可するときは送り先すべての foundation-model も要る */
 const MODEL_DESTINATION_REGIONS = ['ap-northeast-1', 'ap-northeast-3'];
 
@@ -58,7 +59,11 @@ export class AuthChainRuntimeStack extends cdk.Stack {
       );
     }
 
-    const environmentVariables: Record<string, string> = { AGENT_KEY: props.agentKey };
+    // MODEL_ID は実行ロールで InvokeModel* を許可する推論プロファイルと同じ値(V5b)
+    const environmentVariables: Record<string, string> = {
+      AGENT_KEY: props.agentKey,
+      MODEL_ID: MODEL_INFERENCE_PROFILE_ID,
+    };
     if (props.gatewayUrl) {
       environmentVariables.GATEWAY_URL = props.gatewayUrl;
     }
