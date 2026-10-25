@@ -49,7 +49,6 @@ RAG（Retrieval-Augmented Generation）システムの場合、この特定の�
 ## コード規約
 
 - リソースにはハイフンを使用した一貫した命名を使用（例：`synthetics-test-api`）
-- AWSリソース命名規約に従う
 - `versions.tf`に適切なバージョン制約を含める
 - 外部参照には`data.tf`でデータソースを使用
 - 説明と型を含めて`variables.tf`に変数を保持
