@@ -1,0 +1,20 @@
+# 直接依存の正本。版を変えたら requirements.txt(推移的依存まで固定したロック)を再生成する:
+#   uv pip compile requirements.in --python-platform aarch64-manylinux2014 --python-version 3.13 --only-binary :all: -o requirements.txt
+# build.sh はロックの requirements.txt を読む。ロックを requirements.txt という名前にしているのは、
+# GitHub の依存グラフ(Dependabot アラート)が pip で読むのが requirements.txt だから(V5a。推移的依存のずれ対策)
+#
+# AgentCore Runtime のサービスコントラクト(/invocations, /ping)と request_headers(Authorization 転送)を提供する SDK
+# (2026-08-29 PyPI 確認: 最新 1.22.0 / 2026-08-18。1.10.0 以降で allowlist 任意ヘッダー転送に対応)
+bedrock-agentcore==1.22.0
+# 受け取った JWT のデコード(署名検証は Runtime 側で済んでいるため verify_signature=False で中身を見るだけ)
+PyJWT==2.15.1
+# Gateway(MCP)を同じ Bearer で呼ぶためのクライアント(streamablehttp_client)。
+# bedrock-agentcore の strands extra が mcp<2.0.0 を要求し、公式サンプルも 1.x API のため 1.x 系の最新に固定(2.x は API 再設計)
+mcp==1.30.0
+# mcp の HTTP 層。agent.py は Gateway 入口の拒否(401/403)を httpx.HTTPStatusError で受けるため直接 import する。
+# mcp 1.30.0 が解決する版と同じものに固定(V5a)
+httpx==0.28.1
+# V5b: エージェントのフレームワーク(BedrockModel = Converse API、MCPClient で Gateway を同じ Bearer で呼ぶ)。
+# 2026-10-25 ユーザー決定で公開から 1 週間超の 1.61.1(PyPI provenance: strands-agents/harness-sdk の release-python.yml、OSV 該当なし)。
+# mcp<2.2,>=1.23 を要求するので mcp 1.30.0 のまま入る
+strands-agents==1.61.1

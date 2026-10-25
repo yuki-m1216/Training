@@ -15,6 +15,7 @@ JWT 設定の Runtime は AWS SDK の invoke_agent_runtime では呼べない(Si
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --use id        # ID トークンを送ってみる(client_id/aud の違い)
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --tamper        # 署名バイトを 1 ビット反転(改ざん実験)
   python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --action gateway --tool VerifyTarget___echo_profile --args '{"note":"hi"}'
+  python3 scripts/invoke_runtime.py --token-file out/tokens_userA_v2.json --action agent --prompt "こんにちは"   # Strands + モデル(V5b)
 """
 from __future__ import annotations
 
@@ -67,9 +68,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--outputs", default="out/runtime-outputs.json", help="cdk deploy --outputs-file の出力")
     parser.add_argument("--stack", default="AuthChainRuntimeStack")
     parser.add_argument("--runtime-arn", help="outputs を使わず ARN を直接指定")
-    parser.add_argument("--action", choices=["inspect", "gateway"], default="inspect")
+    parser.add_argument("--action", choices=["inspect", "gateway", "agent"], default="inspect")
     parser.add_argument("--tool", help="action=gateway のとき tools/call するツール名(例 VerifyTarget___echo_profile)")
     parser.add_argument("--args", default="{}", help="tools/call の arguments(JSON)")
+    parser.add_argument("--prompt", help="action=agent のときモデルに渡す文(V5b)")
     parser.add_argument("--tamper", action="store_true", help="署名バイトを 1 ビット反転して送る(改ざん実験)")
     parser.add_argument("--session-id", help="X-Amzn-Bedrock-AgentCore-Runtime-Session-Id(既定: 自動生成 64 文字)")
     parser.add_argument("--save", help="応答 JSON の保存先(例 out/runtime_v2b_userA.json)")
@@ -117,6 +119,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.action == "gateway":
         payload["tool"] = args.tool
         payload["arguments"] = json.loads(args.args)
+    elif args.action == "agent":
+        payload["prompt"] = args.prompt
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     headers = {
         "Authorization": f"Bearer {token}",
