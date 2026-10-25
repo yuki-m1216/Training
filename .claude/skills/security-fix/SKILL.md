@@ -55,6 +55,7 @@ security ラベル付きのオープン Issue を修正して PR を作成して
    - requirements.txt（uv pip compile）: 直接依存を上げた場合は `requirements.in` と `requirements.txt` の版が一致していることを確認する
    - `git diff` で意図しない変更がないことを確認
 9. コミット・push・PR作成
+   - コミット前にこの SKILL.md を再読し、ブランチ・コミット規約と PR body の要件を満たしているかセルフチェックする
 
 ## Issue ごとに PR を分ける
 
