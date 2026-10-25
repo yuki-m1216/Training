@@ -12,7 +12,7 @@ disable-model-invocation: true
    - `gh pr view --json number,title,headRefName` で現在のブランチの PR 情報を取得
    - PR が存在しない場合は「現在のブランチに紐づく PR はありません」と報告して終了
 2. レビューコメントを取得する
-   - `gh api /repos/:owner/:repo/pulls/<number>/comments` でファイル単位のレビューコメントを取得
+   - `gh api --paginate /repos/:owner/:repo/pulls/<number>/comments` でファイル単位のレビューコメントを取得（ページネーション対応で全件取得）
    - `gh pr view <number> --comments` で PR 全体へのコメントも確認
    - 取得したコメントが0件の場合は「未対応のレビューコメントはありません」と報告して終了
 3. 各コメントの内容を分析する
