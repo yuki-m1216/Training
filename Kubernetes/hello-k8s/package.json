@@ -16,7 +16,7 @@
     "express": "^5.1.0"
   },
   "overrides": {
-    "body-parser@2": "~2.3.0",
+    "body-parser@2": "~2.4.0",
     "qs": "^6.15.2",
     "path-to-regexp@8": "~8.4.0",
     "proxy-addr@2": "~2.0.8"
