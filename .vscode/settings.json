@@ -44,6 +44,18 @@
     "yuki"
   ],
   "cSpell.ignoreWords": ["nodenext", "refetches", "statefulset"],
+  // Claude Code のサンドボックスがコマンド実行のたびに置くプレースホルダー（本物はこのリポジトリにない）
+  "files.exclude": {
+    ".bashrc": true,
+    ".bash_profile": true,
+    ".profile": true,
+    ".zshrc": true,
+    ".zprofile": true,
+    ".gitconfig": true,
+    ".gitmodules": true,
+    ".ripgreprc": true,
+    ".idea": true
+  },
   "files.watcherExclude": {
     "**/.terraform/**": true,
     "**/cdk.out/**": true,
